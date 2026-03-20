@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                        "text-main-light": "#0f172a",
+                        "text-main-dark": "#f8fafc",
+                        "text-muted-light": "#64748b",
+                        "text-muted-dark": "#94a3b8",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#334155"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display min-h-screen flex">
+<aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark flex flex-col hidden md:flex sticky top-0 h-screen">
+<div class="p-6 flex items-center gap-3 border-b border-border-light dark:border-border-dark">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<div>
+<h1 class="text-base font-bold leading-tight">Company Name</h1>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark">Inventory Management</p>
+</div>
+</div>
+<nav class="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+            Dashboard
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+            Inventory
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">outbox</span>
+            Lending
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">move_to_inbox</span>
+            Return
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+            Users
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+            History
+        </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+            Settings
+        </a>
+</nav>
+</aside>
+<main class="flex-1 flex flex-col min-w-0">
+<header class="h-16 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 -ml-2 text-text-muted-light dark:text-text-muted-dark hover:bg-black/5 dark:hover:bg-white/5 rounded-lg">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-xl font-bold">Dashboard Overview</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-text-muted-light dark:text-text-muted-dark hover:bg-black/5 dark:hover:bg-white/5 rounded-lg relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
+</button>
+<div class="size-8 rounded-full bg-border-light dark:bg-border-dark overflow-hidden cursor-pointer flex-shrink-0" data-alt="User Profile Picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm'); background-size: cover; background-position: center;"></div>
+</div>
+</header>
+<div class="flex-1 p-6 overflow-y-auto">
+<div class="max-w-6xl mx-auto space-y-6">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-2xl font-bold">Overview</h3>
+<p class="text-text-muted-light dark:text-text-muted-dark mt-1">Check current inventory and lending status.</p>
+</div>
+<button class="sm:hidden w-full flex justify-center items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium shadow-sm">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+                    Scan QR
+                </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl border border-border-light dark:border-border-dark shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<p class="text-text-muted-light dark:text-text-muted-dark font-medium">Lent</p>
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">outbox</span>
+</div>
+<p class="text-3xl font-bold">142</p>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl border border-border-light dark:border-border-dark shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<p class="text-text-muted-light dark:text-text-muted-dark font-medium">Available</p>
+<span class="material-symbols-outlined text-green-600 bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">check_circle</span>
+</div>
+<p class="text-3xl font-bold">89</p>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl border border-border-light dark:border-border-dark shadow-sm flex flex-col justify-between">
+<div class="flex justify-between items-start mb-4">
+<p class="text-text-muted-light dark:text-text-muted-dark font-medium">Today's Transactions</p>
+<span class="material-symbols-outlined text-orange-600 bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg">sync_alt</span>
+</div>
+<p class="text-3xl font-bold">12</p>
+</div>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+<div class="p-6 border-b border-border-light dark:border-border-dark flex justify-between items-center">
+<h3 class="text-lg font-bold">Recent Transactions</h3>
+<a class="text-sm text-primary hover:underline font-medium" href="#">View All</a>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left whitespace-nowrap">
+<thead class="bg-black/5 dark:bg-white/5 text-text-muted-light dark:text-text-muted-dark text-sm">
+<tr>
+<th class="px-6 py-3 font-medium">Item</th>
+<th class="px-6 py-3 font-medium">User</th>
+<th class="px-6 py-3 font-medium">Action</th>
+<th class="px-6 py-3 font-medium">Time</th>
+<th class="px-6 py-3 font-medium">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark text-sm">
+<tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium">MacBook Pro 16"</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="size-6 rounded-full bg-border-light dark:bg-border-dark" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuABwJK0CHnsJmXaQQZNapSCC45UkdGPo6NTmIbw3BGq0WZQnMrDD4OWSqv_nXvIcRSbGX9HXcKPqeSgsDqR6X4lI6AHGxqVpX3srWxzY3enpxacLTaHHZxApHpcTVlXowyktdeZxSKXvBqFkHGi_yQQk_mK6O55SfHDuMedb4t0qFK_OXcIDhfB_WC3A25lk5n9r0wDKu2mP2RhMwM4tjFOzoUl9SNCvlUgeY-Zv4T8UkGUYDIf7X9zN3agf2hC4ChZG8qbziyWSqCk'); background-size: cover;"></div>
+                                Taro Tanaka
+                            </td>
+<td class="px-6 py-4"><span class="text-orange-600 font-medium">Lend</span></td>
+<td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">10 mins ago</td>
+<td class="px-6 py-4"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">Processing</span></td>
+</tr>
+<tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium">iPad Pro</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="size-6 rounded-full bg-border-light dark:bg-border-dark" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhZptIAzENkKn-EajgRX8n8ZyRoQc0Ue8yhcNoVEKS9qnupVVXttw5DKz2WN7Slhhy5V_HzzRAj9qOJpwc0qmL-GqFsXmMH4SwKdjUzf0kbqpycqOV-S58DvFMHRhbfmJNT8dxhZbFJtvjJrn3WWqUossaFzJzEa7c6KLMDS4i2tO8T33cJ2GQmSzz7FYZBMSUVRDsryHyWpbMt_1mR7uTsxZdxiofVx41HG6uH3H31FPPS9nKqXF4zpf11e_T2eiMaJVc6AHLj8f2'); background-size: cover;"></div>
+                                Hanako Sato
+                            </td>
+<td class="px-6 py-4"><span class="text-green-600 font-medium">Return</span></td>
+<td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">1 hour ago</td>
+<td class="px-6 py-4"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</span></td>
+</tr>
+<tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium">Dell XPS 15</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="size-6 rounded-full bg-border-light dark:bg-border-dark" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDXGfSRvrFYHYrNS5rweM0M51nvsQKORB5gq3bybpJc1ztZPR52tFzmT6QTQryc9Ji79qxhmcwOslysylXdu_EZySUlH_EAjnzCA3VmoSuLAqtbHbYiY26bs_SHst6wXOghH6sTtYTs2yEfmd6250fwmXPYKiLg5ZdlbK7shHmGw0a0Ht7m9dHGTnlE-NMOYzz5vRpCxoPccb2_EChd17Juf_QAdkIRiG1JeIfefQoctmR0rL7y8QdZMxXmAZH9DOWzA4bNQGNLxDqv'); background-size: cover;"></div>
+                                Ichiro Suzuki
+                            </td>
+<td class="px-6 py-4"><span class="text-orange-600 font-medium">Lend</span></td>
+<td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">3 hours ago</td>
+<td class="px-6 py-4"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</span></td>
+</tr>
+<tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium">Canon EOS R5</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="size-6 rounded-full bg-border-light dark:bg-border-dark" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAfY1vwnjDLccx5PaXokOA3a49QVqrIdRGa8MBq62gNFQJeKEFZeFwcQpNuXeenw58MGZK4omczUQKTEIIL5gI5txvdEfqJ2DSG36CCBBHAPse1U1rrd9lU3RCNJvRVoGbeaOfyVcwhHeCFjMgZd08nYDG0O-qb0DAwOoczepCgG-qJvfE21Wl8L-fwAxvvIk8yOFEbh7oojx8bW2dEyimzdC2xJPglqTf9NjLs9DXLYuapuXTrvFZhpt6tPVPkJKsFe3bDvhYc6KEw'); background-size: cover;"></div>
+                                Jiro Takahashi
+                            </td>
+<td class="px-6 py-4"><span class="text-green-600 font-medium">Return</span></td>
+<td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">Yesterday</td>
+<td class="px-6 py-4"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</span></td>
+</tr>
+<tr class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium">iPhone 13 Pro</td>
+<td class="px-6 py-4 flex items-center gap-2">
+<div class="size-6 rounded-full bg-border-light dark:bg-border-dark" data-alt="User Avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB80KSCjdqk6Y9yjs67lmtBilV77DvJ7gjf3uP8Hn9FVXsD-yGi_vp1IqWI02DFF0nB62F_ZswH3bX_7U_AUAGMJYf3mDrMvx4ihWLOoaIFLlwYxOvKeNdooyDwaxuIWJxIdO_OvQ7CsHPe_rsbURjedJCXK8WuBbPh4OxYR2IxQ7U0PrJdYEah310jylWXGipXuOQLb7M4nCUY0nUJd4SjHiMX061Xjd2SMX8bZYJ_y13cV_CWP998rN3nhE07isqoKnasvqNWJsfu'); background-size: cover;"></div>
+                                Saburo Ito
+                            </td>
+<td class="px-6 py-4"><span class="text-orange-600 font-medium">Lend</span></td>
+<td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">Yesterday</td>
+<td class="px-6 py-4"><span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Users Management - Slate Precision</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#334155",
+                        "text-main-light": "#0f172a",
+                        "text-main-dark": "#f8fafc",
+                        "text-muted-light": "#64748b",
+                        "text-muted-dark": "#94a3b8",
+                        "hover-light": "#f1f5f9",
+                        "hover-dark": "#334155"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark font-display antialiased min-h-screen flex overflow-x-hidden">
+<!-- Sidebar: Matches SCREEN_25 and COMPONENTS_27 -->
+<aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark flex flex-col hidden md:flex sticky top-0 h-screen shrink-0">
+<div class="p-6 flex items-center gap-3 border-b border-border-light dark:border-border-dark">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<div>
+<h1 class="text-base font-bold leading-tight">Slate Precision</h1>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark">Equipment Management</p>
+</div>
+</div>
+<nav class="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">hand_gesture</span>
+                Lending
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">assignment_return</span>
+                Return
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium" href="#">
+<span class="material-symbols-outlined filled">group</span>
+                Users
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+                History
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-text-main-light dark:text-text-main-dark font-medium transition-colors mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+</aside>
+<main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+<!-- Top Navigation: Matches SCREEN_25 and COMPONENTS_27 -->
+<header class="h-16 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark flex items-center justify-between px-8 sticky top-0 z-10 shrink-0">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 -ml-2 text-text-muted-light dark:text-text-muted-dark hover:bg-black/5 dark:hover:bg-white/5 rounded-lg">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-xl font-bold">Users Management</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-text-muted-light dark:text-text-muted-dark hover:bg-black/5 dark:hover:bg-white/5 rounded-lg relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
+</button>
+<div class="size-8 rounded-full bg-border-light dark:bg-border-dark overflow-hidden cursor-pointer flex-shrink-0" data-alt="User Profile Picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm'); background-size: cover; background-position: center;"></div>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-8 @container">
+<div class="max-w-7xl mx-auto space-y-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="relative w-full sm:w-96">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted-light dark:text-text-muted-dark">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-lg leading-5 bg-surface-light dark:bg-surface-dark text-text-main-light dark:text-text-main-dark placeholder-text-muted-light dark:placeholder-text-muted-dark focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-colors" placeholder="Search users by name, email or role..." type="text"/>
+</div>
+<button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium shadow-sm transition-colors w-full sm:w-auto">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+                        Add New User
+                    </button>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-border-light dark:divide-border-dark">
+<thead class="bg-hover-light dark:bg-hover-dark">
+<tr>
+<th class="px-6 py-3.5 text-left text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider" scope="col">Name</th>
+<th class="px-6 py-3.5 text-left text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider" scope="col">Email</th>
+<th class="px-6 py-3.5 text-left text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider" scope="col">Role</th>
+<th class="px-6 py-3.5 text-left text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider" scope="col">Status</th>
+<th class="px-6 py-3.5 text-right text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider" scope="col">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark bg-surface-light dark:bg-surface-dark">
+<tr class="hover:bg-hover-light/50 dark:hover:bg-hover-dark/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-10 w-10">
+<div class="h-10 w-10 rounded-full bg-cover bg-center border border-border-light dark:border-border-dark" data-alt="Jane Cooper Profile Picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA7B0aVUu0DmgLs7kpxQn7uWoBMFAe8pjQEcvmT2B3HMjqfP2J5vuZxPWjHA21CT0RJ5_JkLZXbobffCHBWUYGjUY55IID-wElHpq3H4apNBhdBKEcbguKDIwaU0V1DkkLt0g1aqRHN0rMKFy9xvJgn43e-ZlP3R2XwCtF1PISZtWdou2ROkIfKjZMkDhlQu1uU-fg8RHUBF8SjdytcWst7CqTGx0vrBHB07W82mH4jBtlyO6jJADT0fbN8HLAXYLvMcHWrYImHhoAq");'></div>
+</div>
+<div class="ml-4">
+<div class="text-sm font-medium text-text-main-light dark:text-text-main-dark">Jane Cooper</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-muted-light dark:text-text-muted-dark">jane.cooper@example.com</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-main-light dark:text-text-main-dark">Admin</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
+                                            Active
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-text-muted-light hover:text-primary dark:text-text-muted-dark dark:hover:text-primary transition-colors p-1 rounded hover:bg-hover-light dark:hover:bg-hover-dark" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-text-muted-light hover:text-red-600 dark:text-text-muted-dark dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-hover-light/50 dark:hover:bg-hover-dark/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-10 w-10">
+<div class="h-10 w-10 rounded-full bg-cover bg-center border border-border-light dark:border-border-dark" data-alt="Cody Fisher Profile Picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmuxBHdA6FCAqq4YZrhpBEvRdoY0NN3dV6RGW-NKF_RXV5zgCwe3emplwOlkH4kdFJtzO1oJKlAMETZlHhmMe88kjE8nJy1GuacS5uqbE7kFv42mNjsHTdB9lws5CIyHaaO9OSTY_q0S78DXMqkAiDxIuPi2IyUoOq9-5EWoN15w1m8P-hamb_YdpkYa5kLEpF61Zce7GGWC60aq22Rf3S555WVBt9L-lIOXkOBiUoNDPG-UebhK6Fld-t-O8jKm9Loze08DUIcG1R");'></div>
+</div>
+<div class="ml-4">
+<div class="text-sm font-medium text-text-main-light dark:text-text-main-dark">Cody Fisher</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-muted-light dark:text-text-muted-dark">cody.fisher@example.com</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-main-light dark:text-text-main-dark">Staff</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
+                                            Active
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-text-muted-light hover:text-primary dark:text-text-muted-dark dark:hover:text-primary transition-colors p-1 rounded hover:bg-hover-light dark:hover:bg-hover-dark" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-text-muted-light hover:text-red-600 dark:text-text-muted-dark dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-hover-light/50 dark:hover:bg-hover-dark/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-10 w-10">
+<div class="h-10 w-10 rounded-full bg-cover bg-center border border-border-light dark:border-border-dark" data-alt="Esther Howard Profile Picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAgJ4SXqgRLBfrDsGclaQ8GC03-B4G2fcpaH77X2Q94Aqpsua1B1saA2YlWm1STdifbo_hqGRj3DG7_FWlL16j0l7Uig87yC2-o-ehq1V5Mq2U2IL-i2yIOIG15gM3eGg2Q4qIobbouvpM79ecoLJSHlzx6JbNkK4adPMMh-hFAirViO0UboyDq-EfxZGgwSzaiziS6t2H97t2_eEG4Q4ljE5M3ru-ZKE3L8kxt5aL_bb0OlxS4kSDV4a8-PiVM0e9wwU91VwuhnGsl");'></div>
+</div>
+<div class="ml-4">
+<div class="text-sm font-medium text-text-main-light dark:text-text-main-dark">Esther Howard</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-muted-light dark:text-text-muted-dark">esther.howard@example.com</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-main-light dark:text-text-main-dark">Staff</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                            Inactive
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-text-muted-light hover:text-primary dark:text-text-muted-dark dark:hover:text-primary transition-colors p-1 rounded hover:bg-hover-light dark:hover:bg-hover-dark" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-text-muted-light hover:text-red-600 dark:text-text-muted-dark dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-hover-light/50 dark:hover:bg-hover-dark/50 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="flex-shrink-0 h-10 w-10">
+<div class="h-10 w-10 rounded-full bg-cover bg-center border border-border-light dark:border-border-dark flex items-center justify-center bg-primary/10 text-primary font-semibold">
+                                                    CA
+                                                </div>
+</div>
+<div class="ml-4">
+<div class="text-sm font-medium text-text-main-light dark:text-text-main-dark">Cameron Williamson</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-muted-light dark:text-text-muted-dark">cameron.w@example.com</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm text-text-main-light dark:text-text-main-dark">Staff</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/50">
+                                            Active
+                                        </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<div class="flex items-center justify-end gap-2">
+<button class="text-text-muted-light hover:text-primary dark:text-text-muted-dark dark:hover:text-primary transition-colors p-1 rounded hover:bg-hover-light dark:hover:bg-hover-dark" title="Edit">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+</button>
+<button class="text-text-muted-light hover:text-red-600 dark:text-text-muted-dark dark:hover:text-red-400 transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark px-6 py-4 border-t border-border-light dark:border-border-dark flex items-center justify-between sm:px-6">
+<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark">
+                                    Showing <span class="font-medium text-text-main-light dark:text-text-main-dark">1</span> to <span class="font-medium text-text-main-light dark:text-text-main-dark">4</span> of <span class="font-medium text-text-main-light dark:text-text-main-dark">20</span> results
+                                </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+<a class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark text-sm font-medium text-text-muted-light dark:text-text-muted-dark hover:bg-hover-light dark:hover:bg-hover-dark" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</a>
+<a aria-current="page" class="z-10 bg-primary/10 border-primary text-primary relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                        1
+                                    </a>
+<a class="bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark text-text-muted-light dark:text-text-muted-dark hover:bg-hover-light dark:hover:bg-hover-dark relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                        2
+                                    </a>
+<a class="bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark text-text-muted-light dark:text-text-muted-dark hover:bg-hover-light dark:hover:bg-hover-dark relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                        3
+                                    </a>
+<span class="relative inline-flex items-center px-4 py-2 border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
+                                        ...
+                                    </span>
+<a class="bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark text-text-muted-light dark:text-text-muted-dark hover:bg-hover-light dark:hover:bg-hover-dark relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">
+                                        5
+                                    </a>
+<a class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark text-sm font-medium text-text-muted-light dark:text-text-muted-dark hover:bg-hover-light dark:hover:bg-hover-dark" href="#">
+<span class="sr-only">Next</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

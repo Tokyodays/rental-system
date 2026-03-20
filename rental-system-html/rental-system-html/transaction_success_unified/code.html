@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Success Screen - Slate Precision</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                        "text-main-light": "#0f172a",
+                        "text-main-dark": "#f8fafc",
+                        "text-muted-light": "#64748b",
+                        "text-muted-dark": "#94a3b8",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#334155",
+                        "success": "#16a34a"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-text-main-light dark:text-text-main-dark min-h-screen flex">
+<!-- SideNavBar (from COMPONENTS_27) -->
+<aside class="w-64 h-screen fixed left-0 top-0 bg-white dark:bg-slate-900 border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col z-20 shadow-sm">
+<div class="p-6 flex items-center gap-3 border-b border-slate-200/50 dark:border-slate-800/50">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+</div>
+<div>
+<h1 class="text-base font-bold leading-tight">Slate Precision</h1>
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark">Equipment Management</p>
+</div>
+</div>
+<nav class="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">outbox</span>
+                Lending
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">move_to_inbox</span>
+                Return
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+                Users
+            </a>
+<!-- History (active) -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-bold border-r-2 border-blue-600 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+                History
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200 mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Setting
+            </a>
+</nav>
+</aside>
+<div class="flex-1 ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (from COMPONENTS_27) -->
+<header class="h-16 fixed top-0 right-0 left-64 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex justify-between items-center px-8 w-full">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white">Transaction Success</h2>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden cursor-pointer flex-shrink-0" data-alt="User Profile" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm'); background-size: cover; background-position: center;"></div>
+</div>
+</header>
+<main class="flex-1 flex flex-col items-center justify-center px-4 py-20 mt-16">
+<div class="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 p-8 flex flex-col items-center">
+<div class="flex flex-col items-center gap-4 mb-10">
+<div class="size-24 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-success mb-2">
+<span class="material-symbols-outlined" style="font-size: 48px;">check_circle</span>
+</div>
+<div class="flex flex-col items-center gap-2 text-center">
+<h1 class="text-3xl font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-slate-100">Transaction Completed Successfully</h1>
+<p class="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal max-w-md">
+                            The transaction has been successfully recorded and the inventory has been updated.
+                        </p>
+</div>
+</div>
+<div class="w-full bg-slate-50 dark:bg-slate-800 rounded-lg p-6 mb-8 border border-slate-200 dark:border-slate-700">
+<h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">Transaction Summary</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+<div class="flex flex-col">
+<span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Transaction ID</span>
+<span class="font-medium text-slate-900 dark:text-slate-100">TXN-8492-LNT</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Date &amp; Time</span>
+<span class="font-medium text-slate-900 dark:text-slate-100">Oct 24, 2023 - 14:30 JST</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Equipment</span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400" style="font-size: 18px;">laptop_mac</span>
+<span class="font-medium text-slate-900 dark:text-slate-100">MacBook Pro 16" (M2)</span>
+</div>
+</div>
+<div class="flex flex-col">
+<span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Action</span>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Lent Out</span>
+</div>
+</div>
+<div class="flex flex-col md:col-span-2 mt-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+<span class="text-sm text-slate-500 dark:text-slate-400 mb-1">Assigned To</span>
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-200 dark:bg-slate-700 bg-cover bg-center" data-alt="John Doe profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnV9-tF8GsfzjwyLL57v4ZSq6KULw5Pt-hn1p7yZSI-fyJHdU0Et64TQOl5_hlmyZJ41Up3hVd5zKu7Y5_KFCSisGJM85-ihOYJ0oG79qqCzJQYrOQe0rFazvacFRUaFWMkvOVa7MZ3tTedAinvCX9zU3oJTLkMdPMkzBaj_6_L8MEv3DOelxR9P_7Q_dZZi5YZyKwydJ4xqsuqzqbwkTQsPtixzoS3YINv96bTOub2YcrmRtjOY4ldynE4DqASv-bp0c7FRwwRMUz');"></div>
+<div>
+<p class="font-medium text-slate-900 dark:text-slate-100 leading-none">John Doe</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Engineering Dept.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto mt-2">
+<button class="flex-1 sm:flex-none min-w-[200px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-primary hover:bg-primary/90 transition-colors text-white text-base font-bold leading-normal tracking-[0.015em] shadow-sm active:scale-95 transition-transform">
+                        Back to Dashboard
+                    </button>
+<button class="flex-1 sm:flex-none min-w-[200px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-200 text-base font-bold leading-normal tracking-[0.015em] shadow-sm active:scale-95 transition-transform">
+                        View Transaction
+                    </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transaction History - Slate Precision</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0f172a",
+              "on-error": "#ffffff",
+              "secondary-fixed-dim": "#cbd5e1",
+              "inverse-on-surface": "#f8fafc",
+              "surface-container": "#f1f5f9",
+              "on-secondary-fixed-variant": "#334155",
+              "primary-fixed": "#dbeafe",
+              "on-tertiary-container": "#155e75",
+              "on-secondary-container": "#334155",
+              "tertiary-container": "#cffafe",
+              "surface": "#ffffff",
+              "error": "#ef4444",
+              "on-primary-container": "#1e40af",
+              "surface-bright": "#ffffff",
+              "tertiary-fixed-dim": "#a5f3fc",
+              "primary-container": "#dbeafe",
+              "error-container": "#fee2e2",
+              "surface-variant": "#f1f5f9",
+              "on-error-container": "#991b1b",
+              "on-surface": "#0f172a",
+              "inverse-surface": "#1e293b",
+              "surface-dim": "#f1f5f9",
+              "outline-variant": "#cbd5e1",
+              "surface-container-lowest": "#ffffff",
+              "background": "#f6f6f8",
+              "on-primary-fixed-variant": "#1d4ed8",
+              "on-primary-fixed": "#1e3a8a",
+              "inverse-primary": "#93c5fd",
+              "tertiary-fixed": "#cffafe",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed": "#e2e8f0",
+              "on-surface-variant": "#64748b",
+              "tertiary": "#0891b2",
+              "secondary-container": "#f1f5f9",
+              "on-primary": "#ffffff",
+              "primary-fixed-dim": "#bfdbfe",
+              "on-secondary": "#ffffff",
+              "surface-container-low": "#f8fafc",
+              "surface-tint": "#2463eb",
+              "primary": "#2463eb",
+              "on-tertiary-fixed": "#083344",
+              "on-background": "#0f172a",
+              "surface-container-highest": "#cbd5e1",
+              "outline": "#e2e8f0",
+              "secondary": "#475569",
+              "on-tertiary-fixed-variant": "#0e7490",
+              "surface-container-high": "#e2e8f0"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased">
+<!-- SideNavBar Shell -->
+<aside class="w-64 h-screen fixed left-0 top-0 border-r border-outline-variant bg-white dark:bg-slate-900 shadow-sm z-50 flex flex-col py-6 px-4 font-inter antialiased text-sm font-medium">
+<!-- Brand Header -->
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" data-icon="architecture">architecture</span>
+</div>
+<div>
+<h1 class="text-xl font-black text-slate-900 dark:text-slate-50 tracking-tight leading-none">Slate Precision</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Inventory Management</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="outbound">outbound</span>
+                Lending
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_return">assignment_return</span>
+                Return
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Users
+            </a>
+<!-- ACTIVE: History -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-bold border-r-2 border-blue-600 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+                History
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Setting
+            </a>
+</nav>
+<!-- Profile / Footer -->
+<div class="mt-auto pt-6 border-t border-outline-variant">
+<div class="flex items-center gap-3 px-2">
+<img alt="User Profile" class="w-8 h-8 rounded-full bg-surface-container-high" data-alt="User avatar with professional attire" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSj9YE7ev7XjSkmfWICKggyDxRxutHmgLCtucGhiMLF1AVs8k3nAboY67sKQhoZjcDhVFx9AUrE39R5-D6bqNtzmPXlLqV2Ovab1mTK2rBSpZ2pIerOG3so5fz4zESRCdbu7biX3vptRSNlpiw0iecriz0tVTVLbWPtqRIgTqFx7eJyVXGaUlJU31QOjyp4bJOoJSrJNIZ6q3F1AVUj4Hpn5xCY2zncU1AyudbsNJcMsMiRLPeFnzLRdo-v61FmmzMzk8Q30thU9Oj"/>
+<div class="flex-1 overflow-hidden">
+<p class="text-xs font-bold text-on-surface truncate">Admin Account</p>
+<p class="text-[10px] text-on-surface-variant truncate">admin@slateprecision.com</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="logout">logout</span>
+</div>
+</div>
+</aside>
+<!-- TopNavBar Shell -->
+<header class="h-16 sticky top-0 z-40 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-8 ml-64 overflow-hidden">
+<div class="flex items-center gap-4">
+<h2 class="text-lg font-bold Inter text-on-surface">Transaction History</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="pl-9 pr-4 py-1.5 rounded-lg border border-outline bg-surface-container-low text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all w-64" placeholder="Quick search..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 p-8 min-h-[calc(100vh-64px)]">
+<!-- Page Header & Filters Section -->
+<div class="mb-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-1">
+<h3 class="text-3xl font-black text-on-surface tracking-tight">Audit Ledger</h3>
+<p class="text-on-surface-variant max-w-xl">Comprehensive log of every inventory adjustment, equipment loan, and system update across the facility.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col gap-1.5">
+<label class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-1">Type</label>
+<select class="bg-surface border border-outline text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20">
+<option>All Transactions</option>
+<option>Lent</option>
+<option>Returned</option>
+<option>Added</option>
+<option>Decommissioned</option>
+</select>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant px-1">Date Range</label>
+<div class="flex items-center bg-surface border border-outline rounded-lg px-3 py-2 gap-2 text-sm text-on-surface">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span>Oct 01 - Oct 24</span>
+</div>
+</div>
+<button class="self-end p-2.5 bg-surface-container-high rounded-lg text-on-surface hover:bg-outline transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Ledger Table Container -->
+<div class="bg-surface border border-outline rounded-xl shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full border-collapse text-left">
+<thead>
+<tr class="bg-surface-container border-b border-outline">
+<th class="px-6 py-4 text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Date / Time</th>
+<th class="px-6 py-4 text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Type</th>
+<th class="px-6 py-4 text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Equipment</th>
+<th class="px-6 py-4 text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">User</th>
+<th class="px-6 py-4 text-[12px] font-bold text-on-surface-variant uppercase tracking-wider">Notes</th>
+<th class="px-6 py-4 text-right"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline">
+<!-- Row 1: Lent -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="text-sm font-bold text-on-surface">Oct 24, 2023</div>
+<div class="text-xs text-on-surface-variant">09:42 AM</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+<span class="w-1 h-1 rounded-full bg-amber-800 mr-1.5"></span>
+                                    Lent
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="precision_manufacturing">precision_manufacturing</span>
+</div>
+<div>
+<div class="text-sm font-bold text-on-surface">Calibrated Micrometer V4</div>
+<div class="text-[10px] text-on-surface-variant">SKU: PREC-992-B</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="User" class="w-6 h-6 rounded-full border border-outline" data-alt="Portrait of a technician in work uniform" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoC9dYQZE4e_yQ1HyPIt4RyClbdaT5e0B_5kux5Ea5ZfUtFHwYMvsU8jYhDbMYoDa-_bb7pJYinYTtNFuCsKfFvnyeg08LU_fQ-0xQX83FozmLxUWxu2f1iGgyNbqXlZrwEIVZkER49LHB7OG_OtqlzXeX-bKwZPt4ENsXO0l-tJUIXY61cUg4f7zbJDQ8lPVCHsTMmqNDgWqmJRADv3IfvHQ_pcNH6F0Ywrf2rWBgjQnekshgCx9t-5Bm2mQSj-EDWJXUF9ebWfFR"/>
+<span class="text-sm text-on-surface">John Dawson</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-on-surface-variant line-clamp-1 italic">Project Alpha site-verification</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="open_in_new">open_in_new</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Returned -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="text-sm font-bold text-on-surface">Oct 23, 2023</div>
+<div class="text-xs text-on-surface-variant">04:15 PM</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+<span class="w-1 h-1 rounded-full bg-emerald-800 mr-1.5"></span>
+                                    Returned
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="bolt">bolt</span>
+</div>
+<div>
+<div class="text-sm font-bold text-on-surface">High-Torque Power Driver</div>
+<div class="text-[10px] text-on-surface-variant">SKU: POW-441-X</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="User" class="w-6 h-6 rounded-full border border-outline" data-alt="Headshot of a project manager" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD04M4WwkF56pcxuruDL-HY0CUcJVbxEBec1bFXIYGxw3cnqlYWJAY7CVbQ_2cve3M_cS1oa6MK-_hui7tsnNp3pgMLRAVXFPFG_S-vRw0i7AEjxR1NJrdJavRYQHeNyLe6Wz1TY8sfYTDEgG5PJStCzYUZrnnzoA2SFevbZcYBiHJCtlUX8a_2BHn8shz0DZFyZjv12MRFUdY5BCMIU9F1ddc98fh1h9CLHJ77pz0clgbsD1i0mL2TAPqssCa_YoE-erNrjp8hemVu"/>
+<span class="text-sm text-on-surface">Sarah Rogers</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-on-surface-variant line-clamp-1 italic">Returned with battery at 85%</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="open_in_new">open_in_new</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Added -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="text-sm font-bold text-on-surface">Oct 23, 2023</div>
+<div class="text-xs text-on-surface-variant">11:00 AM</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+<span class="w-1 h-1 rounded-full bg-blue-800 mr-1.5"></span>
+                                    Added
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="construction">construction</span>
+</div>
+<div>
+<div class="text-sm font-bold text-on-surface">Laser Alignment Kit</div>
+<div class="text-[10px] text-on-surface-variant">SKU: LZR-770-S</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="User" class="w-6 h-6 rounded-full border border-outline" data-alt="System administrator avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIL0bUJKf_Cp37F_m0Wr1y5lq4hodZs8TFCYs0hDIWCvkmEebyg08jpkto-UYsfvNU5seKyRjH4QYQADCS3nJcLV9j8O2J7JrbRuWF_ecTg-kl3zZQSpYiCGGDOISdglGTEsr8qV2wLpzMmXKZWMS9oz3HcZ9ar8pufKc_uuQuwhAzgJ97zfQ_iCT67wx2tNVT5L-Q9lAYvybdksqw12lemZiry43tuahjUAICBzpUW6bZaSqhe2vJWKMthxyVPs1IW3SWEzrXUMxB"/>
+<span class="text-sm text-on-surface">Admin Main</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-on-surface-variant line-clamp-1 italic">New unit entry (Q3 purchase order)</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="open_in_new">open_in_new</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Returned -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="text-sm font-bold text-on-surface">Oct 22, 2023</div>
+<div class="text-xs text-on-surface-variant">05:30 PM</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+<span class="w-1 h-1 rounded-full bg-emerald-800 mr-1.5"></span>
+                                    Returned
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="tablet_mac">tablet_mac</span>
+</div>
+<div>
+<div class="text-sm font-bold text-on-surface">Rugged Diagnostic Tablet</div>
+<div class="text-[10px] text-on-surface-variant">SKU: TAB-102-R</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="User" class="w-6 h-6 rounded-full border border-outline" data-alt="Technical support specialist profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMR1HemtTCyoH2c8i1kbvCqjPvYKqVaWuRxuWyl_p9CWQr8bmBaCXZQiDLqXAXQkBE5mjS3FD5kpobXUE0MQWCpw5QtxL5luRA8quqerxpB65Rio8axg1lOZ1JBPp5D-NitU3WwQ6022LUzlYP7HUXZvapPtAEOMaITuItrWfFWN4ySUMldqInZWwu_Hlh1nd9GpdybZmN_GV4YqKLa7GxfmOaCoSGcpRu0jmAOWU4R0q9pmcHcRatItW7BsmXettoAwA3-Zn6es0Z"/>
+<span class="text-sm text-on-surface">Mike Kessler</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-on-surface-variant line-clamp-1 italic">Minor screen scratches noted</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="open_in_new">open_in_new</span>
+</button>
+</td>
+</tr>
+<!-- Row 5: Lent -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="text-sm font-bold text-on-surface">Oct 22, 2023</div>
+<div class="text-xs text-on-surface-variant">08:00 AM</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+<span class="w-1 h-1 rounded-full bg-amber-800 mr-1.5"></span>
+                                    Lent
+                                </span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container-high flex items-center justify-center border border-outline">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="video_camera_front">video_camera_front</span>
+</div>
+<div>
+<div class="text-sm font-bold text-on-surface">Endoscope Inspection Cam</div>
+<div class="text-[10px] text-on-surface-variant">SKU: VIS-009-P</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="User" class="w-6 h-6 rounded-full border border-outline" data-alt="Technician john dawson" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvYG4pkmA4kIMaCs-_f4kwWKnaW6lqoCmw2nmETkdeUVUqs1pf43_Dc7d2V6rgDjWwttC-o7o4PMHRep0_4STSNDAmHdT_rPJ5At_P3e636u0x1vCh_OoBDb97RLfM0T0UuRslethOVIsm_kWZLSOwiOhfBnZ_DG4fXwMRQ_1zdhaztbtxiqTX9DrfOPwh-H3EZ9M2TzWr9scMX-85C5KmxFUBHBmaFf9qQI8CaSsLkpDbXtpQiecpTNncUpQz6fX8lnfbJwWFpdaw"/>
+<span class="text-sm text-on-surface">John Dawson</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm text-on-surface-variant line-clamp-1 italic">Plumbing line inspection - Bld 4</p>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-primary transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="open_in_new">open_in_new</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-6 py-4 bg-surface-container-low border-t border-outline flex items-center justify-between">
+<div class="text-sm text-on-surface-variant">
+                    Showing <span class="font-bold text-on-surface">1 - 5</span> of <span class="font-bold text-on-surface">1,248</span> transactions
+                </div>
+<div class="flex items-center gap-1">
+<button class="p-2 rounded hover:bg-outline-variant text-on-surface-variant transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined" data-icon="first_page">first_page</span>
+</button>
+<button class="p-2 rounded hover:bg-outline-variant text-on-surface-variant transition-colors disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<div class="flex items-center px-2">
+<button class="w-8 h-8 rounded bg-primary text-on-primary text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded hover:bg-outline-variant text-on-surface text-xs font-bold">2</button>
+<button class="w-8 h-8 rounded hover:bg-outline-variant text-on-surface text-xs font-bold">3</button>
+<span class="px-2 text-on-surface-variant">...</span>
+<button class="w-8 h-8 rounded hover:bg-outline-variant text-on-surface text-xs font-bold">250</button>
+</div>
+<button class="p-2 rounded hover:bg-outline-variant text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="p-2 rounded hover:bg-outline-variant text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined" data-icon="last_page">last_page</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Summary Stats Bento Grid (Secondary Information) -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="bg-surface border border-outline rounded-xl p-6 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Returns</p>
+<p class="text-2xl font-black text-on-surface">842</p>
+</div>
+</div>
+<div class="bg-surface border border-outline rounded-xl p-6 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700">
+<span class="material-symbols-outlined" data-icon="outbound">outbound</span>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Current Loans</p>
+<p class="text-2xl font-black text-on-surface">36</p>
+</div>
+</div>
+<div class="bg-surface border border-outline rounded-xl p-6 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Inventory Added</p>
+<p class="text-2xl font-black text-on-surface">12</p>
+</div>
+</div>
+<div class="bg-surface border border-outline rounded-xl p-6 flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Audit Score</p>
+<p class="text-2xl font-black text-on-surface">100%</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>

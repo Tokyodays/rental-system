@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login - Inventory App</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2463eb",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased min-h-screen flex items-center justify-center p-4">
+<div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+<div class="flex flex-col items-center mb-8">
+<div class="size-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-3xl">qr_code_scanner</span>
+</div>
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white text-center">Login</h1>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-2 text-center">Welcome to Inventory App</p>
+</div>
+<form class="space-y-5">
+<div>
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5" for="email">Email address</label>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary h-11 px-4 text-sm" id="email" placeholder="name@company.com" required="" type="email"/>
+</div>
+<div>
+<div class="flex items-center justify-between mb-1.5">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="password">Password</label>
+<a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors" href="#">Forgot password?</a>
+</div>
+<input class="form-input w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary h-11 px-4 text-sm" id="password" placeholder="••••••••" required="" type="password"/>
+</div>
+<div class="pt-2">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-medium rounded-lg h-11 px-4 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary dark:focus:ring-offset-slate-800" type="submit">
+                    Login
+                </button>
+</div>
+</form>
+<p class="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            Don't have an account?
+            <a class="font-medium text-primary hover:text-primary/80 transition-colors" href="#">Contact Administrator</a>
+</p>
+</div>
+
+</body></html>
