@@ -3,7 +3,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 
-const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Confirmation
+const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Confirmation
 const isLoading = ref(false)
 
 // Step 1: Customer Selection
@@ -38,33 +38,90 @@ function selectCustomer(customer: any) {
   currentStep.value = 2
 }
 
-// Step 2: Vehicle Scan (Mock for now)
+// Step 2: Vehicle Scan & Identification
 const scannedVehicle = ref<any>(null)
 const isScanning = ref(false)
+const manualVehicleCode = ref('')
+const isIdentifying = ref(false)
+
+async function identifyVehicleByCode(code: string) {
+  isIdentifying.value = true
+  try {
+    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
+    
+    const { data, error } = await (supabase
+      .from('vehicles')
+      .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
+      .eq('code', code)
+      .eq('status_id', statusData?.id)
+      .single() as any)
+
+    if (data) {
+      scannedVehicle.value = data
+      currentStep.value = 3
+    } else {
+      toast.add({ title: 'Identification Failed', description: 'Vehicle not found or not available.', color: 'error' })
+    }
+  } catch (e: any) {
+    toast.add({ title: 'Error', description: 'Could not identify vehicle.', color: 'error' })
+  } finally {
+    isIdentifying.value = false
+  }
+}
 
 async function simulateScan() {
   isScanning.value = true
-  // Simulate delay
   await new Promise(resolve => setTimeout(resolve, 1500))
   
-  // Scanned code: B-HONDA-001 (example)
-  const { data, error } = await (supabase
+  // For simulation, we'll try to get ANY available vehicle
+  const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
+  const { data } = await (supabase
     .from('vehicles')
-    .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
-    .eq('status_id', (await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)).data?.id)
+    .select('code')
+    .eq('status_id', statusData?.id)
     .limit(1)
     .single() as any)
 
   if (data) {
-    scannedVehicle.value = data
-    currentStep.value = 3
+    await identifyVehicleByCode(data.code)
   } else {
     toast.add({ title: 'Scan Failed', description: 'No available vehicle found.', color: 'error' })
   }
   isScanning.value = false
 }
 
-// Step 3: Confirmation & Process
+// Step 3: Return Date & Time
+const returnDate = ref(new Date(Date.now() + 86400000).toISOString().split('T')[0]) // Default +1 day
+const returnTime = ref('10:00')
+
+const formattedReturnAt = computed(() => {
+  if (!returnDate.value || !returnTime.value) return ''
+  return `${returnDate.value} ${returnTime.value}`
+})
+
+const durationText = computed(() => {
+  if (!formattedReturnAt.value) return ''
+  const start = new Date()
+  const end = new Date(formattedReturnAt.value)
+  const diffMs = end.getTime() - start.getTime()
+  if (diffMs < 0) return 'Invalid (Past date)'
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const days = Math.floor(diffHours / 24)
+  const hours = diffHours % 24
+
+  if (days === 0) return `${hours} hours`
+  return `${days} days ${hours} hours`
+})
+
+const isPastDate = computed(() => {
+  if (!formattedReturnAt.value) return true
+  const start = new Date()
+  const end = new Date(formattedReturnAt.value)
+  return end.getTime() <= start.getTime()
+})
+
+// Step 4: Confirmation & Process
 const isSubmitting = ref(false)
 
 async function handleCompleteLending() {
@@ -81,6 +138,7 @@ async function handleCompleteLending() {
       vehicle_id: scannedVehicle.value.id,
       customer_id: selectedCustomer.value.id,
       start_at: new Date().toISOString(),
+      end_at: new Date(formattedReturnAt.value).toISOString(),
       start_mileage: scannedVehicle.value.last_mileage || 0,
       status: 'Active'
     } as any) as any)
@@ -117,7 +175,7 @@ onMounted(() => {
       
       <!-- Progress Indicator -->
       <div class="flex items-center gap-2">
-        <div v-for="step in 3" :key="step" 
+        <div v-for="step in 4" :key="step" 
           :class="['h-2 w-8 rounded-full transition-colors', currentStep >= step ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800']" 
         />
       </div>
@@ -177,24 +235,113 @@ onMounted(() => {
         <UIcon name="i-lucide-camera" :class="['size-16 text-slate-800', isScanning ? 'animate-pulse' : '']" />
       </div>
 
-      <div class="flex flex-col gap-3 w-72">
-        <UButton
-          label="Simulate QR Scan"
-          icon="i-lucide-qr-code"
-          size="xl"
-          block
-          :loading="isScanning"
-          class="cursor-pointer"
-          @click="simulateScan"
-        />
-        <p class="text-xs text-center text-slate-400">Mocking a successful scan of an available vehicle.</p>
+      <div class="flex flex-col gap-6 w-full max-w-sm">
+        <div class="space-y-3">
+          <UButton
+            label="Simulate QR Scan"
+            icon="i-lucide-qr-code"
+            size="xl"
+            block
+            :loading="isScanning"
+            class="cursor-pointer"
+            @click="simulateScan"
+          />
+          <p class="text-xs text-center text-slate-400">Mocking a successful scan of an available vehicle.</p>
+        </div>
+
+        <div class="flex items-center gap-4 py-2">
+          <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+          <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+        </div>
+
+        <div class="space-y-4">
+          <UFormField label="Enter Vehicle ID manually" name="manualCode">
+            <UInput
+              v-model="manualVehicleCode"
+              placeholder="e.g. B-HONDA-001"
+              size="lg"
+              icon="i-lucide-keyboard"
+            />
+          </UFormField>
+          <UButton
+            label="Identify Vehicle"
+            variant="subtle"
+            color="neutral"
+            size="lg"
+            block
+            :loading="isIdentifying"
+            :disabled="!manualVehicleCode"
+            class="cursor-pointer"
+            @click="identifyVehicleByCode(manualVehicleCode)"
+          />
+        </div>
       </div>
     </div>
 
-    <!-- Step 3: Confirmation -->
-    <div v-if="currentStep === 3 && selectedCustomer && scannedVehicle" class="space-y-6">
+    <!-- Step 3: Return Date & Time Selection -->
+    <div v-if="currentStep === 3" class="space-y-6 flex flex-col items-center">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 3: Confirm Transaction</h2>
+        <h2 class="text-2xl font-bold font-heading">Step 3: Return Schedule</h2>
+        <p class="text-slate-500">When is the customer planning to return the vehicle?</p>
+      </div>
+
+      <UCard class="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+        <div class="p-6 space-y-6">
+          <UFormField label="Return Date" name="returnDate">
+            <UInput
+              v-model="returnDate"
+              type="date"
+              size="xl"
+              icon="i-lucide-calendar"
+            />
+          </UFormField>
+
+          <UFormField label="Return Time" name="returnTime">
+            <UInput
+              v-model="returnTime"
+              type="time"
+              size="xl"
+              icon="i-lucide-clock"
+            />
+          </UFormField>
+
+          <div :class="['p-5 rounded-xl border transition-colors', isPastDate ? 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800']">
+            <div class="flex items-center gap-3 mb-3">
+              <UIcon :name="isPastDate ? 'i-lucide-alert-triangle' : 'i-lucide-calendar-clock'" :class="['size-6', isPastDate ? 'text-red-500' : 'text-blue-600']" />
+              <p :class="['text-xs font-bold uppercase tracking-wider', isPastDate ? 'text-red-500' : 'text-blue-600']">
+                {{ isPastDate ? 'Invalid Return Schedule' : 'Scheduled Return' }}
+              </p>
+            </div>
+            <div class="space-y-3">
+              <p :class="['font-bold text-xl', isPastDate ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white']">
+                {{ formattedReturnAt }}
+              </p>
+              <div :class="['h-px w-full', isPastDate ? 'bg-red-200 dark:bg-red-700' : 'bg-blue-200 dark:bg-blue-700']"></div>
+              <p :class="['font-bold text-xl flex items-center gap-2', isPastDate ? 'text-red-500' : 'text-blue-600 dark:text-blue-400']">
+                <UIcon :name="isPastDate ? 'i-lucide-x-circle' : 'i-lucide-timer'" class="size-6" />
+                {{ isPastDate ? 'Return date must be in the future' : durationText }}
+              </p>
+            </div>
+          </div>
+
+          <UButton
+            label="Continue to Confirmation"
+            color="primary"
+            size="xl"
+            block
+            :disabled="isPastDate"
+            class="cursor-pointer font-bold"
+            @click="currentStep = 4"
+          />
+        </div>
+      </UCard>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div v-if="currentStep === 4 && selectedCustomer && scannedVehicle" class="space-y-6">
+      <div class="text-center space-y-2">
+        <h2 class="text-2xl font-bold">Step 4: Confirm Transaction</h2>
         <p class="text-slate-500">Please review the lending details below.</p>
       </div>
 
@@ -207,7 +354,6 @@ onMounted(() => {
             <div>
               <p class="text-lg font-bold text-slate-900 dark:text-white">{{ selectedCustomer.full_name }}</p>
               <p class="text-sm text-slate-500">{{ selectedCustomer.email }}</p>
-              <p class="text-sm text-slate-500">{{ selectedCustomer.phone }}</p>
             </div>
           </div>
         </UCard>
@@ -221,9 +367,29 @@ onMounted(() => {
             </div>
             <div>
               <p class="text-lg font-bold text-slate-900 dark:text-white">{{ scannedVehicle.name }}</p>
-              <p class="text-sm text-slate-500">{{ scannedVehicle.vehicle_categories?.name }} • {{ scannedVehicle.code }}</p>
-              <p class="text-sm text-slate-500">Current Mileage: {{ scannedVehicle.last_mileage }} km</p>
+              <p class="text-sm text-slate-500">{{ scannedVehicle.code }} • {{ scannedVehicle.last_mileage }} km</p>
             </div>
+          </div>
+        </UCard>
+
+        <!-- Schedule Summary -->
+        <UCard class="md:col-span-2 border-slate-200 dark:border-slate-800 shadow-sm bg-blue-50/30 dark:bg-blue-900/5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="size-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center text-blue-600">
+                <UIcon name="i-lucide-calendar-check" class="size-6" />
+              </div>
+              <div class="flex-1">
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Return Schedule</p>
+                <p class="text-lg font-bold text-slate-900 dark:text-white">{{ formattedReturnAt }}</p>
+                <div class="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
+                <p class="text-lg font-bold text-blue-600 flex items-center gap-2">
+                  <UIcon name="i-lucide-timer" class="size-5" />
+                  {{ durationText }}
+                </p>
+              </div>
+            </div>
+            <UButton label="Change" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 3" />
           </div>
         </UCard>
       </div>
@@ -235,7 +401,7 @@ onMounted(() => {
           block
           color="primary"
           :loading="isSubmitting"
-          class="cursor-pointer max-w-sm"
+          class="cursor-pointer max-w-sm font-bold"
           @click="handleCompleteLending"
         />
         <UButton

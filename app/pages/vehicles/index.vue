@@ -36,7 +36,6 @@ const isLoadingVehicles = ref(true)
 const isAddModalOpen = ref(false)
 const isSubmitting = ref(false)
 const newVehicle = reactive({
-  code: '',
   name: '',
   categoryName: 'Bike',
   status: 'Available',
@@ -111,7 +110,6 @@ async function handleAddVehicle() {
     const { error } = await client
       .from('vehicles')
       .insert({
-        code: newVehicle.code,
         name: newVehicle.name,
         category_id: categoryId,
         store_id: storeId,
@@ -124,7 +122,6 @@ async function handleAddVehicle() {
     // Success
     isAddModalOpen.value = false
     // Reset form
-    newVehicle.code = ''
     newVehicle.name = ''
     newVehicle.lastMileage = 0
     
@@ -189,6 +186,10 @@ async function toggleVehicleStatus() {
     console.error('Update failed:', e)
     toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
   }
+}
+
+function openQR(id: string) {
+  window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${id}`, '_blank')
 }
 </script>
 
@@ -377,6 +378,15 @@ async function toggleVehicleStatus() {
           </div>
         </div>
 
+        <!-- QR Code Display -->
+        <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex flex-col items-center border border-slate-200 dark:border-slate-800">
+           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Unique Vehicle QR</p>
+           <div class="bg-white p-3 rounded-xl shadow-inner border border-slate-100 mb-3">
+             <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${selectedVehicle.id}`" class="size-32" alt="Vehicle QR" />
+           </div>
+           <p class="text-xs font-mono font-bold text-slate-500">{{ selectedVehicle.id }}</p>
+        </div>
+
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 flex flex-col gap-4">
           <div>
             <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Category</p>
@@ -422,6 +432,7 @@ async function toggleVehicleStatus() {
               color="neutral"
               variant="outline"
               class="cursor-pointer"
+              @click="openQR(selectedVehicle.id)"
             />
           </div>
         </div>
@@ -432,10 +443,6 @@ async function toggleVehicleStatus() {
     <UModal v-model:open="isAddModalOpen" title="Register New Vehicle" description="Enter the vehicle details to add it to the inventory.">
       <template #body>
         <UForm :state="newVehicle" class="space-y-4" @submit="handleAddVehicle">
-          <UFormField label="Vehicle ID (Code)" name="code" required>
-            <UInput v-model="newVehicle.code" placeholder="e.g. B-HONDA-123" />
-          </UFormField>
-
           <UFormField label="Vehicle Name" name="name" required>
             <UInput v-model="newVehicle.name" placeholder="e.g. Honda PCX 150" />
           </UFormField>
