@@ -22,12 +22,16 @@ const recentTransactions = [
         <h1 class="text-2xl font-bold">Overview</h1>
         <p class="text-slate-500 mt-1">Check today's rental and return status.</p>
       </div>
-      <UButton
-        label="Scan QR"
-        icon="i-lucide-qr-code"
-        size="lg"
-        class="sm:hidden"
-      />
+      <div class="flex items-center gap-3">
+        <UButton
+          label="Lending"
+          icon="i-lucide-log-out"
+          color="primary"
+          size="lg"
+          to="/rentals/new"
+          class="cursor-pointer font-bold px-8 shadow-lg shadow-blue-500/20"
+        />
+      </div>
     </div>
 
     <!-- Stats Grid -->
@@ -64,7 +68,7 @@ const recentTransactions = [
       <template #header>
         <div class="flex justify-between items-center px-4 py-2">
           <h3 class="text-lg font-bold">Recent Transactions</h3>
-          <UButton label="View All" variant="link" color="primary" to="/history" />
+          <UButton label="View All" variant="link" color="primary" to="/history" class="cursor-pointer" />
         </div>
       </template>
 

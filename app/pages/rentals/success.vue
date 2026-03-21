@@ -37,6 +37,7 @@ const router = useRouter()
         color="primary"
         size="lg"
         to="/"
+        class="cursor-pointer"
       />
       <UButton
         label="View History"
@@ -44,6 +45,7 @@ const router = useRouter()
         color="neutral"
         variant="ghost"
         to="/history"
+        class="cursor-pointer"
       />
     </div>
   </div>

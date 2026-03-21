@@ -53,6 +53,7 @@ function navigateToVehicle() {
           variant="solid"
           block
           size="lg"
+          class="cursor-pointer"
           @click="navigateToVehicle"
         />
         <UButton
@@ -60,6 +61,7 @@ function navigateToVehicle() {
           color="neutral"
           variant="ghost"
           block
+          class="cursor-pointer"
           @click="resetScanner"
         />
       </div>
@@ -73,6 +75,7 @@ function navigateToVehicle() {
         color="primary"
         size="lg"
         block
+        class="cursor-pointer"
         @click="simulateScan"
       />
       <div class="grid grid-cols-2 gap-2">
@@ -82,6 +85,7 @@ function navigateToVehicle() {
           color="neutral"
           variant="outline"
           block
+          class="cursor-pointer"
         />
         <UButton
           label="Albums"
@@ -89,6 +93,7 @@ function navigateToVehicle() {
           color="neutral"
           variant="outline"
           block
+          class="cursor-pointer"
         />
       </div>
     </div>

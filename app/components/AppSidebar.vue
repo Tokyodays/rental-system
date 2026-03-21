@@ -2,7 +2,6 @@
 const items = [
   { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
   { label: 'Vehicle List', icon: 'i-lucide-package', to: '/vehicles' },
-  { label: 'Scan QR', icon: 'i-lucide-qr-code', to: '/qr-scanner' },
   { label: 'Lending', icon: 'i-lucide-log-out', to: '/rentals/new' },
   { label: 'Return', icon: 'i-lucide-log-in', to: '/rentals/return' },
   { label: 'Customers', icon: 'i-lucide-users', to: '/customers' },
@@ -30,7 +29,7 @@ const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settin
       <template v-for="item in items" :key="item.label">
         <NuxtLink
           :to="item.to"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer"
           active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
           inactive-class="text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
         >
@@ -42,7 +41,7 @@ const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settin
       <!-- Settings at bottom -->
       <NuxtLink
         :to="settingItem.to"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors mt-auto"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors mt-auto cursor-pointer"
         active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
         inactive-class="text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
       >

@@ -207,6 +207,7 @@ async function toggleVehicleStatus() {
             icon="i-lucide-plus"
             color="primary"
             size="md"
+            class="cursor-pointer"
             @click="isAddModalOpen = true"
           />
         </div>
@@ -230,7 +231,7 @@ async function toggleVehicleStatus() {
                   :key="cat"
                   @click="selectedCategory = cat"
                   :class="[
-                    'px-3 py-1 rounded-md text-xs font-medium transition-all',
+                    'px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer',
                     selectedCategory === cat 
                        ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -316,6 +317,7 @@ async function toggleVehicleStatus() {
                     icon="i-lucide-ellipsis-vertical"
                     variant="ghost"
                     color="neutral"
+                    class="cursor-pointer"
                   />
                 </td>
               </tr>
@@ -333,8 +335,8 @@ async function toggleVehicleStatus() {
               Showing <span class="font-bold">1</span> to <span class="font-bold">{{ filteredVehicles.length }}</span> of <span class="font-bold">{{ filteredVehicles.length }}</span> results
             </p>
             <div class="flex gap-2">
-              <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled />
-              <UButton icon="i-lucide-chevron-right" variant="outline" color="neutral" size="xs" disabled />
+              <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
+              <UButton icon="i-lucide-chevron-right" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
             </div>
           </div>
         </div>
@@ -353,6 +355,7 @@ async function toggleVehicleStatus() {
             icon="i-lucide-x"
             variant="ghost"
             color="neutral"
+            class="cursor-pointer"
             @click="selectedVehicle = null"
           />
         </div>
@@ -392,6 +395,7 @@ async function toggleVehicleStatus() {
               :variant="selectedVehicle.status === 'Available' ? 'subtle' : 'solid'"
               :color="selectedVehicle.status === 'Available' ? 'error' : 'success'"
               size="xs"
+              class="cursor-pointer"
               @click="toggleVehicleStatus"
             />
           </div>
@@ -409,6 +413,7 @@ async function toggleVehicleStatus() {
               block
               color="primary"
               variant="solid"
+              class="cursor-pointer"
             />
             <UButton
               label="Print QR Code"
@@ -416,6 +421,7 @@ async function toggleVehicleStatus() {
               block
               color="neutral"
               variant="outline"
+              class="cursor-pointer"
             />
           </div>
         </div>
@@ -443,8 +449,8 @@ async function toggleVehicleStatus() {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" @click="isAddModalOpen = false" />
-            <UButton label="Save Vehicle" type="submit" color="primary" :loading="isSubmitting" />
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton label="Save Vehicle" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>

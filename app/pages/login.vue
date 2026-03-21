@@ -63,11 +63,12 @@ async function handleLogin() {
             color="primary"
             block
             size="lg"
+            class="cursor-pointer"
             :loading="isLoading"
           />
 
           <div class="text-center">
-             <UButton label="Forgot password?" variant="link" color="neutral" size="xs" />
+             <UButton label="Forgot password?" variant="link" color="neutral" size="xs" class="cursor-pointer" />
           </div>
         </UForm>
       </UCard>

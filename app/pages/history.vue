@@ -11,7 +11,7 @@ const transactions = [
   <div class="max-w-7xl mx-auto space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <h1 class="text-2xl font-bold">Transaction History</h1>
-      <UButton label="Export CSV" icon="i-lucide-download" variant="outline" color="neutral" />
+      <UButton label="Export CSV" icon="i-lucide-download" variant="outline" color="neutral" class="cursor-pointer" />
     </div>
 
     <UCard class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" :ui="{ body: 'p-0' }">

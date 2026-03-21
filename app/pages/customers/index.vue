@@ -6,16 +6,36 @@ const toast = useToast()
 interface Customer {
   id: string
   full_name: string
-  email: string
-  phone: string
+  email: string | null
+  phone: string | null
   passport_url?: string
-  status: string
+  customer_statuses: {
+    name: string
+    color: string
+  }
+  status_id?: string
   created_at: string
 }
 
 const customers = ref<Customer[]>([])
 const isLoading = ref(true)
 const fetchError = ref<string | null>(null)
+const statuses = ref<{ id: string, name: string }[]>([])
+const statusFilter = ref('all')
+
+const activeStatusId = computed(() => statuses.value.find(s => s.name === 'Active')?.id)
+const unactiveStatusId = computed(() => statuses.value.find(s => s.name === 'Unactive')?.id)
+const rentingStatusId = computed(() => statuses.value.find(s => s.name === 'Renting')?.id)
+
+const statusOptions = computed(() => [
+  { label: 'Active', value: activeStatusId.value || '' },
+  { label: 'Unactive', value: unactiveStatusId.value || '' }
+])
+
+const filterStatuses = computed(() => [
+  { name: 'All Statuses', id: 'all' },
+  ...statuses.value
+])
 
 // Add Customer Modal State
 const isAddModalOpen = ref(false)
@@ -25,6 +45,21 @@ const newCustomer = reactive({
   email: '',
   phone: ''
 })
+
+// Update Customer Modal State
+const isUpdateModalOpen = ref(false)
+const customerToUpdate = reactive({
+  id: '',
+  full_name: '',
+  email: '',
+  phone: '',
+  status_id: ''
+})
+
+// Delete Customer Modal State
+const isDeleteModalOpen = ref(false)
+const isDeleting = ref(false)
+const customerToDelete = ref<Customer | null>(null)
 
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -42,23 +77,29 @@ async function fetchCustomers() {
   try {
     const { data, error } = await client
       .from('customers')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .select('*, customer_statuses(name, color)')
+      .order('updated_at', { ascending: false })
     
     if (error) {
       fetchError.value = error.message
       throw error
     }
     
-    customers.value = data?.map((c: any) => ({
-      ...c,
-      status: 'Active'
-    })) || []
+    customers.value = data || []
   } catch (e: any) {
     console.error('Error fetching customers:', e)
     fetchError.value = e.message || 'Unknown error'
   } finally {
     isLoading.value = false
+  }
+}
+
+async function fetchStatuses() {
+  const { data, error } = await client
+    .from('customer_statuses')
+    .select('id, name')
+  if (!error && data) {
+    statuses.value = data
   }
 }
 
@@ -83,13 +124,22 @@ async function handleAddCustomer() {
     }
 
     // 2. Insert customer data
+    const { data: activeStatus } = await client
+      .from('customer_statuses')
+      .select('id')
+      .eq('name', 'Active')
+      .single() as any
+    
+    const statusId = activeStatus?.id || null
+
     const { error } = await client
       .from('customers')
       .insert({
         full_name: newCustomer.full_name,
         email: newCustomer.email,
         phone: newCustomer.phone,
-        passport_url: passportUrl
+        passport_url: passportUrl,
+        status_id: statusId
       } as any)
     
     if (error) throw error
@@ -119,15 +169,104 @@ async function handleAddCustomer() {
   }
 }
 
+function confirmDelete(customer: Customer) {
+  customerToDelete.value = customer
+  isDeleteModalOpen.value = true
+}
+
+async function handleDeleteCustomer() {
+  if (!customerToDelete.value) return
+  
+  isDeleting.value = true
+  try {
+    const { error } = await client
+      .from('customers')
+      .delete()
+      .eq('id', customerToDelete.value.id)
+    
+    if (error) throw error
+
+    isDeleteModalOpen.value = false
+    customerToDelete.value = null
+    
+    await fetchCustomers()
+    toast.add({
+      title: 'Customer Deleted',
+      description: 'The customer has been removed successfully.',
+      color: 'success'
+    })
+  } catch (e: any) {
+    console.error('Delete failed:', e)
+    toast.add({
+      title: 'Delete Failed',
+      description: e.message || 'Failed to delete customer.',
+      color: 'error'
+    })
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+function openUpdateModal(customer: Customer) {
+  customerToUpdate.id = customer.id
+  customerToUpdate.full_name = customer.full_name
+  customerToUpdate.email = customer.email || ''
+  customerToUpdate.phone = customer.phone || ''
+  customerToUpdate.status_id = customer.status_id || ''
+  isUpdateModalOpen.value = true
+}
+
+async function handleUpdateCustomer() {
+  isSubmitting.value = true
+  try {
+    const { error } = await client
+      .from('customers')
+      .update({
+        full_name: customerToUpdate.full_name,
+        email: customerToUpdate.email,
+        phone: customerToUpdate.phone,
+        status_id: customerToUpdate.status_id
+      } as any)
+      .eq('id', customerToUpdate.id)
+    
+    if (error) throw error
+
+    isUpdateModalOpen.value = false
+    await fetchCustomers()
+    toast.add({
+      title: 'Customer Updated',
+      description: 'The customer information has been updated successfully.',
+      color: 'success'
+    })
+  } catch (e: any) {
+    console.error('Update failed:', e)
+    toast.add({
+      title: 'Update Failed',
+      description: e.message || 'Failed to update customer.',
+      color: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 onMounted(() => {
   fetchCustomers()
+  fetchStatuses()
 })
 
 const filteredCustomers = computed(() => {
-  return customers.value.filter(c => 
-    c.full_name.toLowerCase().includes(search.value.toLowerCase()) || 
-    c.email?.toLowerCase().includes(search.value.toLowerCase())
-  )
+  const s = search.value.toLowerCase()
+  const f = statusFilter.value
+  
+  return customers.value.filter(c => {
+    const matchesSearch = c.full_name.toLowerCase().includes(s) || 
+                         (c.email && c.email.toLowerCase().includes(s))
+    
+    const matchesFilter = f === 'all' || c.status_id === f
+    
+    return matchesSearch && matchesFilter
+  })
 })
 </script>
 
@@ -144,12 +283,31 @@ const filteredCustomers = computed(() => {
           class="w-full"
         />
       </div>
+      <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800 shrink-0">
+        <span class="text-[10px] font-bold text-slate-400 px-2 uppercase hidden sm:inline">Status</span>
+        <div class="flex items-center gap-1">
+          <button
+            v-for="s in filterStatuses"
+            :key="s.id"
+            type="button"
+            @click="statusFilter = s.id"
+            :class="[
+              'px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer whitespace-nowrap',
+              statusFilter === s.id 
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' 
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            ]"
+          >
+            {{ s.name }}
+          </button>
+        </div>
+      </div>
       <UButton
         label="Add New Customer"
         icon="i-lucide-user-plus"
         color="primary"
         size="md"
-        class="w-full sm:w-auto"
+        class="w-full sm:w-auto cursor-pointer"
         @click="isAddModalOpen = true"
       />
     </div>
@@ -167,7 +325,7 @@ const filteredCustomers = computed(() => {
         <div v-else-if="fetchError" class="p-12 text-center text-red-500">
           <UIcon name="i-lucide-alert-circle" class="size-8 mb-2 mx-auto" />
           <p>Error: {{ fetchError }}</p>
-          <UButton label="Retry" variant="ghost" color="error" class="mt-4" @click="fetchCustomers" />
+          <UButton label="Retry" variant="ghost" color="error" class="mt-4 cursor-pointer" @click="fetchCustomers" />
         </div>
         <table v-else class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead class="bg-slate-50 dark:bg-slate-800/50">
@@ -200,8 +358,16 @@ const filteredCustomers = computed(() => {
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <UBadge
-                  :label="c.status"
-                  :color="c.status === 'Active' ? 'success' : 'neutral'"
+                  v-if="c.customer_statuses"
+                  :label="c.customer_statuses.name"
+                  :color="c.customer_statuses.color as any"
+                  variant="subtle"
+                  class="rounded-full"
+                />
+                <UBadge
+                  v-else
+                  label="Unknown"
+                  color="neutral"
                   variant="subtle"
                   class="rounded-full"
                 />
@@ -213,12 +379,16 @@ const filteredCustomers = computed(() => {
                     variant="ghost"
                     color="neutral"
                     size="xs"
+                    class="cursor-pointer"
+                    @click="openUpdateModal(c)"
                   />
                   <UButton
                     icon="i-lucide-trash-2"
                     variant="ghost"
                     color="error"
                     size="xs"
+                    class="cursor-pointer"
+                    @click="confirmDelete(c)"
                   />
                 </div>
               </td>
@@ -239,8 +409,8 @@ const filteredCustomers = computed(() => {
             Showing <span class="font-bold text-slate-900 dark:text-white">1</span> to <span class="font-bold text-slate-900 dark:text-white">{{ filteredCustomers.length }}</span> of <span class="font-bold text-slate-900 dark:text-white">{{ filteredCustomers.length }}</span> results
           </p>
           <div class="flex gap-2">
-            <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled />
-            <UButton icon="i-lucide-chevron-right" variant="outline" color="neutral" size="xs" disabled />
+            <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
+            <UButton icon="i-lucide-chevron-right" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
           </div>
         </div>
       </template>
@@ -276,8 +446,60 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" @click="isAddModalOpen = false" />
-            <UButton label="Register Customer" type="submit" color="primary" :loading="isSubmitting" />
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton label="Register Customer" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="isDeleteModalOpen" title="Delete Customer" description="Are you sure you want to delete this customer? This action cannot be undone.">
+      <template #body>
+        <div v-if="customerToDelete" class="space-y-4">
+          <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800">
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Customer to be deleted</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white mt-1">{{ customerToDelete.full_name }}</p>
+            <p class="text-sm text-slate-500">{{ customerToDelete.email }}</p>
+          </div>
+          <div class="flex justify-end gap-3 mt-6">
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isDeleteModalOpen = false" />
+            <UButton label="Delete" color="error" class="cursor-pointer" :loading="isDeleting" @click="handleDeleteCustomer" />
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Update Customer Modal -->
+    <UModal v-model:open="isUpdateModalOpen" title="Update Customer" description="Update the information for this customer.">
+      <template #body>
+        <UForm :state="customerToUpdate" class="space-y-4" @submit="handleUpdateCustomer">
+          <UFormField label="Full Name" name="full_name" required>
+            <UInput v-model="customerToUpdate.full_name" placeholder="e.g. John Doe" />
+          </UFormField>
+
+          <UFormField label="Email Address" name="email">
+            <UInput v-model="customerToUpdate.email" type="email" placeholder="john@example.com" />
+          </UFormField>
+
+          <UFormField label="Phone Number" name="phone">
+            <UInput v-model="customerToUpdate.phone" placeholder="+81-XXX-XXXX-XXXX" />
+          </UFormField>
+
+          <div v-if="customerToUpdate.status_id === rentingStatusId" class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 text-sm border border-blue-100 dark:border-blue-900/50">
+            <UIcon name="i-lucide-info" class="size-5" />
+            <span class="font-medium">Status cannot be changed while renting.</span>
+          </div>
+          <UFormField v-else label="Status" name="status" description="Select the customer status.">
+            <URadioGroup
+              v-model="customerToUpdate.status_id"
+              :items="statusOptions"
+              class="mt-1"
+            />
+          </UFormField>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
+            <UButton label="Update Customer" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>

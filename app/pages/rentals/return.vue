@@ -13,7 +13,7 @@ function confirmReturn() {
 <template>
   <div class="max-w-2xl mx-auto space-y-6">
     <div class="flex items-center gap-4">
-      <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
+      <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="router.back()" />
       <h1 class="text-2xl font-bold">Return Transaction</h1>
     </div>
 
@@ -50,8 +50,8 @@ function confirmReturn() {
           </div>
 
           <div class="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
-            <UButton label="Cancel" variant="ghost" color="neutral" @click="router.back()" />
-            <UButton label="Confirm Return" color="primary" type="submit" size="lg" />
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="router.back()" />
+            <UButton label="Confirm Return" color="primary" type="submit" size="lg" class="cursor-pointer" />
           </div>
         </UForm>
       </div>

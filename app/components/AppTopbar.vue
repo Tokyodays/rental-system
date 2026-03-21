@@ -13,7 +13,7 @@ const emit = defineEmits(['toggle-sidebar'])
         icon="i-lucide-menu"
         variant="ghost"
         color="neutral"
-        class="md:hidden"
+        class="md:hidden cursor-pointer"
         @click="emit('toggle-sidebar')"
       />
       <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ title }}</h2>
@@ -24,7 +24,7 @@ const emit = defineEmits(['toggle-sidebar'])
         icon="i-lucide-notifications"
         variant="ghost"
         color="neutral"
-        class="relative"
+        class="relative cursor-pointer"
       >
         <span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
       </UButton>
