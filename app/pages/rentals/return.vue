@@ -2,6 +2,7 @@
 const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
+const route = useRoute()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 const isLoading = ref(false)
@@ -11,6 +12,14 @@ const manualVehicleCode = ref('')
 const isIdentifying = ref(false)
 const isScanning = ref(false)
 const activeRental = ref<any>(null)
+
+onMounted(() => {
+  const code = route.query.code
+  if (code && typeof code === 'string') {
+    manualVehicleCode.value = code
+    identifyVehicleForReturn(code)
+  }
+})
 
 async function identifyVehicleForReturn(code: string) {
   isIdentifying.value = true

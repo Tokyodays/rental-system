@@ -191,6 +191,53 @@ async function toggleVehicleStatus() {
 function openQR(id: string) {
   window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${id}`, '_blank')
 }
+
+const isEditingMileage = ref(false)
+const editMileageValue = ref(0)
+const isUpdatingMileage = ref(false)
+
+function startEditMileage() {
+  if (!selectedVehicle.value) return
+  editMileageValue.value = selectedVehicle.value.lastMileage
+  isEditingMileage.value = true
+}
+
+async function saveMileage() {
+  if (!selectedVehicle.value) return
+  isUpdatingMileage.value = true
+  try {
+    const { error } = await client
+      .from('vehicles')
+      .update({ last_mileage: editMileageValue.value } as any)
+      .eq('code', selectedVehicle.value.id)
+
+    if (error) throw error
+    
+    selectedVehicle.value.lastMileage = editMileageValue.value
+    toast.add({ title: 'Mileage Updated', description: 'Vehicle mileage has been updated.', color: 'success' })
+    await fetchVehicles()
+    
+    // Refresh selectedVehicle with updated data
+    const updatedVehicle = vehicles.value.find(v => v.id === selectedVehicle.value?.id)
+    if (updatedVehicle) selectedVehicle.value = updatedVehicle
+    
+  } catch (e: any) {
+    console.error('Update mileage failed:', e)
+    toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
+  } finally {
+    isUpdatingMileage.value = false
+    isEditingMileage.value = false
+  }
+}
+
+function cancelEditMileage() {
+  isEditingMileage.value = false
+}
+
+// Reset editing state when a different vehicle is selected
+watch(selectedVehicle, () => {
+  isEditingMileage.value = false
+})
 </script>
 
 <template>
@@ -269,7 +316,7 @@ function openQR(id: string) {
             <thead class="bg-slate-50 dark:bg-slate-800/50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vehicle Name</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vehicle ID</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Updated</th>
                 <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
@@ -403,20 +450,59 @@ function openQR(id: string) {
             />
           </div>
           <div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Last Mileage</p>
-            <span class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.lastMileage.toLocaleString() }} km</span>
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Last Mileage</p>
+              <UButton
+                v-if="!isEditingMileage"
+                icon="i-lucide-pencil"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                class="cursor-pointer"
+                @click="startEditMileage"
+              />
+            </div>
+            <div v-if="isEditingMileage" class="flex items-center gap-2 mt-1">
+              <UInput
+                v-model.number="editMileageValue"
+                type="number"
+                size="sm"
+                class="w-full"
+              />
+              <UButton
+                icon="i-lucide-check"
+                color="success"
+                size="xs"
+                variant="subtle"
+                class="cursor-pointer shrink-0"
+                :loading="isUpdatingMileage"
+                @click="saveMileage"
+              />
+              <UButton
+                icon="i-lucide-x"
+                color="neutral"
+                size="xs"
+                variant="ghost"
+                class="cursor-pointer shrink-0"
+                :disabled="isUpdatingMileage"
+                @click="cancelEditMileage"
+              />
+            </div>
+            <span v-else class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.lastMileage.toLocaleString() }} km</span>
           </div>
         </div>
 
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 mt-auto">
           <div class="flex flex-col gap-2">
             <UButton
+              v-if="selectedVehicle.status === 'Lent'"
               label="Process Return"
               icon="i-lucide-corner-down-left"
               block
               color="primary"
               variant="solid"
               class="cursor-pointer"
+              @click="navigateTo(`/rentals/return?code=${selectedVehicle.id}`)"
             />
             <UButton
               label="Print QR Code"
