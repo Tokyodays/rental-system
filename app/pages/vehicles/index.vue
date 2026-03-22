@@ -198,21 +198,6 @@ function openQR(id: string) {
     <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-[600px]">
       <!-- Sub Header / Filters -->
       <div class="flex flex-col gap-4 p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col gap-1">
-            <h1 class="text-2xl font-bold leading-tight text-slate-900 dark:text-white">Vehicle List</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm">Manage and track all vehicles across locations.</p>
-          </div>
-          <UButton
-            label="Add Vehicle"
-            icon="i-lucide-plus"
-            color="primary"
-            size="md"
-            class="cursor-pointer"
-            @click="isAddModalOpen = true"
-          />
-        </div>
-
         <div class="flex items-center gap-4 mt-2">
           <div class="flex-1 relative">
             <UInput
@@ -262,6 +247,14 @@ function openQR(id: string) {
               </div>
             </div>
           </div>
+          <UButton
+            label="Add Vehicle"
+            icon="i-lucide-plus"
+            color="primary"
+            size="md"
+            class="cursor-pointer"
+            @click="isAddModalOpen = true"
+          />
         </div>
       </div>
 
