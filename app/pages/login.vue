@@ -10,13 +10,40 @@ const state = reactive({
 const isLoading = ref(false)
 
 const router = useRouter()
+const supabase = useSupabaseClient()
+const toast = useToast()
+
 async function handleLogin() {
-  console.log('Login attempt:', state.email)
   isLoading.value = true
-  // Mock login delay
-  await new Promise(resolve => setTimeout(resolve, 800))
-  isLoading.value = false
-  await navigateTo('/', { replace: true })
+  
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: state.email,
+      password: state.password
+    })
+
+    if (error) throw error
+
+    // Supabase Auth returns null session if email confirmation is required and not yet confirmed
+    if (!data.session) {
+      throw new Error('Login failed: Email not confirmed. Please check your Supabase dashboard and make sure the user is auto-confirmed.')
+    }
+
+    toast.add({ title: 'Welcome', description: 'Successfully logged in.', color: 'success' })
+    
+    // NuxtのミドルウェアとSupabaseのステートの同期タイミングによる
+    // リダイレクトループを防ぐため、少し待ってから遷移させます
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 100)
+  } catch (error: any) {
+    console.error('Login error:', error)
+    const errorMsg = error.message || 'Invalid credentials'
+    toast.add({ title: 'Login Failed', description: errorMsg, color: 'error' })
+    alert(`Login Failed: ${errorMsg}`) // Fallback to native alert to ensure visibility
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

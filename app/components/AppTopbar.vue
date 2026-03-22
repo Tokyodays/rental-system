@@ -4,6 +4,27 @@ defineProps<{
 }>()
 
 const emit = defineEmits(['toggle-sidebar'])
+
+const supabase = useSupabaseClient()
+const router = useRouter()
+const toast = useToast()
+
+const handleLogout = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    toast.add({ title: 'Logout Failed', description: error.message, color: 'error' })
+  } else {
+    toast.add({ title: 'Logged Out', description: 'You have been successfully logged out.', color: 'success' })
+    await router.push('/login')
+  }
+}
+
+const userMenuItems = [
+  [
+    { label: 'Profile', icon: 'i-lucide-user' },
+    { label: 'Logout', icon: 'i-lucide-log-out', color: 'error' as any, onSelect: handleLogout }
+  ]
+]
 </script>
 
 <template>
@@ -30,7 +51,7 @@ const emit = defineEmits(['toggle-sidebar'])
       </UButton>
 
       <!-- User Profile -->
-      <UDropdownMenu :items="[[{ label: 'Profile', icon: 'i-lucide-user' }, { label: 'Logout', icon: 'i-lucide-log-out', color: 'error' }]]">
+      <UDropdownMenu :items="userMenuItems">
         <UAvatar
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm"
           alt="User"
