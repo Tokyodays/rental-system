@@ -132,6 +132,13 @@ async function handleAddCustomer() {
     
     const statusId = activeStatus?.id || null
 
+    const user = useSupabaseUser()
+    let storeId = null
+    if (user.value) {
+      const { data: staffData } = await (client.from('staff').select('store_id').eq('id', user.value.id).single() as any)
+      storeId = staffData?.store_id
+    }
+
     const { error } = await client
       .from('customers')
       .insert({
@@ -139,7 +146,8 @@ async function handleAddCustomer() {
         email: newCustomer.email,
         phone: newCustomer.phone,
         passport_url: passportUrl,
-        status_id: statusId
+        status_id: statusId,
+        store_id: storeId
       } as any)
     
     if (error) throw error

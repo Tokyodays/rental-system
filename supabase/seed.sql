@@ -48,3 +48,25 @@ BEGIN
     ('Kristin Watson', 'kristin.w@example.com', '+81-80-3333-4444', active_id),
     ('Darlene Robertson', 'darlene.r@example.com', '+81-70-6666-7777', active_id);
 END $$;
+
+-- 6. スタッフの復旧 (storesのTRUNCATE CASCADEで消えたauth.users連携データの再生成)
+DO $$
+DECLARE
+  u record;
+  default_store_id UUID;
+BEGIN
+  -- 最初の店舗(Main Store)のIDを取得
+  SELECT id INTO default_store_id FROM public.stores LIMIT 1;
+
+  FOR u IN SELECT id, email, raw_user_meta_data FROM auth.users LOOP
+    IF NOT EXISTS (SELECT 1 FROM public.staff WHERE id = u.id) THEN
+      INSERT INTO public.staff (id, store_id, full_name, role)
+      VALUES (
+        u.id, 
+        default_store_id, 
+        COALESCE(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)), 
+        'staff'
+      );
+    END IF;
+  END LOOP;
+END $$;

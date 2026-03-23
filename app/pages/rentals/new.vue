@@ -133,10 +133,20 @@ async function handleCompleteLending() {
     const { data: vStatus } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Lent').single() as any)
     const { data: cStatus } = await (supabase.from('customer_statuses').select('id').eq('name', 'Renting').single() as any)
     
+    // 1.5 Get Staff and Store Info
+    const user = useSupabaseUser()
+    let storeId = null
+    if (user.value) {
+      const { data: staffData } = await (supabase.from('staff').select('store_id').eq('id', user.value.id).single() as any)
+      storeId = staffData?.store_id
+    }
+
     // 2. Insert Rental
     const { error: rentalError } = await (supabase.from('rentals').insert({
       vehicle_id: scannedVehicle.value.id,
       customer_id: selectedCustomer.value.id,
+      staff_id: user.value?.id,
+      store_id: storeId,
       start_at: new Date().toISOString(),
       end_at: new Date(formattedReturnAt.value).toISOString(),
       start_mileage: scannedVehicle.value.last_mileage || 0,

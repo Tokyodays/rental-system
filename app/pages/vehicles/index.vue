@@ -92,10 +92,13 @@ async function handleAddVehicle() {
     if (!catData) throw new Error('Category not found')
     const categoryId = (catData as any).id
 
-    // 2. Get Store ID (First store for now)
-    const { data: storeData } = await client.from('stores').select('id').limit(1).single()
-    if (!storeData) throw new Error('Store not found')
-    const storeId = (storeData as any).id
+    // 2. Get Store ID associated with the logged-in staff
+    const user = useSupabaseUser()
+    if (!user.value) throw new Error('Not authenticated')
+    const { data: staffData } = await (client.from('staff').select('store_id').eq('id', user.value.id).single() as any)
+    if (!staffData || !staffData.store_id) throw new Error('Store not found for this user')
+    const storeId = staffData.store_id
+
 
     // 3. Get Status ID (Default to Available)
     const { data: statusData } = await client
