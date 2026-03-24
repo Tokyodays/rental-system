@@ -10,6 +10,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/rentals/return')) return 'Return Transaction'
   if (path.startsWith('/customers')) return 'Customer Management'
   if (path.startsWith('/history')) return 'Transaction History'
+  if (path.startsWith('/settings')) return 'Settings'
   return 'Rental System'
 })
 </script>

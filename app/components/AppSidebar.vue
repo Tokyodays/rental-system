@@ -1,4 +1,10 @@
 <script setup lang="ts">
+const { isAdmin, fetchStaff } = useStaff()
+
+onMounted(() => {
+  fetchStaff()
+})
+
 const items = [
   { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
   { label: 'Vehicle List', icon: 'i-lucide-package', to: '/vehicles' },
@@ -38,8 +44,9 @@ const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settin
         </NuxtLink>
       </template>
 
-      <!-- Settings at bottom -->
+      <!-- Settings at bottom (adminのみ表示) -->
       <NuxtLink
+        v-if="isAdmin"
         :to="settingItem.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors mt-auto cursor-pointer"
         active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
