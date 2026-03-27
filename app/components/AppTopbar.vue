@@ -9,6 +9,14 @@ const supabase = useSupabaseClient()
 const router = useRouter()
 const toast = useToast()
 
+const user = useSupabaseUser()
+const { staff, isLoading } = useStaff()
+
+// デバッグ用: ロード完了時にログを出す
+watch(staff, (val) => {
+  if (val) console.log('[AppTopbar] Staff data loaded:', val.full_name)
+}, { immediate: true })
+
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) {
@@ -41,22 +49,26 @@ const userMenuItems = [
     </div>
 
     <div class="flex items-center gap-4">
-      <UButton
-        icon="i-lucide-notifications"
-        variant="ghost"
-        color="neutral"
-        class="relative cursor-pointer"
-      >
-        <span class="absolute top-1.5 right-1.5 size-2 bg-red-500 rounded-full"></span>
-      </UButton>
-
-      <!-- User Profile -->
       <UDropdownMenu :items="userMenuItems">
-        <UAvatar
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm"
-          alt="User"
-          class="cursor-pointer"
-        />
+        <div class="flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+          <!-- Loading State -->
+          <div v-if="isLoading" class="flex items-center gap-2">
+            <div class="animate-pulse w-20 h-4 bg-slate-100 dark:bg-slate-800 rounded"></div>
+            <UAvatar size="sm" class="animate-pulse opacity-50" />
+          </div>
+
+          <!-- Loaded State -->
+          <template v-else>
+            <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">
+              {{ staff?.full_name || user?.email?.split('@')[0] || 'User' }}
+            </span>
+            <UAvatar
+              :src="staff?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm'"
+              alt="Avatar"
+              size="sm"
+            />
+          </template>
+        </div>
       </UDropdownMenu>
     </div>
   </header>
