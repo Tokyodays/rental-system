@@ -9,40 +9,75 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      [_ in string]: {
+      stores: {
         Row: {
-          [_ in string]: Json
+          id: string
+          name: string | null
+          address: string | null
+          created_at: string
         }
         Insert: {
-          [_ in string]: Json
+          id?: string
+          name?: string | null
+          address?: string | null
+          created_at?: string
         }
         Update: {
-          [_ in string]: Json
+          id?: string
+          name?: string | null
+          address?: string | null
+          created_at?: string
+        }
+      }
+      staff_roles: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+        }
+      }
+      staff: {
+        Row: {
+          id: string
+          full_name: string | null
+          store_id: string | null
+          role_id: string
+          created_at: string
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          store_id?: string | null
+          role_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          store_id?: string | null
+          role_id?: string
+          created_at?: string
         }
       }
     }
     Views: {
-      [_ in string]: {
-        Row: {
-          [_ in string]: Json
-        }
-      }
+      [_ in never]: never
     }
     Functions: {
-      [_ in string]: {
-        Args: {
-          [_ in string]: Json
-        }
-        Returns: Json
-      }
+      [_ in never]: never
     }
     Enums: {
-      [_ in string]: string
-    }
-    CompositeTypes: {
-      [_ in string]: {
-        [key: string]: Json
-      }
+      [_ in never]: never
     }
   }
 }

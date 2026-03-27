@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { Database } from '../types/database.types'
+
 definePageMeta({
   middleware: ['settings-only-admin']
 })
 
-const supabase = useSupabaseClient()
+const supabase = useSupabaseClient<Database>()
 const toast = useToast()
 const { staff } = useStaff()
 
@@ -46,10 +48,10 @@ async function fetchStoreAndStaff() {
   try {
     // Store 情報
     const { data: storeData } = await supabase
-      .from('stores')
+      .from('stores' as any)
       .select('id, name, address')
       .eq('id', staff.value.store_id)
-      .single()
+      .single() as any
 
     if (storeData) {
       store.value = storeData as Store
@@ -59,10 +61,10 @@ async function fetchStoreAndStaff() {
 
     // Staff 一覧
     const { data: staffData } = await supabase
-      .from('staff')
+      .from('staff' as any)
       .select('id, full_name, role_id, staff_roles(name)')
       .eq('store_id', staff.value.store_id)
-      .order('full_name')
+      .order('full_name') as any
 
     if (staffData) {
       staffList.value = staffData as StaffMember[]
@@ -80,8 +82,8 @@ async function saveStore() {
   isSavingStore.value = true
   try {
     const { error } = await supabase
-      .from('stores')
-      .update({ name: storeName.value, address: storeAddress.value })
+      .from('stores' as any)
+      .update({ name: storeName.value, address: storeAddress.value } as any)
       .eq('id', store.value.id)
 
     if (error) throw error
@@ -96,9 +98,47 @@ async function saveStore() {
   }
 }
 
-// ---- ロール表示用ヘルパー ----
-function roleBadgeColor(roleName: string | undefined) {
-  return roleName === 'admin' ? 'primary' : 'neutral'
+// ---- スタッフのロール更新 ----
+const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
+const USER_ROLE_ID = '00000000-0000-0000-0001-000000000002'
+const isUpdatingRole = ref<Record<string, boolean>>({})
+
+async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
+  const newRoleId = isAdmin ? ADMIN_ROLE_ID : USER_ROLE_ID
+  if (member.role_id === newRoleId) return
+
+  // 管理者1名維持の制約チェック
+  if (!isAdmin) {
+    const adminCount = staffList.value.filter(s => s.staff_roles?.name === 'admin').length
+    if (adminCount <= 1) {
+      toast.add({
+        title: 'Action Denied',
+        description: 'At least one admin is required for each store.',
+        color: 'error',
+        icon: 'i-lucide-alert-triangle'
+      })
+      // 元の状態に戻すために一覧を再取得
+      await fetchStoreAndStaff()
+      return
+    }
+  }
+
+  isUpdatingRole.value[member.id] = true
+  try {
+    const { error } = await supabase
+      .from('staff' as any)
+      .update({ role_id: newRoleId } as any)
+      .eq('id', member.id)
+
+    if (error) throw error
+    toast.add({ title: 'Role Updated', description: `${member.full_name || 'Staff'} is now an ${isAdmin ? 'Admin' : 'User'}.`, color: 'success' })
+    await fetchStoreAndStaff()
+  } catch (err: any) {
+    toast.add({ title: 'Update Failed', description: err.message, color: 'error' })
+    await fetchStoreAndStaff()
+  } finally {
+    isUpdatingRole.value[member.id] = false
+  }
 }
 
 onMounted(() => {
@@ -134,7 +174,7 @@ watch(() => staff.value?.store_id, (newId) => {
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm font-medium" :class="!isJapanese ? 'text-slate-400' : 'text-slate-900 dark:text-white'">日本語</span>
-          <UToggle v-model="isJapanese" color="primary" />
+          <USwitch v-model="isJapanese" color="primary" />
           <span class="text-sm font-medium" :class="isJapanese ? 'text-slate-400' : 'text-slate-900 dark:text-white'">English</span>
         </div>
       </div>
@@ -236,12 +276,19 @@ watch(() => staff.value?.store_id, (newId) => {
                 </div>
               </td>
               <td class="px-6 py-4">
-                <UBadge
-                  :label="member.staff_roles?.name ?? 'unknown'"
-                  :color="roleBadgeColor(member.staff_roles?.name)"
-                  variant="subtle"
-                  class="capitalize"
-                />
+                <div class="flex items-center gap-3">
+                  <USwitch
+                    :model-value="member.staff_roles?.name === 'admin'"
+                    :loading="isUpdatingRole[member.id]"
+                    @update:model-value="(val: boolean) => updateStaffRole(member, val)"
+                  />
+                  <span
+                    class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    :class="member.staff_roles?.name === 'admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'"
+                  >
+                    {{ member.staff_roles?.name ?? 'user' }}
+                  </span>
+                </div>
               </td>
             </tr>
 
