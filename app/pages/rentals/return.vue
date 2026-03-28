@@ -38,7 +38,7 @@ async function identifyVehicleForReturn(code: string) {
 
     // 2. Find active rental for this vehicle
     const { data: rental, error: rError } = await (supabase
-      .from('rentals')
+      .from('transactions')
       .select('*, customers(full_name, email, phone)')
       .eq('vehicle_id', vehicle.id)
       .eq('status', 'Active')
@@ -47,7 +47,7 @@ async function identifyVehicleForReturn(code: string) {
       .single() as any)
 
     if (rError || !rental) {
-      toast.add({ title: 'No Active Rental', description: 'This vehicle is not currently lent out.', color: 'error' })
+      toast.add({ title: 'No Active Transaction', description: 'This vehicle is not currently lent out.', color: 'error' })
       return
     }
 
@@ -66,7 +66,7 @@ async function simulateScan() {
   
   // For simulation, find ANY active rental vehicle code
   const { data } = await (supabase
-    .from('rentals')
+    .from('transactions')
     .select('vehicles(code)')
     .eq('status', 'Active')
     .limit(1)
@@ -117,8 +117,8 @@ async function handleCompleteReturn() {
     const { data: vStatus } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
     const { data: cStatus } = await (supabase.from('customer_statuses').select('id').eq('name', 'Active').single() as any)
     
-    // 2. Update Rental Status
-    const { error: rError } = await ((supabase.from('rentals') as any)
+    // 2. Update Transaction Status
+    const { error: rError } = await ((supabase.from('transactions') as any)
       .update({ status: 'Completed', end_at: actualReturnAt.value.toISOString() })
       .eq('id', activeRental.value.id) as any)
     if (rError) throw rError

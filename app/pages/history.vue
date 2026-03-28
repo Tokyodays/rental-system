@@ -1,12 +1,13 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
+const { formatPrice } = useCurrency()
 const search = ref('')
 const rentals = ref<any[]>([])
 const isLoading = ref(true)
 
-const { data, refresh } = await useAsyncData('rentals-history', async () => {
+const { data, refresh } = await useAsyncData('transactions-history', async () => {
   const { data } = await (supabase
-    .from('rentals')
+    .from('transactions')
     .select('*, vehicles(name, code), customers(full_name)')
     .order('start_at', { ascending: false }) as any)
   return data || []
@@ -32,48 +33,74 @@ function calculateDurationText(startStr: string, endStr: string) {
 }
 
 const transactionEvents = computed(() => {
-  const events: any[] = []
-  
-  rentals.value.forEach(r => {
-    // Always add a 'Lend' event
-    events.push({
-      id: `${r.id}-L`,
-      rentalId: r.id,
-      type: 'Lend',
-      date: r.start_at,
-      vehicle: r.vehicles,
-      customer: r.customers,
-      status: r.status // Overall rental status
-    })
-    
-    // Add 'Return' event if completed
-    if (r.status === 'Completed' && r.end_at) {
-      events.push({
-        id: `${r.id}-R`,
-        rentalId: r.id,
-        type: 'Return',
-        date: r.end_at,
-        vehicle: r.vehicles,
-        customer: r.customers,
-        status: 'Completed',
-        duration: calculateDurationText(r.start_at, r.end_at)
-      })
+  // Directly map each transaction to its summary format as requested
+  // ID, Item, User, Lending Time, Returned Time, Duration, Price
+  return rentals.value.map(r => ({
+    id: r.id,
+    transactionId: r.id,
+    vehicle: r.vehicles,
+    customer: r.customers,
+    lendingTime: r.start_at,
+    returnedTime: r.status === 'Completed' ? r.end_at : null,
+    duration: r.status === 'Completed' && r.end_at ? calculateDurationText(r.start_at, r.end_at) : null,
+    price: r.price,
+    status: r.status,
+    expectedReturnTime: r.end_at // end_at stores the expected return date for active rentals
+  })).sort((a, b) => new Date(b.lendingTime).getTime() - new Date(a.lendingTime).getTime())
+})
+
+const statusFilter = ref('All')
+const monthFilter = ref(new Date().toISOString().substring(0, 7)) // Default to current month (YYYY-MM)
+
+const availableMonths = computed(() => {
+  const months = new Set<string>()
+  transactionEvents.value.forEach(t => {
+    if (t.lendingTime) {
+      months.add(new Date(t.lendingTime).toISOString().substring(0, 7))
     }
   })
   
-  // Sort all events by date desc
-  return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const currentMonth = new Date().toISOString().substring(0, 7)
+  months.add(currentMonth)
+  
+  return Array.from(months).sort().reverse().map(m => ({
+    label: m,
+    value: m
+  }))
 })
 
 const filteredTransactions = computed(() => {
-  if (!search.value) return transactionEvents.value
-  const q = search.value.toLowerCase()
-  return transactionEvents.value.filter(t => 
-    t.vehicle?.name?.toLowerCase().includes(q) || 
-    t.vehicle?.code?.toLowerCase().includes(q) ||
-    t.customer?.full_name?.toLowerCase().includes(q) ||
-    t.type.toLowerCase().includes(q)
-  )
+  let filtered = transactionEvents.value
+
+  // Search filter
+  if (search.value) {
+    const q = search.value.toLowerCase()
+    filtered = filtered.filter(t => 
+      t.vehicle?.name?.toLowerCase().includes(q) || 
+      t.vehicle?.code?.toLowerCase().includes(q) ||
+      t.customer?.full_name?.toLowerCase().includes(q)
+    )
+  }
+
+  // Month Filter (based on lendingTime)
+  if (monthFilter.value) {
+    filtered = filtered.filter(t => {
+      if (!t.lendingTime) return false
+      return t.lendingTime.startsWith(monthFilter.value)
+    })
+  }
+
+  return filtered
+})
+
+const displayedTotal = computed(() => {
+  const uniqueIds = new Set(filteredTransactions.value.map(t => t.transactionId))
+  let sum = 0
+  uniqueIds.forEach(id => {
+    const r = rentals.value.find(r => r.id === id)
+    if (r && r.price) sum += Number(r.price)
+  })
+  return sum
 })
 
 const toast = useToast()
@@ -109,7 +136,7 @@ function downloadExport() {
   end.setHours(23, 59, 59, 999) // Include the end date entirely
 
   const dataToExport = transactionEvents.value.filter(t => {
-    const d = new Date(t.date)
+    const d = new Date(t.lendingTime)
     return d >= start && d <= end
   })
 
@@ -119,15 +146,15 @@ function downloadExport() {
   }
 
   // Create CSV
-  const headers = ['ID', 'Type', 'Duration', 'Date', 'Vehicle Name', 'Vehicle Code', 'Customer Name']
+  const headers = ['ID', 'Item', 'User', 'Lending Time', 'Returned Time', 'Duration', 'Price']
   const rows = dataToExport.map(t => [
-    `#${t.rentalId.split('-')[0]}`,
-    t.type,
-    t.duration || '-',
-    formatDate(t.date),
+    `#${t.transactionId.split('-')[0]}`,
     t.vehicle?.name || '',
-    t.vehicle?.code || '',
-    t.customer?.full_name || ''
+    t.customer?.full_name || '',
+    formatDate(t.lendingTime),
+    t.returnedTime ? formatDate(t.returnedTime) : '-',
+    t.duration || '-',
+    t.price || 0
   ])
 
   const csvContent = [
@@ -163,16 +190,26 @@ function formatDate(date: string | null) {
 
 <template>
   <div class="max-w-7xl mx-auto space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div class="flex items-center gap-3 w-full sm:w-auto">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
         <UInput
           v-model="search"
           placeholder="Search items or users..."
           icon="i-lucide-search"
-          class="flex-1 sm:w-64"
+          class="w-full sm:w-64"
         />
-        <UButton label="Export" icon="i-lucide-download" variant="outline" color="neutral" class="cursor-pointer" @click="isExportModalOpen = true" />
+        
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 uppercase">Month:</span>
+          <USelect
+            v-model="monthFilter"
+            :items="availableMonths"
+            class="w-40"
+          />
+        </div>
       </div>
+      
+      <UButton label="Export" icon="i-lucide-download" variant="outline" color="neutral" class="cursor-pointer w-full sm:w-auto" @click="isExportModalOpen = true" />
     </div>
 
     <UCard class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" :ui="{ body: 'p-0' }">
@@ -182,9 +219,10 @@ function formatDate(date: string | null) {
             <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">ID</th>
             <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Item</th>
             <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">User</th>
-            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Type</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Lending Time</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Returned Time</th>
             <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Duration</th>
-            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Price</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -192,25 +230,32 @@ function formatDate(date: string | null) {
              <td v-for="j in 6" :key="j" class="px-6 py-4"><div class="h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded w-24"></div></td>
           </tr>
           <tr v-else v-for="t in filteredTransactions" :key="t.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td class="px-6 py-4 text-[10px] font-mono text-slate-400">#{{ t.rentalId.split('-')[0] }}</td>
+            <td class="px-6 py-4 text-[10px] font-mono text-slate-400">#{{ t.transactionId.split('-')[0] }}</td>
             <td class="px-6 py-4">
               <p class="font-bold text-slate-900 dark:text-white">{{ t.vehicle?.name }}</p>
               <p class="text-xs text-slate-500">{{ t.vehicle?.code }}</p>
             </td>
             <td class="px-6 py-4 text-sm font-medium">{{ t.customer?.full_name }}</td>
-            <td class="px-6 py-4">
-               <UBadge 
-                 :label="t.type === 'Lend' ? 'Lending' : 'Returned'" 
-                 :color="t.type === 'Lend' ? 'info' : 'success'" 
-                 variant="subtle"
-                 class="font-bold"
-               />
+            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+               {{ formatDate(t.lendingTime) }}
+            </td>
+            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+               <template v-if="t.returnedTime">
+  {{ formatDate(t.returnedTime) }}
+</template>
+<div v-else class="flex flex-col gap-1">
+  <UBadge label="Lending" color="info" variant="subtle" class="font-bold animate-pulse w-fit" />
+  <div class="flex flex-col text-[10px] text-slate-500 font-medium leading-tight">
+    <span>Expected Return:</span>
+    <span class="text-blue-600 dark:text-blue-400">{{ formatDate(t.expectedReturnTime) }}</span>
+  </div>
+</div>
             </td>
             <td class="px-6 py-4 text-sm text-slate-500 font-medium">
               {{ t.duration || '-' }}
             </td>
-            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 font-medium">
-               {{ formatDate(t.date) }}
+            <td class="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">
+              {{ t.price ? formatPrice(t.price) : '-' }}
             </td>
           </tr>
           <tr v-if="!isLoading && filteredTransactions.length === 0">
@@ -221,6 +266,20 @@ function formatDate(date: string | null) {
         </tbody>
       </table>
     </UCard>
+
+    <div class="flex justify-end pt-4">
+      <div class="bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-lg border border-slate-800 flex items-center gap-6">
+        <div class="flex flex-col">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Transactions</span>
+          <span class="text-xl font-mono">{{ filteredTransactions.length }}</span>
+        </div>
+        <div class="w-px h-8 bg-slate-700"></div>
+        <div class="flex flex-col">
+          <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Amount</span>
+          <span class="text-2xl font-bold font-mono text-primary-400">{{ formatPrice(displayedTotal) }}</span>
+        </div>
+      </div>
+    </div>
     <!-- Export Modal -->
     <UModal v-model:open="isExportModalOpen" title="Export Transactions" description="Select a date range to export transaction history.">
       <template #body>

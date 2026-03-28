@@ -4,7 +4,7 @@ const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 
-const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Price Input, 5: Confirmation
+const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Confirmation
 const isLoading = ref(false)
 
 // Step 1: Customer Selection
@@ -122,11 +122,7 @@ const isPastDate = computed(() => {
   return end.getTime() <= start.getTime()
 })
 
-// Step 4: Price Input
-const price = ref(0)
-const isPriceValid = computed(() => price.value >= 0)
-
-// Step 5: Confirmation & Process
+// Step 4: Confirmation & Process
 const isSubmitting = ref(false)
 
 async function handleCompleteLending() {
@@ -146,8 +142,8 @@ async function handleCompleteLending() {
     const staffId = currentStaff.value.id
     const storeId = currentStaff.value.store_id
 
-    // 2. Insert Transaction
-    const { error: rentalError } = await (supabase.from('transactions').insert({
+    // 2. Insert Rental
+    const { error: rentalError } = await (supabase.from('rentals' as any).insert({
       vehicle_id: scannedVehicle.value.id,
       customer_id: selectedCustomer.value.id,
       staff_id: staffId,
@@ -155,7 +151,6 @@ async function handleCompleteLending() {
       start_at: new Date().toISOString(),
       end_at: new Date(formattedReturnAt.value).toISOString(),
       start_mileage: scannedVehicle.value.last_mileage || 0,
-      price: price.value,
       status: 'Active'
     } as any) as any)
     if (rentalError) throw rentalError
@@ -191,7 +186,7 @@ onMounted(() => {
       
       <!-- Progress Indicator -->
       <div class="flex items-center gap-2">
-        <div v-for="step in 5" :key="step" 
+        <div v-for="step in 4" :key="step" 
           :class="['h-2 w-8 rounded-full transition-colors', currentStep >= step ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800']" 
         />
       </div>
@@ -342,7 +337,7 @@ onMounted(() => {
           </div>
 
           <UButton
-            label="Continue to Price Input"
+            label="Continue to Confirmation"
             color="primary"
             size="xl"
             block
@@ -354,42 +349,10 @@ onMounted(() => {
       </UCard>
     </div>
 
-    <!-- Step 4: Price Input -->
-    <div v-if="currentStep === 4" class="space-y-6 flex flex-col items-center">
+    <!-- Step 4: Confirmation -->
+    <div v-if="currentStep === 4 && selectedCustomer && scannedVehicle" class="space-y-6">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold font-heading">Step 4: Payment Amount</h2>
-        <p class="text-slate-500">Enter the rental fee for this transaction.</p>
-      </div>
-
-      <UCard class="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
-        <div class="p-6 space-y-6">
-          <UFormField label="Rental Price" name="price">
-            <UInput
-              v-model="price"
-              type="number"
-              size="xl"
-              icon="i-lucide-banknote"
-              :placeholder="`0 (${formatPrice(0).split(' ')[0]})`"
-            />
-          </UFormField>
-
-          <UButton
-            label="Continue to Confirmation"
-            color="primary"
-            size="xl"
-            block
-            :disabled="!isPriceValid"
-            class="cursor-pointer font-bold"
-            @click="currentStep = 5"
-          />
-        </div>
-      </UCard>
-    </div>
-
-    <!-- Step 5: Confirmation -->
-    <div v-if="currentStep === 5 && selectedCustomer && scannedVehicle" class="space-y-6">
-      <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 5: Confirm Transaction</h2>
+        <h2 class="text-2xl font-bold">Step 4: Confirm Transaction</h2>
         <p class="text-slate-500">Please review the lending details below.</p>
       </div>
 
@@ -421,7 +384,7 @@ onMounted(() => {
         </UCard>
 
         <!-- Schedule Summary -->
-        <UCard class="border-slate-200 dark:border-slate-800 shadow-sm bg-blue-50/30 dark:bg-blue-900/5">
+        <UCard class="md:col-span-2 border-slate-200 dark:border-slate-800 shadow-sm bg-blue-50/30 dark:bg-blue-900/5">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="size-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center text-blue-600">
@@ -438,22 +401,6 @@ onMounted(() => {
               </div>
             </div>
             <UButton label="Change" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 3" />
-          </div>
-        </UCard>
-
-        <!-- Price Summary -->
-        <UCard class="border-slate-200 dark:border-slate-800 shadow-sm bg-orange-50/30 dark:bg-orange-900/5">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-              <div class="size-10 bg-orange-100 dark:bg-orange-800 rounded-lg flex items-center justify-center text-orange-600">
-                <UIcon name="i-lucide-banknote" class="size-6" />
-              </div>
-              <div class="flex-1">
-                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Payment Amount</p>
-                <p class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(price) }}</p>
-              </div>
-            </div>
-            <UButton label="Change" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
           </div>
         </UCard>
       </div>
