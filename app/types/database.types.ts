@@ -50,22 +50,112 @@ export interface Database {
         Row: {
           id: string
           full_name: string | null
-          store_id: string | null
+          store_id: string
           role_id: string
           created_at: string
         }
         Insert: {
           id: string
           full_name?: string | null
-          store_id?: string | null
+          store_id: string
           role_id: string
           created_at?: string
         }
         Update: {
           id?: string
           full_name?: string | null
-          store_id?: string | null
+          store_id?: string
           role_id?: string
+          created_at?: string
+        }
+      }
+      vehicles: {
+        Row: {
+          id: string
+          name: string
+          model_year: number | null
+          license_plate: string | null
+          status_id: string
+          store_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          model_year?: number | null
+          license_plate?: string | null
+          status_id: string
+          store_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          model_year?: number | null
+          license_plate?: string | null
+          status_id?: string
+          store_id?: string
+          created_at?: string
+        }
+      }
+      customers: {
+        Row: {
+          id: string
+          full_name: string
+          email: string | null
+          phone_number: string | null
+          store_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          email?: string | null
+          phone_number?: string | null
+          store_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          email?: string | null
+          phone_number?: string | null
+          store_id?: string
+          created_at?: string
+        }
+      }
+      transactions: {
+        Row: {
+          id: string
+          vehicle_id: string
+          customer_id: string
+          staff_id: string
+          store_id: string
+          start_date: string
+          end_date: string | null
+          price: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          vehicle_id: string
+          customer_id: string
+          staff_id: string
+          store_id: string
+          start_date?: string
+          end_date?: string | null
+          price?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          vehicle_id?: string
+          customer_id?: string
+          staff_id?: string
+          store_id?: string
+          start_date?: string
+          end_date?: string | null
+          price?: number | null
           created_at?: string
         }
       }

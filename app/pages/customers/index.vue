@@ -2,6 +2,8 @@
 const search = ref('')
 const client = useSupabaseClient()
 const toast = useToast()
+const { staff } = useStaff()
+
 
 interface Customer {
   id: string
@@ -132,12 +134,7 @@ async function handleAddCustomer() {
     
     const statusId = activeStatus?.id || null
 
-    const user = useSupabaseUser()
-    let storeId = null
-    if (user.value) {
-      const { data: staffData } = await (client.from('staff').select('store_id').eq('id', user.value.id).single() as any)
-      storeId = staffData?.store_id
-    }
+    const storeId = staff.value?.store_id
 
     const { error } = await client
       .from('customers')

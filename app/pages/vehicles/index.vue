@@ -29,6 +29,7 @@ interface Vehicle {
 
 const client = useSupabaseClient()
 const toast = useToast()
+const { staff } = useStaff()
 const vehicles = ref<Vehicle[]>([])
 const isLoadingVehicles = ref(true)
 
@@ -93,12 +94,8 @@ async function handleAddVehicle() {
     const categoryId = (catData as any).id
 
     // 2. Get Store ID associated with the logged-in staff
-    const user = useSupabaseUser()
-    if (!user.value) throw new Error('Not authenticated')
-    const { data: staffData } = await (client.from('staff').select('store_id').eq('id', user.value.id).single() as any)
-    if (!staffData || !staffData.store_id) throw new Error('Store not found for this user')
-    const storeId = staffData.store_id
-
+    if (!staff.value?.store_id) throw new Error('Store not found for this user')
+    const storeId = staff.value.store_id
 
     // 3. Get Status ID (Default to Available)
     const { data: statusData } = await client

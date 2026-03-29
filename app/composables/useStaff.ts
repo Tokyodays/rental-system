@@ -9,8 +9,16 @@ export const useStaff = () => {
   // 独自にユーザー状態を管理（モジュールのステートに依存しない）
   const user = useState<any>('verified-supabase-user', () => null)
 
-  interface StaffRole {
+  interface StoreRecord {
+    id: string
     name: string
+    address: string | null
+    currency_id: number | null
+    currency: {
+      id: number
+      currency_text: string
+      currency_symbol: string
+    } | null
   }
 
   interface StaffRecord {
@@ -18,7 +26,8 @@ export const useStaff = () => {
     full_name: string | null
     store_id: string | null
     role_id: string
-    staff_roles: StaffRole | null
+    staff_roles: { name: string } | null
+    stores: StoreRecord | null
   }
 
   const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
@@ -28,7 +37,9 @@ export const useStaff = () => {
 
   const isAdmin = computed(() => {
     if (!staff.value) return false
-    return staff.value.staff_roles?.name === 'admin' || staff.value.role_id === ADMIN_ROLE_ID
+    const hasAdminRoleName = staff.value.staff_roles?.name === 'admin'
+    const hasAdminRoleId = staff.value.role_id === ADMIN_ROLE_ID
+    return !!(hasAdminRoleName || hasAdminRoleId)
   })
 
   /**
@@ -44,7 +55,7 @@ export const useStaff = () => {
     try {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, full_name, store_id, role_id, staff_roles(name)')
+        .select('id, full_name, store_id, role_id, staff_roles(name), stores(id, name, address, currency_id, currency(id, currency_text, currency_symbol))')
         .eq('id', uid)
         .maybeSingle()
 
@@ -56,7 +67,8 @@ export const useStaff = () => {
           full_name: user.value?.email?.split('@')[0] || 'Unknown',
           store_id: null,
           role_id: '',
-          staff_roles: { name: 'user' }
+          staff_roles: { name: 'user' },
+          stores: null
         }
       } else {
         staff.value = data as StaffRecord

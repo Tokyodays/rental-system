@@ -56,7 +56,7 @@ async function handleLogin() {
           <UIcon name="i-lucide-package" class="size-8" />
         </div>
         <div class="text-center">
-          <h1 class="text-2xl font-black text-slate-900 dark:text-white">Slate Precision</h1>
+          <h1 class="text-2xl font-black text-slate-900 dark:text-white">Rental System</h1>
           <p class="text-slate-500 text-sm">Mobility Management SaaS</p>
         </div>
       </div>

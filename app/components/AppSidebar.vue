@@ -47,7 +47,7 @@ const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settin
     </nav>
 
     <!-- Footer Section (Settings) -->
-    <div v-if="isAdmin || staff?.role_id === '00000000-0000-0000-0001-000000000001'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div v-if="isAdmin || staff?.staff_roles?.name === 'admin'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <NuxtLink
         :to="settingItem.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer group"

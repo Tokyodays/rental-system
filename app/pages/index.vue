@@ -42,13 +42,13 @@ async function fetchDashboardData() {
     stats.value[0].value = lentCount.toString()
     stats.value[1].value = availableCount.toString()
     
-    // Fetch Rentals to compute today's tx & recent tx
-    const { data: rentalsData } = await (supabase
-      .from('rentals')
+    // Fetch Transactions to compute today's tx & recent tx
+    const { data: transactionsData } = await (supabase
+      .from('transactions')
       .select('*, vehicles(name, code), customers(full_name)')
       .order('start_at', { ascending: false }) as any)
       
-    const rentals = rentalsData || []
+    const transactions = transactionsData || []
     
     let transactionCountToday = 0
     const events: any[] = []
@@ -56,7 +56,7 @@ async function fetchDashboardData() {
     const today = new Date()
     today.setHours(0,0,0,0) // Start of today
     
-    rentals.forEach((r: any) => {
+    transactions.forEach((r: any) => {
       // Check start_at for 'Lend' event
       if (r.start_at) {
         const startAt = new Date(r.start_at)

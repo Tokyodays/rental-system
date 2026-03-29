@@ -14,6 +14,7 @@ interface Store {
   id: string
   name: string
   address: string | null
+  currency_id: number | null
 }
 
 interface StaffMember {
@@ -23,7 +24,8 @@ interface StaffMember {
   staff_roles: { name: string } | null
 }
 
-// ---- ストア情報 ----
+const { currencies, currentSymbol, updateCurrency } = useCurrency()
+const storeCurrency = ref<number | null>(null)
 const store = ref<Store | null>(null)
 const storeName = ref('')
 const storeAddress = ref('')
@@ -49,7 +51,7 @@ async function fetchStoreAndStaff() {
     // Store 情報
     const { data: storeData } = await supabase
       .from('stores' as any)
-      .select('id, name, address')
+      .select('id, name, address, currency_id')
       .eq('id', staff.value.store_id)
       .single() as any
 
@@ -57,6 +59,7 @@ async function fetchStoreAndStaff() {
       store.value = storeData as Store
       storeName.value = storeData.name ?? ''
       storeAddress.value = storeData.address ?? ''
+      storeCurrency.value = storeData.currency_id ?? null
     }
 
     // Staff 一覧
@@ -83,12 +86,23 @@ async function saveStore() {
   try {
     const { error } = await supabase
       .from('stores' as any)
-      .update({ name: storeName.value, address: storeAddress.value } as any)
+      .update({ 
+        name: storeName.value, 
+        address: storeAddress.value,
+        currency_id: storeCurrency.value
+      } as any)
       .eq('id', store.value.id)
 
     if (error) throw error
-    store.value.name = storeName.value
-    store.value.address = storeAddress.value
+    if (store.value) {
+      store.value.name = storeName.value
+      store.value.address = storeAddress.value
+      store.value.currency_id = storeCurrency.value
+    }
+    
+    // キャッシュを更新
+    const { fetchStaff } = useStaff()
+    await fetchStaff()
     toast.add({ title: 'Saved', description: 'Store information updated.', color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -208,6 +222,23 @@ watch(() => staff.value?.store_id, (newId) => {
             class="w-full"
             size="lg"
           />
+        </UFormField>
+
+        <UFormField label="Currency Unit" name="storeCurrency">
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-for="c in currencies"
+              :key="c.id"
+              :label="c.currency_text"
+              :color="storeCurrency === c.id ? 'primary' : 'neutral'"
+              :variant="storeCurrency === c.id ? 'solid' : 'outline'"
+              class="min-w-16 justify-center font-bold"
+              @click="storeCurrency = c.id"
+            />
+          </div>
+          <template #help>
+            Prices will be displayed with '{{ currencies.find(c => c.id === storeCurrency)?.currency_symbol }}' symbol.
+          </template>
         </UFormField>
       </div>
 
