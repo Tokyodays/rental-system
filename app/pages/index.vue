@@ -138,7 +138,7 @@ onMounted(() => {
           icon="i-lucide-log-out"
           color="primary"
           size="lg"
-          to="/transactions/new"
+          to="/rentals/new"
           class="cursor-pointer font-bold px-8 shadow-lg shadow-blue-500/20"
         />
       </div>
