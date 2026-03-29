@@ -3,6 +3,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
+const { formatPrice } = useCurrency()
 
 const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Price Input, 5: Confirmation
 const isLoading = ref(false)
