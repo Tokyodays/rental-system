@@ -13,7 +13,46 @@ const isIdentifying = ref(false)
 const isScanning = ref(false)
 const activeRental = ref<any>(null)
 
+// Lent vehicle list
+const lentVehicles = ref<any[]>([])
+const isLoadingLentVehicles = ref(false)
+const lentVehicleSearch = ref('')
+
+async function fetchLentVehicles() {
+  isLoadingLentVehicles.value = true
+  try {
+    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Lent').single() as any)
+    if (!statusData) return
+
+    const { data, error } = await (supabase
+      .from('vehicles')
+      .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
+      .eq('status_id', statusData.id)
+      .order('name') as any)
+
+    if (!error) lentVehicles.value = data || []
+  } catch (e: any) {
+    toast.add({ title: 'Error', description: 'Could not load lent vehicles.', color: 'error' })
+  } finally {
+    isLoadingLentVehicles.value = false
+  }
+}
+
+const filteredLentVehicles = computed(() => {
+  const s = lentVehicleSearch.value.toLowerCase()
+  return lentVehicles.value.filter(v =>
+    v.name.toLowerCase().includes(s) ||
+    v.code.toLowerCase().includes(s) ||
+    (v.vehicle_categories?.name && v.vehicle_categories.name.toLowerCase().includes(s))
+  )
+})
+
+function selectLentVehicle(vehicle: any) {
+  identifyVehicleForReturn(vehicle.code)
+}
+
 onMounted(() => {
+  fetchLentVehicles()
   const code = route.query.code
   if (code && typeof code === 'string') {
     manualVehicleCode.value = code
@@ -157,18 +196,75 @@ async function handleCompleteReturn() {
     </div>
 
     <!-- Step 1: Vehicle Identification -->
-    <div v-if="currentStep === 1" class="flex flex-col items-center justify-center py-10 space-y-10">
+    <div v-if="currentStep === 1" class="space-y-8">
       <div class="text-center space-y-2">
         <h2 class="text-2xl font-bold">Step 1: Identify Vehicle</h2>
-        <p class="text-slate-500">Scan QR code or enter Vehicle ID to start return.</p>
+        <p class="text-slate-500">Choose a vehicle from the lent list, scan QR, or enter ID manually.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full max-w-4xl">
+      <!-- Lent Vehicle List -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <UIcon name="i-lucide-log-out" class="size-5 text-orange-600" />
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Currently Lent Vehicles</h3>
+          <UBadge :label="`${lentVehicles.length}`" color="warning" variant="subtle" size="sm" />
+        </div>
+
+        <UInput
+          v-model="lentVehicleSearch"
+          icon="i-lucide-search"
+          placeholder="Search by name, code, or category..."
+          size="lg"
+          class="w-full"
+        />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-1">
+          <div v-if="isLoadingLentVehicles" class="col-span-full py-8 flex flex-col items-center justify-center text-slate-500">
+            <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mb-2" />
+            <p>Loading vehicles...</p>
+          </div>
+          <UCard
+            v-for="vehicle in filteredLentVehicles"
+            :key="vehicle.id"
+            class="cursor-pointer hover:border-orange-500 transition-all border-slate-200 dark:border-slate-800 shadow-sm"
+            @click="selectLentVehicle(vehicle)"
+          >
+            <div class="flex items-center gap-4">
+              <div class="size-10 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center text-orange-600 shrink-0">
+                <UIcon :name="vehicle.vehicle_categories?.icon || 'i-lucide-package'" class="size-6" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-900 dark:text-white truncate">{{ vehicle.name }}</p>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                  <span class="font-mono">{{ vehicle.code }}</span>
+                  <span>•</span>
+                  <span>{{ vehicle.vehicle_categories?.name || 'Unknown' }}</span>
+                </div>
+              </div>
+              <UBadge label="Lent" color="warning" variant="subtle" size="xs" class="shrink-0" />
+              <UIcon name="i-lucide-chevron-right" class="text-slate-400 shrink-0" />
+            </div>
+          </UCard>
+          <div v-if="filteredLentVehicles.length === 0 && !isLoadingLentVehicles" class="col-span-full py-8 text-center text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+            No lent vehicles found.
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-4 py-2">
+        <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+      </div>
+
+      <!-- QR Scan & Manual Entry -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full max-w-4xl mx-auto">
         <!-- QR Section -->
         <div class="flex flex-col items-center space-y-6 border-r border-slate-200 dark:border-slate-800 pr-0 md:pr-12">
-           <div class="relative w-64 h-64 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center border-4 border-slate-200">
+           <div class="relative w-56 h-56 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center border-4 border-slate-200">
              <div v-if="isScanning" class="absolute inset-x-0 top-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-bounce-vertical"></div>
-             <UIcon name="i-lucide-qr-code" :class="['size-16 text-slate-800', isScanning ? 'animate-pulse' : '']" />
+             <UIcon name="i-lucide-qr-code" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
            </div>
            <UButton
              label="Simulate QR Scan"

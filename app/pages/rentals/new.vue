@@ -38,6 +38,7 @@ const filteredCustomers = computed(() => {
 function selectCustomer(customer: any) {
   selectedCustomer.value = customer
   currentStep.value = 2
+  fetchAvailableVehicles()
 }
 
 // Step 2: Vehicle Scan & Identification
@@ -45,6 +46,45 @@ const scannedVehicle = ref<any>(null)
 const isScanning = ref(false)
 const manualVehicleCode = ref('')
 const isIdentifying = ref(false)
+
+// Vehicle list selection
+const availableVehicles = ref<any[]>([])
+const isLoadingVehicles = ref(false)
+const vehicleSearch = ref('')
+
+async function fetchAvailableVehicles() {
+  isLoadingVehicles.value = true
+  try {
+    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
+    if (!statusData) return
+
+    const { data, error } = await (supabase
+      .from('vehicles')
+      .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
+      .eq('status_id', statusData.id)
+      .order('name') as any)
+
+    if (!error) availableVehicles.value = data || []
+  } catch (e: any) {
+    toast.add({ title: 'Error', description: 'Could not load available vehicles.', color: 'error' })
+  } finally {
+    isLoadingVehicles.value = false
+  }
+}
+
+const filteredVehicles = computed(() => {
+  const s = vehicleSearch.value.toLowerCase()
+  return availableVehicles.value.filter(v =>
+    v.name.toLowerCase().includes(s) ||
+    v.code.toLowerCase().includes(s) ||
+    (v.vehicle_categories?.name && v.vehicle_categories.name.toLowerCase().includes(s))
+  )
+})
+
+function selectVehicleFromList(vehicle: any) {
+  scannedVehicle.value = vehicle
+  currentStep.value = 3
+}
 
 async function identifyVehicleByCode(code: string) {
   isIdentifying.value = true
@@ -240,58 +280,116 @@ onMounted(() => {
     </div>
 
     <!-- Step 2: Vehicle Scan -->
-    <div v-if="currentStep === 2" class="flex flex-col items-center justify-center py-10 space-y-8">
+    <div v-if="currentStep === 2" class="space-y-8">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 2: Scan Vehicle QR</h2>
-        <p class="text-slate-500">Point the camera at the vehicle's QR code.</p>
+        <h2 class="text-2xl font-bold">Step 2: Select Vehicle</h2>
+        <p class="text-slate-500">Choose a vehicle from the list, scan QR, or enter ID manually.</p>
       </div>
 
-      <!-- Scanner Simulation Box -->
-      <div class="relative w-72 h-72 bg-slate-950 rounded-3xl overflow-hidden border-4 border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center">
-        <div v-if="isScanning" class="absolute inset-x-0 top-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-bounce-vertical"></div>
-        <UIcon name="i-lucide-camera" :class="['size-16 text-slate-800', isScanning ? 'animate-pulse' : '']" />
+      <!-- Available Vehicle List -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <UIcon name="i-lucide-list" class="size-5 text-blue-600" />
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Available Vehicles</h3>
+          <UBadge :label="`${availableVehicles.length}`" color="info" variant="subtle" size="sm" />
+        </div>
+
+        <UInput
+          v-model="vehicleSearch"
+          icon="i-lucide-search"
+          placeholder="Search by name, code, or category..."
+          size="lg"
+          class="w-full"
+        />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-1">
+          <div v-if="isLoadingVehicles" class="col-span-full py-8 flex flex-col items-center justify-center text-slate-500">
+            <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mb-2" />
+            <p>Loading vehicles...</p>
+          </div>
+          <UCard
+            v-for="vehicle in filteredVehicles"
+            :key="vehicle.id"
+            class="cursor-pointer hover:border-blue-500 transition-all border-slate-200 dark:border-slate-800 shadow-sm"
+            @click="selectVehicleFromList(vehicle)"
+          >
+            <div class="flex items-center gap-4">
+              <div class="size-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 shrink-0">
+                <UIcon :name="vehicle.vehicle_categories?.icon || 'i-lucide-package'" class="size-6" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-900 dark:text-white truncate">{{ vehicle.name }}</p>
+                <div class="flex items-center gap-2 text-xs text-slate-500">
+                  <span class="font-mono">{{ vehicle.code }}</span>
+                  <span>•</span>
+                  <span>{{ vehicle.vehicle_categories?.name || 'Unknown' }}</span>
+                </div>
+              </div>
+              <UIcon name="i-lucide-chevron-right" class="text-slate-400 shrink-0" />
+            </div>
+          </UCard>
+          <div v-if="filteredVehicles.length === 0 && !isLoadingVehicles" class="col-span-full py-8 text-center text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+            No available vehicles found.
+          </div>
+        </div>
       </div>
 
-      <div class="flex flex-col gap-6 w-full max-w-sm">
-        <div class="space-y-3">
-          <UButton
-            label="Simulate QR Scan"
-            icon="i-lucide-qr-code"
-            size="xl"
-            block
-            :loading="isScanning"
-            class="cursor-pointer"
-            @click="simulateScan"
-          />
-          <p class="text-xs text-center text-slate-400">Mocking a successful scan of an available vehicle.</p>
+      <!-- Divider -->
+      <div class="flex items-center gap-4 py-2">
+        <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+        <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+      </div>
+
+      <!-- QR Scan & Manual Entry -->
+      <div class="flex flex-col items-center space-y-8">
+        <!-- Scanner Simulation Box -->
+        <div class="relative w-56 h-56 bg-slate-950 rounded-3xl overflow-hidden border-4 border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center">
+          <div v-if="isScanning" class="absolute inset-x-0 top-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-bounce-vertical"></div>
+          <UIcon name="i-lucide-camera" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
         </div>
 
-        <div class="flex items-center gap-4 py-2">
-          <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
-          <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-        </div>
-
-        <div class="space-y-4">
-          <UFormField label="Enter Vehicle ID manually" name="manualCode">
-            <UInput
-              v-model="manualVehicleCode"
-              placeholder="e.g. B-HONDA-001"
-              size="lg"
-              icon="i-lucide-keyboard"
+        <div class="flex flex-col gap-6 w-full max-w-sm">
+          <div class="space-y-3">
+            <UButton
+              label="Simulate QR Scan"
+              icon="i-lucide-qr-code"
+              size="xl"
+              block
+              :loading="isScanning"
+              class="cursor-pointer"
+              @click="simulateScan"
             />
-          </UFormField>
-          <UButton
-            label="Identify Vehicle"
-            variant="subtle"
-            color="neutral"
-            size="lg"
-            block
-            :loading="isIdentifying"
-            :disabled="!manualVehicleCode"
-            class="cursor-pointer"
-            @click="identifyVehicleByCode(manualVehicleCode)"
-          />
+            <p class="text-xs text-center text-slate-400">Mocking a successful scan of an available vehicle.</p>
+          </div>
+
+          <div class="flex items-center gap-4 py-2">
+            <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+            <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+          </div>
+
+          <div class="space-y-4">
+            <UFormField label="Enter Vehicle ID manually" name="manualCode">
+              <UInput
+                v-model="manualVehicleCode"
+                placeholder="e.g. B-HONDA-001"
+                size="lg"
+                icon="i-lucide-keyboard"
+              />
+            </UFormField>
+            <UButton
+              label="Identify Vehicle"
+              variant="subtle"
+              color="neutral"
+              size="lg"
+              block
+              :loading="isIdentifying"
+              :disabled="!manualVehicleCode"
+              class="cursor-pointer"
+              @click="identifyVehicleByCode(manualVehicleCode)"
+            />
+          </div>
         </div>
       </div>
     </div>
