@@ -9,6 +9,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "test": "vitest",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
     "db:migrate": "node scripts/migrate.js"
   },
   "dependencies": {
@@ -21,6 +24,7 @@
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.98",
     "@nuxt/test-utils": "^4.0.0",
+    "@playwright/test": "^1.59.1",
     "@vitest/ui": "^4.1.0",
     "dotenv": "^17.3.1",
     "happy-dom": "^20.8.4",
