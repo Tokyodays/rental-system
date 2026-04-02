@@ -98,13 +98,13 @@ yarn dev
 
 ```bash
 # 基本実行（ヘッドレス）
-E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass yarn test:e2e
+E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e
 
 # ブラウザを表示しながら実行（デバッグ用）
-E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass yarn test:e2e:headed
+E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e:headed
 
 # Playwright UI モードで実行（インタラクティブにテスト操作確認）
-E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass yarn test:e2e:ui
+E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e:ui
 ```
 
 #### 3. テストレポートを確認
