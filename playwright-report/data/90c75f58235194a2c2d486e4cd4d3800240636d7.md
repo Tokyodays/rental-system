@@ -94,7 +94,7 @@ Received string:    " no transactions found. "
     - button "Toggle Nuxt DevTools" [ref=e78] [cursor=pointer]:
       - img [ref=e79]
     - generic "Page load time" [ref=e82]:
-      - generic [ref=e83]: "54"
+      - generic [ref=e83]: "47"
       - generic [ref=e84]: ms
     - button "Toggle Component Inspector" [ref=e86] [cursor=pointer]:
       - img [ref=e87]

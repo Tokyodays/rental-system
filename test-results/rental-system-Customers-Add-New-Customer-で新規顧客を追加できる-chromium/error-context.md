@@ -103,23 +103,6 @@ Call log:
                         - cell:
                           - generic:
                             - generic:
-                              - generic: BS
-                            - generic: Brooklyn Simmons
-                        - cell:
-                          - generic: brooklyn.s@example.com
-                          - generic: +81-90-2222-3333
-                        - cell
-                        - cell:
-                          - generic:
-                            - generic: Active
-                        - cell:
-                          - generic:
-                            - button
-                            - button
-                      - row:
-                        - cell:
-                          - generic:
-                            - generic:
                               - generic: CW
                             - generic: Cameron Williamson
                         - cell:
@@ -159,6 +142,23 @@ Call log:
                         - cell:
                           - generic: hanako.sato@example.com
                           - generic: +81-80-2222-2222
+                        - cell
+                        - cell:
+                          - generic:
+                            - generic: Active
+                        - cell:
+                          - generic:
+                            - button
+                            - button
+                      - row:
+                        - cell:
+                          - generic:
+                            - generic:
+                              - generic: LA
+                            - generic: Leslie Alexander
+                        - cell:
+                          - generic: leslie.a@example.com
+                          - generic: +81-80-4444-5555
                         - cell
                         - cell:
                           - generic:
@@ -439,26 +439,9 @@ Call log:
                           - generic:
                             - button
                             - button
-                      - row:
-                        - cell:
-                          - generic:
-                            - generic:
-                              - generic: LA
-                            - generic: Leslie Alexander
-                        - cell:
-                          - generic: leslie.a@example.com
-                          - generic: +81-80-4444-5555
-                        - cell
-                        - cell:
-                          - generic:
-                            - generic: Active
-                        - cell:
-                          - generic:
-                            - button
-                            - button
               - generic:
                 - generic:
-                  - paragraph: Showing 1 to 21 of 21 results
+                  - paragraph: Showing 1 to 20 of 20 results
                   - generic:
                     - button [disabled]
                     - button [disabled]
@@ -468,7 +451,7 @@ Call log:
     - button [ref=e2] [cursor=pointer]:
       - img [ref=e3]
     - generic [ref=e6]:
-      - generic [ref=e7]: "49"
+      - generic [ref=e7]: "44"
       - generic [ref=e8]: ms
     - button [ref=e10] [cursor=pointer]:
       - img [ref=e11]

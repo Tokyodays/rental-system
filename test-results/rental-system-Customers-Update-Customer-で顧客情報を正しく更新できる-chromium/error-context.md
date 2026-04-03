@@ -103,23 +103,6 @@ Call log:
                         - cell:
                           - generic:
                             - generic:
-                              - generic: BS
-                            - generic: Brooklyn Simmons
-                        - cell:
-                          - generic: brooklyn.s@example.com
-                          - generic: +81-90-2222-3333
-                        - cell
-                        - cell:
-                          - generic:
-                            - generic: Active
-                        - cell:
-                          - generic:
-                            - button
-                            - button
-                      - row:
-                        - cell:
-                          - generic:
-                            - generic:
                               - generic: CW
                             - generic: Cameron Williamson
                         - cell:
@@ -159,6 +142,23 @@ Call log:
                         - cell:
                           - generic: hanako.sato@example.com
                           - generic: +81-80-2222-2222
+                        - cell
+                        - cell:
+                          - generic:
+                            - generic: Active
+                        - cell:
+                          - generic:
+                            - button
+                            - button
+                      - row:
+                        - cell:
+                          - generic:
+                            - generic:
+                              - generic: LA
+                            - generic: Leslie Alexander
+                        - cell:
+                          - generic: leslie.a@example.com
+                          - generic: +81-80-4444-5555
                         - cell
                         - cell:
                           - generic:
@@ -439,26 +439,9 @@ Call log:
                           - generic:
                             - button
                             - button
-                      - row:
-                        - cell:
-                          - generic:
-                            - generic:
-                              - generic: LA
-                            - generic: Leslie Alexander
-                        - cell:
-                          - generic: leslie.a@example.com
-                          - generic: +81-80-4444-5555
-                        - cell
-                        - cell:
-                          - generic:
-                            - generic: Active
-                        - cell:
-                          - generic:
-                            - button
-                            - button
               - generic:
                 - generic:
-                  - paragraph: Showing 1 to 21 of 21 results
+                  - paragraph: Showing 1 to 20 of 20 results
                   - generic:
                     - button [disabled]
                     - button [disabled]
@@ -468,7 +451,7 @@ Call log:
     - button [ref=e2] [cursor=pointer]:
       - img [ref=e3]
     - generic [ref=e6]:
-      - generic [ref=e7]: "48"
+      - generic [ref=e7]: "44"
       - generic [ref=e8]: ms
     - button [ref=e10] [cursor=pointer]:
       - img [ref=e11]
@@ -483,17 +466,17 @@ Call log:
         - generic [ref=e28]: Full Name*
         - textbox "Full Name*" [ref=e31]:
           - /placeholder: e.g. John Doe
-          - text: Brooklyn Simmons
+          - text: Cameron Williamson
       - generic [ref=e32]:
         - generic [ref=e35]: Email Address
         - textbox "Email Address" [ref=e38]:
           - /placeholder: john@example.com
-          - text: brooklyn.s@example.com
+          - text: cameron.w@example.com
       - generic [ref=e39]:
         - generic [ref=e42]: Phone Number
         - textbox "Phone Number" [ref=e45]:
           - /placeholder: +81-XXX-XXXX-XXXX
-          - text: +81-90-2222-3333
+          - text: +81-80-5555-6666
       - generic [ref=e46]:
         - generic [ref=e47]:
           - generic [ref=e49]: Status

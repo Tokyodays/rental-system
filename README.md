@@ -100,6 +100,9 @@ yarn dev
 # 基本実行（ヘッドレス）
 E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e
 
+# ポート番号を指定して実行（例：3001番ポート）
+E2E_PORT=3001 E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e
+
 # ブラウザを表示しながら実行（デバッグ用）
 E2E_USER_EMAIL=developer@gmail.com E2E_USER_PASSWORD=password123 yarn test:e2e:headed
 

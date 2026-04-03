@@ -80,10 +80,10 @@ Call log:
                 - paragraph [ref=e54]: "0"
               - generic [ref=e56]:
                 - paragraph [ref=e58]: Available
-                - paragraph [ref=e61]: "20"
+                - paragraph [ref=e61]: "21"
               - generic [ref=e63]:
                 - paragraph [ref=e65]: Today's Transactions
-                - paragraph [ref=e68]: "1"
+                - paragraph [ref=e68]: "0"
             - generic [ref=e69]:
               - generic [ref=e71]:
                 - heading "Recent Transactions" [level=3] [ref=e72]
@@ -145,7 +145,7 @@ Call log:
     - button "Toggle Nuxt DevTools" [ref=e139] [cursor=pointer]:
       - img [ref=e140]
     - generic "Page load time" [ref=e143]:
-      - generic [ref=e144]: "45"
+      - generic [ref=e144]: "40"
       - generic [ref=e145]: ms
     - button "Toggle Component Inspector" [ref=e147] [cursor=pointer]:
       - img [ref=e148]
