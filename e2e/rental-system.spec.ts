@@ -223,7 +223,7 @@ test.describe('Add Vehicle', () => {
     await page.getByRole('button', { name: 'Add Vehicle' }).click()
 
     // モーダルが表示される
-    await expect(page.getByText('Register New Vehicle')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Register New Vehicle' })).toBeVisible()
 
     // フォームに入力
     const testName = `E2E Test Vehicle ${Date.now()}`
@@ -442,7 +442,7 @@ test.describe('Customers', () => {
     await deleteButton.click()
 
     // 確認モーダルが表示される
-    await expect(page.getByText('Delete Customer')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Delete Customer' })).toBeVisible()
     await expect(page.getByText('Are you sure you want to delete this customer')).toBeVisible()
 
     // Delete を実行
@@ -507,7 +507,7 @@ test.describe('History', () => {
     await waitForLoadingComplete(page)
 
     await page.getByRole('button', { name: 'Export' }).click()
-    await expect(page.getByText('Export Transactions')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Export Transactions' })).toBeVisible()
     await expect(page.getByText('Start Date')).toBeVisible()
     await expect(page.getByText('End Date')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Download CSV' })).toBeVisible()
