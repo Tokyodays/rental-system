@@ -112,7 +112,7 @@ test.describe('Dashboard', () => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    const lendingButton = page.locator('a[href="/rentals/new"]', { hasText: 'Lending' })
+    const lendingButton = page.getByRole('main').getByRole('link', { name: 'Lending' })
     await expect(lendingButton).toBeVisible()
     await lendingButton.click()
     await page.waitForLoadState('networkidle')
