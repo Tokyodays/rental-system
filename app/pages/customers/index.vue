@@ -153,10 +153,10 @@ function takePhoto() {
     const context = canvas.getContext('2d')
     if (context) {
       context.drawImage(video, 0, 0, canvas.width, canvas.height)
-      capturedPhoto.value = canvas.toDataURL('image/jpeg')
+      capturedPhoto.value = canvas.toDataURL('image/webp', 0.8)
       canvas.toBlob((blob) => {
         capturedBlob.value = blob
-      }, 'image/jpeg', 0.8)
+      }, 'image/webp', 0.8)
     }
   }
 }
@@ -169,6 +169,9 @@ function resetPhoto() {
 function handleFileChange(event: any) {
   const file = event.target.files?.[0]
   if (file) {
+    // If user uploaded a file manually, we don't force webp conversion here 
+    // unless you want to re-process it through canvas.
+    // For now, just keep the original blob for manual uploads.
     capturedBlob.value = file
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -226,7 +229,7 @@ async function handleAddCustomer() {
 
     // 2. Upload photo IF captured BEFORE inserting record
     if (capturedBlob.value) {
-      const fileName = `${customerId}-passport.jpg`
+      const fileName = `${customerId}-passport.webp`
       const filePath = `passports/${fileName}`
 
       const { error: uploadError } = await client
@@ -351,7 +354,7 @@ async function handleUpdateCustomer() {
 
     // 1. Upload photo if captured (Overwrite)
     if (capturedBlob.value) {
-      const fileName = `${customerToUpdate.id}-passport.jpg`
+      const fileName = `${customerToUpdate.id}-passport.webp`
       const filePath = `passports/${fileName}`
 
       const { error: uploadError } = await client
@@ -718,8 +721,8 @@ const filteredCustomers = computed(() => {
         <div v-else class="space-y-6">
           <!-- Camera Preview / Captured Photo -->
           <div class="relative aspect-[4/3] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-inner flex items-center justify-center group">
-            <video v-if="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover shadow-xl"></video>
-            <img v-else :src="capturedPhoto" class="w-full h-full object-cover" />
+            <video v-show="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover shadow-xl"></video>
+            <img v-if="capturedPhoto" :src="capturedPhoto" class="w-full h-full object-cover" />
             
             <div v-if="isCameraLoading" class="absolute inset-0 flex items-center justify-center bg-slate-900/50">
                <UIcon name="i-lucide-loader-2" class="size-10 animate-spin text-white" />
