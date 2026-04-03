@@ -342,53 +342,53 @@ onMounted(() => {
       </div>
 
       <!-- QR Scan & Manual Entry -->
-      <div class="flex flex-col items-center space-y-8">
-        <!-- Scanner Simulation Box -->
-        <div class="relative w-56 h-56 bg-slate-950 rounded-3xl overflow-hidden border-4 border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center">
-          <div v-if="isScanning" class="absolute inset-x-0 top-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-bounce-vertical"></div>
-          <UIcon name="i-lucide-camera" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full max-w-4xl mx-auto">
+        <!-- QR Section -->
+        <div class="flex flex-col items-center space-y-6 border-r border-slate-200 dark:border-slate-800 pr-0 md:pr-12">
+           <div class="relative w-56 h-56 bg-slate-950 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center border-4 border-slate-200 dark:border-slate-800">
+             <div v-if="isScanning" class="absolute inset-x-0 top-0 h-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-bounce-vertical"></div>
+             <UIcon name="i-lucide-qr-code" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
+           </div>
+           <UButton
+             label="Simulate QR Scan"
+             icon="i-lucide-camera"
+             size="xl"
+             block
+             :loading="isScanning"
+             class="cursor-pointer font-bold"
+             @click="simulateScan"
+           />
         </div>
 
-        <div class="flex flex-col gap-6 w-full max-w-sm">
-          <div class="space-y-3">
-            <UButton
-              label="Simulate QR Scan"
-              icon="i-lucide-qr-code"
-              size="xl"
-              block
-              :loading="isScanning"
-              class="cursor-pointer"
-              @click="simulateScan"
-            />
-            <p class="text-xs text-center text-slate-400">Mocking a successful scan of an available vehicle.</p>
-          </div>
-
-          <div class="flex items-center gap-4 py-2">
-            <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
-            <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-          </div>
-
+        <!-- Manual Entry Section -->
+        <div class="space-y-6">
           <div class="space-y-4">
-            <UFormField label="Enter Vehicle ID manually" name="manualCode">
+            <UFormField label="Vehicle ID (Code)" name="manualCode">
               <UInput
                 v-model="manualVehicleCode"
                 placeholder="e.g. B-HONDA-001"
-                size="lg"
+                size="xl"
                 icon="i-lucide-keyboard"
+                class="bg-white dark:bg-slate-900"
               />
             </UFormField>
             <UButton
               label="Identify Vehicle"
-              variant="subtle"
-              color="neutral"
-              size="lg"
+              color="primary"
+              size="xl"
               block
               :loading="isIdentifying"
               :disabled="!manualVehicleCode"
-              class="cursor-pointer"
+              class="cursor-pointer font-bold shadow-lg shadow-blue-500/20"
               @click="identifyVehicleByCode(manualVehicleCode)"
             />
+          </div>
+          
+          <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <p class="text-xs text-slate-500 leading-relaxed">
+              <UIcon name="i-lucide-info" class="inline-block mr-1" />
+              Ensure the vehicle is available for lending before identifying.
+            </p>
           </div>
         </div>
       </div>
