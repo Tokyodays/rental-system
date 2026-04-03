@@ -373,7 +373,7 @@ test.describe('Customers', () => {
     await editButton.click()
 
     // Update モーダルが表示される
-    await expect(page.getByText('Update Customer')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Update Customer' })).toBeVisible()
 
     // 名前を取得して更新
     const fullNameInput = page.getByPlaceholder('e.g. John Doe').first()
@@ -410,7 +410,7 @@ test.describe('Customers', () => {
     await page.getByRole('button', { name: 'Add New Customer' }).click()
 
     // モーダルが表示される
-    await expect(page.getByText('Add New Customer')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Add New Customer' })).toBeVisible()
 
     // フォームに入力
     const testName = `E2E Test Customer ${Date.now()}`
