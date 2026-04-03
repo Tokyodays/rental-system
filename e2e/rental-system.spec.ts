@@ -160,14 +160,14 @@ test.describe('Vehicle List', () => {
 
     const searchInput = page.getByPlaceholder('Search vehicles...')
     await expect(searchInput).toBeVisible()
-    await searchInput.fill('Honda')
+    await searchInput.fill('Suzuki')
     await page.waitForTimeout(500)
 
     const rows = page.locator('tbody tr')
     const count = await rows.count()
     if (count > 0) {
       const firstRow = await rows.first().textContent()
-      expect(firstRow?.toLowerCase()).toContain('honda')
+      expect(firstRow?.toLowerCase()).toContain('suzuki')
     }
   })
 
@@ -488,7 +488,7 @@ test.describe('History', () => {
 
     const searchInput = page.getByPlaceholder('Search items or users...')
     await expect(searchInput).toBeVisible()
-    await searchInput.fill('Honda')
+    await searchInput.fill('Suzuki')
     await page.waitForTimeout(500)
 
     const rows = page.locator('tbody tr')
@@ -496,7 +496,7 @@ test.describe('History', () => {
     if (count > 0) {
       for (let i = 0; i < Math.min(count, 3); i++) {
         const text = await rows.nth(i).textContent()
-        expect(text?.toLowerCase()).toContain('honda')
+        expect(text?.toLowerCase()).toContain('suzuki')
       }
     }
   })
