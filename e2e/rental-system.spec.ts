@@ -75,7 +75,7 @@ test.describe('Dashboard', () => {
     await waitForLoadingComplete(page)
 
     // ページ見出し
-    await expect(page.locator('h1')).toContainText('Overview')
+    await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
 
     // 3つの統計カードが表示される
     await expect(page.getByText('Lending').first()).toBeVisible()
