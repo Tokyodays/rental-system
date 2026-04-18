@@ -30,8 +30,8 @@ async function login(page: Page) {
   // 既にログイン済みならスキップ
   if (!page.url().includes('/login')) return
 
-  // メール・パスワードを入力
-  await page.getByPlaceholder('name@company.com').fill(TEST_EMAIL)
+  // ユーザー名・パスワードを入力
+  await page.getByPlaceholder('admin').fill(TEST_EMAIL.split('@')[0]) // Use username part
   await page.getByPlaceholder('••••••••').fill(TEST_PASSWORD)
 
   // Sign In ボタンをクリック
@@ -668,5 +668,139 @@ test.describe('Status Filters', () => {
       const count = await rows.count()
       expect(count).toBeGreaterThanOrEqual(0)
     }
+  })
+})
+
+// ============================================================
+// 11. Settings & User Management
+// ============================================================
+test.describe('Settings & User Management', () => {
+  test('言語切替が機能し、UI全体に反映される', async ({ page }) => {
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // Bahasa Melayu を選択
+    const malayOption = page.getByText('Bahasa Melayu')
+    await expect(malayOption).toBeVisible()
+    await malayOption.click()
+
+    // 保存
+    await page.getByRole('button', { name: 'Save' }).click()
+    await page.waitForTimeout(1000)
+
+    // サイドバーのテキストがマレー語になっているか確認
+    // "Dashboard" -> "Papan Pemuka"
+    await expect(page.locator('aside')).toContainText('Papan Pemuka')
+
+    // 元の言語（English）に戻す
+    await page.getByText('English').click()
+    await page.getByRole('button', { name: 'Save' }).click()
+    await page.waitForTimeout(1000)
+    await expect(page.locator('aside')).toContainText('Dashboard')
+  })
+
+  test('スタッフを新規追加および削除できる', async ({ page }) => {
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // スタッフ追加モーダルを開く
+    await page.getByRole('button', { name: 'Add Staff' }).click()
+    await expect(page.getByText('Add New Staff')).toBeVisible()
+
+    const tempUser = `testuser${Date.now()}`
+    await page.getByPlaceholder('John Doe').fill('E2E Test Staff')
+    await page.getByPlaceholder('staff123').fill(tempUser)
+    await page.getByPlaceholder('••••••••').last().fill('password123')
+
+    // 作成
+    await page.getByRole('button', { name: 'Create Account' }).click()
+    await page.waitForTimeout(3000)
+
+    // 一覧に表示されるか確認
+    await expect(page.getByText(`@${tempUser}`)).toBeVisible()
+
+    // 削除
+    const deleteBtn = page.locator('tr', { hasText: tempUser }).getByRole('button').last()
+    await deleteBtn.click()
+
+    // ダイアログを確認（ブラウザのconfirmをハンドル）
+    page.on('dialog', dialog => dialog.accept())
+    
+    await page.waitForTimeout(2000)
+    await expect(page.getByText(`@${tempUser}`)).not.toBeVisible()
+  })
+})
+
+// ============================================================
+// 12. Multi-tenant Management Flow
+// ============================================================
+test.describe('Multi-tenant Management Flow', () => {
+  const NEW_STORE_NAME = `E2E Store ${Date.now()}`
+  const NEW_ADMIN_NAME = `admin${Date.now()}`
+
+  test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
+    await login(page)
+    await page.goto('/admin/stores')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+    
+    // 店舗追加
+    await page.click('#btn-add-store')
+    await page.getByPlaceholder('Branch Name').fill(NEW_STORE_NAME)
+    await page.click('#btn-create-store')
+    
+    // 店舗がリストに現れるまで待機 (テーブル内のセルを確実に特定)
+    await expect(page.locator('td', { hasText: NEW_STORE_NAME }).first()).toBeVisible({ timeout: 15000 })
+
+    // その店舗にAdminを追加
+    const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
+    await storeRow.waitFor({ state: 'visible' })
+    await page.waitForTimeout(500)
+    await storeRow.getByRole('button', { name: /Add Admin/i }).click()
+    await page.getByPlaceholder('branch_admin').fill(NEW_ADMIN_NAME)
+    await page.getByPlaceholder('••••••••').fill('password123')
+    await page.getByRole('button', { name: 'Create Admin' }).click()
+    await page.waitForTimeout(3000)
+
+    // ログアウト
+    await page.goto('/')
+    await page.getByRole('button', { name: /@admin/ }).first().click()
+    await page.getByText('Logout').click()
+    await page.waitForURL('/login')
+  })
+
+  test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page }) => {
+    // 新しいAdminでログイン
+    await page.goto('/login')
+    await page.getByPlaceholder('admin').fill(NEW_ADMIN_NAME)
+    await page.getByPlaceholder('••••••••').fill('password123')
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('/', { timeout: 15_000 })
+
+    // 設定（スタッフ管理）へ
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+
+    // スタッフを追加
+    const staffName = `staff${Date.now()}`
+    await page.getByRole('button', { name: 'Add Staff' }).click()
+    await page.getByPlaceholder('staff123').fill(staffName)
+    await page.getByPlaceholder('••••••••').last().fill('password123')
+    await page.getByRole('button', { name: 'Create Account' }).click()
+    await page.waitForTimeout(2000)
+    await expect(page.getByText(`@${staffName}`)).toBeVisible()
+
+    // スタッフのロール更新
+    const row = page.locator('tr', { hasText: staffName })
+    await row.locator('button[role="switch"]').click()
+    await page.waitForTimeout(1000)
+
+    // スタッフの削除
+    await row.getByRole('button').last().click()
+    page.on('dialog', d => d.accept())
+    await page.waitForTimeout(2000)
+    await expect(page.getByText(`@${staffName}`)).not.toBeVisible()
   })
 })

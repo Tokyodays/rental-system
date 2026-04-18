@@ -11,10 +11,11 @@ const toast = useToast()
 
 const user = useSupabaseUser()
 const { staff, isLoading } = useStaff()
+const { t } = useI18n()
 
 // デバッグ用: ロード完了時にログを出す
 watch(staff, (val) => {
-  if (val) console.log('[AppTopbar] Staff data loaded:', val.full_name)
+  if (val) console.log('[AppTopbar] Staff data loaded:', val.username)
 }, { immediate: true })
 
 const handleLogout = async () => {
@@ -27,12 +28,12 @@ const handleLogout = async () => {
   }
 }
 
-const userMenuItems = [
+const userMenuItems = computed(() => [
   [
-    { label: 'Profile', icon: 'i-lucide-user' },
-    { label: 'Logout', icon: 'i-lucide-log-out', color: 'error' as any, onSelect: handleLogout }
+    { label: t('profile'), icon: 'i-lucide-user' },
+    { label: t('logout'), icon: 'i-lucide-log-out', color: 'error' as any, onSelect: handleLogout }
   ]
-]
+])
 </script>
 
 <template>
@@ -60,7 +61,7 @@ const userMenuItems = [
           <!-- Loaded State -->
           <template v-else>
             <span class="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">
-              {{ staff?.full_name || user?.email?.split('@')[0] || 'User' }}
+              @{{ staff?.username || user?.email?.split('@')[0] || 'User' }}
             </span>
             <UAvatar
               :src="staff?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnl5K-isI96o9PdqQJEgTsBc2W2YGOpT5BStFOmTGsUidCdncENUhhcqeWSSWROguIuYc_X-nMYK4hn3BXkvsPhHOq9xpCt_voI2q29zswt88eV9FbMNZDG1IIztHOC_o9IHPHnKbw5Ibslw-kaLC-F3CAoP1iufzX0dXbF7EN_ClxY8HvltXxIEk6q1qa6Uh1UlU7PDBKL28DHh2eti8bO8__T3RwRzjvvQmkYase89UXYjljXO8f-UGI0fpPSJd7BOr537xHC5Dm'"

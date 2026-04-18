@@ -15,11 +15,12 @@ interface Store {
   name: string
   address: string | null
   currency_id: number | null
+  default_locale: string | null
 }
 
 interface StaffMember {
   id: string
-  full_name: string | null
+  username: string | null
   role_id: string
   staff_roles: { name: string } | null
 }
@@ -35,12 +36,8 @@ const isSavingStore = ref(false)
 const staffList = ref<StaffMember[]>([])
 const isLoadingStaff = ref(true)
 
-// ---- 言語 ----
-const locale = useCookie<'ja' | 'en'>('locale', { default: () => 'ja' })
-const isJapanese = computed({
-  get: () => locale.value === 'ja',
-  set: (v: boolean) => { locale.value = v ? 'ja' : 'en' }
-})
+// ---- 言語設定 ----
+const { locale, t, availableLocales } = useI18n()
 
 // ---- データ取得 ----
 async function fetchStoreAndStaff() {
@@ -60,14 +57,17 @@ async function fetchStoreAndStaff() {
       storeName.value = storeData.name ?? ''
       storeAddress.value = storeData.address ?? ''
       storeCurrency.value = storeData.currency_id ?? null
+      if (storeData.default_locale) {
+        locale.value = storeData.default_locale as any
+      }
     }
 
     // Staff 一覧
     const { data: staffData } = await supabase
       .from('staff' as any)
-      .select('id, full_name, role_id, staff_roles(name)')
+      .select('id, username, role_id, staff_roles(name)')
       .eq('store_id', staff.value.store_id)
-      .order('full_name') as any
+      .order('username') as any
 
     if (staffData) {
       staffList.value = staffData as StaffMember[]
@@ -89,7 +89,8 @@ async function saveStore() {
       .update({ 
         name: storeName.value, 
         address: storeAddress.value,
-        currency_id: storeCurrency.value
+        currency_id: storeCurrency.value,
+        default_locale: locale.value
       } as any)
       .eq('id', store.value.id)
 
@@ -115,6 +116,68 @@ async function saveStore() {
 // ---- スタッフのロール更新 ----
 const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
 const USER_ROLE_ID = '00000000-0000-0000-0001-000000000002'
+// ---- スタッフの追加・削除 ----
+const isAddingStaff = ref(false)
+const isDeletingStaff = ref<Record<string, boolean>>({})
+const showAddModal = ref(false)
+const newStaff = reactive({
+  username: '',
+  password: '',
+  role_id: '00000000-0000-0000-0001-000000000002' // user role as default
+})
+
+async function addStaff() {
+  if (!newStaff.username || !newStaff.password) return
+
+  // バリデーション: 英数字のみ
+  if (!/^[a-zA-Z0-9]+$/.test(newStaff.username)) {
+    toast.add({ title: 'Invalid Username', description: 'Username must be alphanumeric.', color: 'error' })
+    return
+  }
+
+  isAddingStaff.value = true
+  try {
+    const response = await $fetch('/api/admin/users', {
+      method: 'POST',
+      body: {
+        ...newStaff,
+        store_id: staff.value?.store_id
+      }
+    })
+    
+    toast.add({ title: 'Staff Added', description: 'New staff member has been created.', color: 'success' })
+    showAddModal.value = false
+    // Reset form
+    newStaff.username = ''
+    newStaff.password = ''
+    
+    await fetchStoreAndStaff()
+  } catch (err: any) {
+    toast.add({ title: 'Failed to add staff', description: err.data?.message || err.message, color: 'error' })
+  } finally {
+    isAddingStaff.value = false
+  }
+}
+
+async function deleteStaff(member: StaffMember) {
+  if (!confirm(`Are you sure you want to delete ${member.username}? This action cannot be undone.`)) return
+
+  isDeletingStaff.value[member.id] = true
+  try {
+    await $fetch('/api/admin/users', {
+      method: 'DELETE',
+      body: { id: member.id }
+    })
+    
+    toast.add({ title: 'Staff Deleted', description: 'User account has been removed.', color: 'success' })
+    await fetchStoreAndStaff()
+  } catch (err: any) {
+    toast.add({ title: 'Delete Failed', description: err.data?.message || err.message, color: 'error' })
+  } finally {
+    isDeletingStaff.value[member.id] = false
+  }
+}
+
 const isUpdatingRole = ref<Record<string, boolean>>({})
 
 async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
@@ -145,7 +208,7 @@ async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
       .eq('id', member.id)
 
     if (error) throw error
-    toast.add({ title: 'Role Updated', description: `${member.full_name || 'Staff'} is now an ${isAdmin ? 'Admin' : 'User'}.`, color: 'success' })
+    toast.add({ title: 'Role Updated', description: `${member.username || 'Staff'} is now an ${isAdmin ? 'Admin' : 'User'}.`, color: 'success' })
     await fetchStoreAndStaff()
   } catch (err: any) {
     toast.add({ title: 'Update Failed', description: err.message, color: 'error' })
@@ -169,7 +232,7 @@ watch(() => staff.value?.store_id, (newId) => {
   <div class="space-y-8 max-w-3xl">
     <!-- ページヘッダー -->
     <div>
-      <h1 class="text-2xl font-bold">Settings</h1>
+      <h1 class="text-2xl font-bold">{{ t('settings') }}</h1>
       <p class="text-slate-500 mt-1">Manage your store and account preferences.</p>
     </div>
 
@@ -178,19 +241,24 @@ watch(() => staff.value?.store_id, (newId) => {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-languages" class="size-5 text-blue-600" />
-          <h2 class="font-semibold text-base">Language</h2>
+          <h2 class="font-semibold text-base">{{ t('language') }}</h2>
         </div>
       </template>
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="font-medium">Display Language</p>
-          <p class="text-sm text-slate-500">Switch between Japanese and English.</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-medium" :class="!isJapanese ? 'text-slate-400' : 'text-slate-900 dark:text-white'">日本語</span>
-          <USwitch v-model="isJapanese" color="primary" />
-          <span class="text-sm font-medium" :class="isJapanese ? 'text-slate-400' : 'text-slate-900 dark:text-white'">English</span>
-        </div>
+      <div class="space-y-4">
+        <p class="text-sm text-slate-500">Select your preferred display language.</p>
+        <URadioGroup
+          v-model="locale"
+          :items="availableLocales"
+          orientation="horizontal"
+          :ui="{ wrapper: 'flex flex-wrap gap-x-8 gap-y-4' }"
+        >
+          <template #label="{ item }">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">{{ item.icon }}</span>
+              <span class="font-medium">{{ item.label }}</span>
+            </div>
+          </template>
+        </URadioGroup>
       </div>
     </UCard>
 
@@ -199,32 +267,32 @@ watch(() => staff.value?.store_id, (newId) => {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-store" class="size-5 text-blue-600" />
-          <h2 class="font-semibold text-base">Store Information</h2>
+          <h2 class="font-semibold text-base">{{ t('store_info') }}</h2>
         </div>
       </template>
 
       <div class="space-y-4">
-        <UFormField label="Store Name" name="storeName">
+        <UFormField :label="t('store_name')" name="storeName">
           <UInput
             v-model="storeName"
-            placeholder="Enter store name"
+            :placeholder="t('store_name')"
             icon="i-lucide-building-2"
             class="w-full"
             size="lg"
           />
         </UFormField>
 
-        <UFormField label="Store Address" name="storeAddress">
+        <UFormField :label="t('store_address')" name="storeAddress">
           <UInput
             v-model="storeAddress"
-            placeholder="Enter store address"
+            :placeholder="t('store_address')"
             icon="i-lucide-map-pin"
             class="w-full"
             size="lg"
           />
         </UFormField>
 
-        <UFormField label="Currency Unit" name="storeCurrency">
+        <UFormField :label="t('currency')" name="storeCurrency">
           <div class="flex flex-wrap gap-2">
             <UButton
               v-for="c in currencies"
@@ -245,7 +313,7 @@ watch(() => staff.value?.store_id, (newId) => {
       <template #footer>
         <div class="flex justify-end">
           <UButton
-            label="Save Changes"
+            :label="t('save')"
             icon="i-lucide-save"
             color="primary"
             :loading="isSavingStore"
@@ -259,10 +327,19 @@ watch(() => staff.value?.store_id, (newId) => {
     <!-- ③ Staff 一覧 -->
     <UCard class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" :ui="{ body: 'p-0' }">
       <template #header>
-        <div class="flex items-center gap-2 px-2">
+        <div class="flex items-center gap-2 px-2 w-full">
           <UIcon name="i-lucide-users" class="size-5 text-blue-600" />
-          <h2 class="font-semibold text-base">Staff Members</h2>
-          <UBadge :label="staffList.length.toString()" color="neutral" variant="subtle" class="ml-auto" />
+          <h2 class="font-semibold text-base">{{ t('staff_members') }}</h2>
+          <UBadge :label="staffList.length.toString()" color="neutral" variant="subtle" class="ml-2" />
+          
+          <UButton
+            :label="t('add') + ' Staff'"
+            icon="i-lucide-user-plus"
+            size="sm"
+            color="primary"
+            class="ml-auto font-bold"
+            @click="showAddModal = true"
+          />
         </div>
       </template>
 
@@ -270,14 +347,15 @@ watch(() => staff.value?.store_id, (newId) => {
         <table class="w-full text-left whitespace-nowrap border-collapse">
           <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm uppercase tracking-wider">
             <tr>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Name</th>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Role</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('username') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('role') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800 text-right">{{ t('actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
             <!-- ローディング -->
             <tr v-if="isLoadingStaff">
-              <td colspan="2" class="px-6 py-10 text-center text-slate-500">
+              <td colspan="3" class="px-6 py-10 text-center text-slate-500">
                 <UIcon name="i-lucide-loader-2" class="animate-spin size-6 mx-auto mb-2" />
                 <p>Loading staff...</p>
               </td>
@@ -295,12 +373,12 @@ watch(() => staff.value?.store_id, (newId) => {
                 <div class="flex items-center gap-3">
                   <UAvatar
                     size="sm"
-                    :alt="member.full_name ?? 'Staff'"
+                    :alt="member.username ?? 'Staff'"
                     class="font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
                   />
                   <div>
                     <p class="font-medium text-slate-900 dark:text-white">
-                      {{ member.full_name ?? '—' }}
+                      @{{ member.username }}
                       <span v-if="member.id === staff?.id" class="ml-2 text-xs text-blue-500 font-normal">(You)</span>
                     </p>
                   </div>
@@ -321,11 +399,22 @@ watch(() => staff.value?.store_id, (newId) => {
                   </span>
                 </div>
               </td>
+              <td class="px-6 py-4 text-right">
+                <UButton
+                  v-if="member.id !== staff?.id"
+                  icon="i-lucide-trash-2"
+                  color="red"
+                  variant="ghost"
+                  size="xs"
+                  :loading="isDeletingStaff[member.id]"
+                  @click="deleteStaff(member)"
+                />
+              </td>
             </tr>
 
             <!-- 空状態 -->
             <tr v-if="!isLoadingStaff && staffList.length === 0">
-              <td colspan="2" class="px-6 py-10 text-center text-slate-500">
+              <td colspan="3" class="px-6 py-10 text-center text-slate-500">
                 No staff members found.
               </td>
             </tr>
@@ -333,5 +422,53 @@ watch(() => staff.value?.store_id, (newId) => {
         </table>
       </div>
     </UCard>
+
+    <!-- スタッフ追加モーダル -->
+    <UModal v-model:open="showAddModal">
+      <template #content>
+        <div class="p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold">Add New Staff</h3>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="showAddModal = false" />
+          </div>
+
+          <div class="space-y-4">
+            <UFormField :label="t('username') + ' (英数字)'" name="username" required>
+              <UInput v-model="newStaff.username" placeholder="staff123" icon="i-lucide-at-sign" />
+              <template #help>Login ID. Alphanumeric only.</template>
+            </UFormField>
+
+            <UFormField :label="t('password')" name="password" required>
+              <UInput v-model="newStaff.password" type="password" placeholder="••••••••" icon="i-lucide-lock" />
+              <template #help>At least 6 characters.</template>
+            </UFormField>
+
+            <UFormField :label="t('role')" name="role">
+              <div class="flex gap-4">
+                <URadioGroup
+                  v-model="newStaff.role_id"
+                  :items="[
+                    { label: 'User', value: USER_ROLE_ID },
+                    { label: 'Admin', value: ADMIN_ROLE_ID }
+                  ]"
+                  orientation="horizontal"
+                />
+              </div>
+            </UFormField>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <UButton label="Cancel" variant="ghost" color="neutral" @click="showAddModal = false" />
+            <UButton
+              label="Create Account"
+              color="primary"
+              icon="i-lucide-user-plus"
+              :loading="isAddingStaff"
+              @click="addStaff"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

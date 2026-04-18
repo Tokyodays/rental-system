@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 const state = reactive({
-  email: '',
+  username: '',
   password: ''
 })
 const isLoading = ref(false)
@@ -14,33 +14,38 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 
 async function handleLogin() {
+  // バリデーション: 英数字のみ
+  if (!/^[a-zA-Z0-9]+$/.test(state.username)) {
+    toast.add({ title: 'Invalid Username', description: 'Username must be alphanumeric.', color: 'error' })
+    return
+  }
+
   isLoading.value = true
   
   try {
+    // ユーザー名を内部的なメールアドレス形式に変換
+    const internalEmail = `${state.username.toLowerCase()}@rental.local`
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: state.email,
+      email: internalEmail,
       password: state.password
     })
 
     if (error) throw error
 
-    // Supabase Auth returns null session if email confirmation is required and not yet confirmed
     if (!data.session) {
-      throw new Error('Login failed: Email not confirmed. Please check your Supabase dashboard and make sure the user is auto-confirmed.')
+      throw new Error('Login failed: Session not created.')
     }
 
     toast.add({ title: 'Welcome', description: 'Successfully logged in.', color: 'success' })
     
-    // NuxtのミドルウェアとSupabaseのステートの同期タイミングによる
-    // リダイレクトループを防ぐため、少し待ってから遷移させます
     setTimeout(() => {
       window.location.href = '/'
     }, 100)
   } catch (error: any) {
     console.error('Login error:', error)
-    const errorMsg = error.message || 'Invalid credentials'
+    const errorMsg = error.message === 'Invalid login credentials' ? 'ユーザー名またはパスワードが正しくありません' : error.message
     toast.add({ title: 'Login Failed', description: errorMsg, color: 'error' })
-    alert(`Login Failed: ${errorMsg}`) // Fallback to native alert to ensure visibility
   } finally {
     isLoading.value = false
   }
@@ -64,12 +69,11 @@ async function handleLogin() {
       <!-- Login Form Card -->
       <UCard class="border-slate-200 dark:border-slate-800 shadow-xl">
         <UForm :state="state" class="space-y-6" @submit="handleLogin">
-          <UFormField label="Email Address" name="email" required>
+          <UFormField label="Username (英数字)" name="username" required>
             <UInput
-              v-model="state.email"
-              type="email"
-              placeholder="name@company.com"
-              icon="i-lucide-mail"
+              v-model="state.username"
+              placeholder="admin"
+              icon="i-lucide-user"
               size="md"
             />
           </UFormField>
@@ -90,7 +94,7 @@ async function handleLogin() {
             color="primary"
             block
             size="lg"
-            class="cursor-pointer"
+            class="cursor-pointer font-bold"
             :loading="isLoading"
           />
 

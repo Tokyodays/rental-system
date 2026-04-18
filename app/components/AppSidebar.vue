@@ -1,21 +1,33 @@
 <script setup lang="ts">
 const { isAdmin, staff, fetchStaff } = useStaff()
+const { t } = useI18n()
 
 // サイドバーでも明示的に同期を試みる（最終的な安全策）
 onMounted(() => {
   fetchStaff()
 })
 
-const items = [
-  { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
-  { label: 'Vehicle List', icon: 'i-lucide-package', to: '/vehicles' },
-  { label: 'Lending', icon: 'i-lucide-log-out', to: '/rentals/new' },
-  { label: 'Return', icon: 'i-lucide-log-in', to: '/rentals/return' },
-  { label: 'Customers', icon: 'i-lucide-users', to: '/customers' },
-  { label: 'History', icon: 'i-lucide-history', to: '/history' }
-]
+const items = computed(() => [
+  { label: t('dashboard'), icon: 'i-lucide-layout-dashboard', to: '/' },
+  { label: t('vehicles'), icon: 'i-lucide-package', to: '/vehicles' },
+  { label: t('lending'), icon: 'i-lucide-log-out', to: '/rentals/new' },
+  { label: t('return'), icon: 'i-lucide-log-in', to: '/rentals/return' },
+  { label: t('customers'), icon: 'i-lucide-users', to: '/customers' },
+  { label: t('history'), icon: 'i-lucide-history', to: '/history' },
+  { label: t('store_management'), icon: 'i-lucide-building-2', to: '/admin/stores' }
+])
 
-const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
+// デバッグ用: 現在の権限状態をログ出力
+watch([isAdmin, staff], ([newAdmin, newStaff]) => {
+  console.log('[AppSidebar] Admin Check:', {
+    isAdmin: newAdmin,
+    username: newStaff?.username,
+    roleName: newStaff?.staff_roles?.name,
+    roleId: newStaff?.role_id
+  })
+}, { immediate: true })
+
+const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-settings', to: '/settings' }))
 </script>
 
 <template>
@@ -47,7 +59,8 @@ const settingItem = { label: 'Settings', icon: 'i-lucide-settings', to: '/settin
     </nav>
 
     <!-- Footer Section (Settings) -->
-    <div v-if="isAdmin || staff?.staff_roles?.name === 'admin'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <!-- 救済措置: isAdmin判定がNGでも、ユーザー名がadminなら表示する -->
+    <div v-if="isAdmin || staff?.username === 'admin' || staff?.staff_roles?.name === 'admin'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <NuxtLink
         :to="settingItem.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer group"
