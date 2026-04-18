@@ -25,6 +25,7 @@ interface Vehicle {
   icon: string
   lastMileage: number
   imageUrl: string | null
+  imageUrls: string[]
 }
 
 const client = useSupabaseClient()
@@ -40,7 +41,8 @@ const newVehicle = reactive({
   name: '',
   categoryName: 'Bike',
   status: 'Available',
-  lastMileage: 0
+  lastMileage: 0,
+  imageUrls: [] as string[]
 })
 
 async function fetchVehicles() {
@@ -53,7 +55,7 @@ async function fetchVehicles() {
     // 2. Fetch Vehicles with Relations
     const { data, error } = await client
       .from('vehicles')
-      .select('*, vehicle_categories(name, icon), vehicle_statuses(name, color)')
+      .select('*, image_urls, vehicle_categories(name, icon), vehicle_statuses(name, color)')
     
     if (error) {
       console.error('Supabase Error:', error)
@@ -71,7 +73,8 @@ async function fetchVehicles() {
       lastUpdated: new Date(v.updated_at).toLocaleDateString(),
       icon: v.vehicle_categories?.icon || 'i-lucide-package',
       lastMileage: v.last_mileage || 0,
-      imageUrl: v.image_url || null
+      imageUrl: v.image_url || null,
+      imageUrls: v.image_urls || []
     })) || []
   } catch (e) {
     console.error('Error fetching vehicles:', e)
@@ -114,7 +117,8 @@ async function handleAddVehicle() {
         category_id: categoryId,
         store_id: storeId,
         status_id: statusId,
-        last_mileage: newVehicle.lastMileage
+        last_mileage: newVehicle.lastMileage,
+        image_urls: newVehicle.imageUrls
       } as any)
     
     if (error) throw error
@@ -124,6 +128,7 @@ async function handleAddVehicle() {
     // Reset form
     newVehicle.name = ''
     newVehicle.lastMileage = 0
+    newVehicle.imageUrls = []
     
     await fetchVehicles()
   } catch (e) {
@@ -234,9 +239,40 @@ function cancelEditMileage() {
   isEditingMileage.value = false
 }
 
+// Photo editing in sidebar
+const isEditingPhotos = ref(false)
+const isUpdatingPhotos = ref(false)
+
+async function savePhotos(newUrls: string[]) {
+  if (!selectedVehicle.value) return
+  isUpdatingPhotos.value = true
+  try {
+    const { error } = await client
+      .from('vehicles')
+      .update({ image_urls: newUrls } as any)
+      .eq('code', selectedVehicle.value.id)
+
+    if (error) throw error
+    
+    selectedVehicle.value.imageUrls = newUrls
+    toast.add({ title: 'Photos Updated', description: 'Vehicle photos have been updated.', color: 'success' })
+    await fetchVehicles()
+    
+    // サイドバーの表示を最新のデータに同期
+    const updated = vehicles.value.find(v => v.id === selectedVehicle.value?.id)
+    if (updated) selectedVehicle.value = updated
+  } catch (e: any) {
+    console.error('Update photos failed:', e)
+    toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
+  } finally {
+    isUpdatingPhotos.value = false
+  }
+}
+
 // Reset editing state when a different vehicle is selected
 watch(selectedVehicle, () => {
   isEditingMileage.value = false
+  isEditingPhotos.value = false
 })
 </script>
 
@@ -401,20 +437,49 @@ watch(selectedVehicle, () => {
           />
         </div>
 
-        <div class="flex flex-col items-center mb-6">
-          <div class="w-full aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 mb-4 border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <img v-if="selectedVehicle.imageUrl" :src="selectedVehicle.imageUrl" class="w-full h-full object-cover" />
-            <UIcon v-else :name="selectedVehicle.icon" class="text-6xl" />
+        <div class="mb-6">
+          <div v-if="!isEditingPhotos" class="space-y-4">
+            <VehiclePhotoCarousel :images="selectedVehicle.imageUrls" />
+            <div class="flex justify-center">
+              <UButton
+                label="Edit Photos"
+                icon="i-lucide-camera"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                class="cursor-pointer"
+                @click="isEditingPhotos = true"
+              />
+            </div>
           </div>
-          <h2 class="text-xl font-bold text-slate-900 dark:text-white text-center">{{ selectedVehicle.name }}</h2>
-          <p class="text-slate-500 dark:text-slate-400 font-mono text-sm mt-1">{{ selectedVehicle.id }}</p>
-          <div class="mt-4">
-            <UBadge
-              :label="selectedVehicle.status"
-              :color="selectedVehicle.statusColor as any"
-              variant="subtle"
-              class="rounded-full px-4"
+          <div v-else class="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+            <VehiclePhotoManager
+              :model-value="selectedVehicle.imageUrls"
+              :vehicle-id="selectedVehicle.id"
+              @update:model-value="savePhotos"
             />
+            <UButton
+              label="Done"
+              size="sm"
+              block
+              color="neutral"
+              variant="soft"
+              class="mt-4 cursor-pointer"
+              @click="isEditingPhotos = false"
+            />
+          </div>
+          
+          <div class="mt-6 flex flex-col items-center">
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white text-center">{{ selectedVehicle.name }}</h2>
+            <p class="text-slate-500 dark:text-slate-400 font-mono text-sm mt-1">{{ selectedVehicle.id }}</p>
+            <div class="mt-4">
+              <UBadge
+                :label="selectedVehicle.status"
+                :color="selectedVehicle.statusColor as any"
+                variant="subtle"
+                class="rounded-full px-4"
+              />
+            </div>
           </div>
         </div>
 
@@ -532,6 +597,10 @@ watch(selectedVehicle, () => {
 
           <UFormField label="Initial Mileage (km)" name="lastMileage">
             <UInput v-model.number="newVehicle.lastMileage" type="number" />
+          </UFormField>
+
+          <UFormField label="Vehicle Photos" name="imageUrls">
+            <VehiclePhotoManager v-model="newVehicle.imageUrls" />
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
