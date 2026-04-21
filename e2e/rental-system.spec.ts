@@ -710,7 +710,6 @@ test.describe('Settings & User Management', () => {
     await expect(page.getByText('Add New Staff')).toBeVisible()
 
     const tempUser = `testuser${Date.now()}`
-    await page.getByPlaceholder('John Doe').fill('E2E Test Staff')
     await page.getByPlaceholder('staff123').fill(tempUser)
     await page.getByPlaceholder('••••••••').last().fill('password123')
 
@@ -721,13 +720,13 @@ test.describe('Settings & User Management', () => {
     // 一覧に表示されるか確認
     await expect(page.getByText(`@${tempUser}`)).toBeVisible()
 
+    // ダイアログ（window.confirm）はクリック前にハンドラを登録する必要がある
+    page.on('dialog', dialog => dialog.accept())
+
     // 削除
     const deleteBtn = page.locator('tr', { hasText: tempUser }).getByRole('button').last()
     await deleteBtn.click()
 
-    // ダイアログを確認（ブラウザのconfirmをハンドル）
-    page.on('dialog', dialog => dialog.accept())
-    
     await page.waitForTimeout(2000)
     await expect(page.getByText(`@${tempUser}`)).not.toBeVisible()
   })
@@ -797,9 +796,11 @@ test.describe('Multi-tenant Management Flow', () => {
     await row.locator('button[role="switch"]').click()
     await page.waitForTimeout(1000)
 
+    // window.confirm ハンドラはクリック前に登録する
+    page.on('dialog', d => d.accept())
+
     // スタッフの削除
     await row.getByRole('button').last().click()
-    page.on('dialog', d => d.accept())
     await page.waitForTimeout(2000)
     await expect(page.getByText(`@${staffName}`)).not.toBeVisible()
   })

@@ -125,8 +125,8 @@ onMounted(() => {
     </UCard>
 
     <!-- Add Store Modal -->
-    <UModal v-model="isAddingStore" title="Add New Store">
-      <div class="p-4">
+    <UModal v-model:open="isAddingStore" title="Add New Store">
+      <template #body>
         <form @submit.prevent="handleAddStore" class="space-y-4">
           <UFormField label="Store Name" required>
             <UInput v-model="newStore.name" placeholder="Branch Name" />
@@ -139,12 +139,12 @@ onMounted(() => {
             <UButton id="btn-create-store" type="submit" label="Create Store" color="primary" />
           </div>
         </form>
-      </div>
+      </template>
     </UModal>
 
     <!-- Add Admin Modal -->
-    <UModal v-model="isAddingAdmin" :title="'Add Admin for ' + selectedStore?.name">
-      <div class="p-4">
+    <UModal v-model:open="isAddingAdmin" :title="'Add Admin for ' + selectedStore?.name">
+      <template #body>
         <form @submit.prevent="handleAddAdmin" class="space-y-4">
           <UFormField label="Admin Username" required>
             <UInput v-model="newAdmin.username" placeholder="branch_admin" />
@@ -157,7 +157,7 @@ onMounted(() => {
             <UButton id="btn-create-admin" type="submit" label="Create Admin" color="primary" />
           </div>
         </form>
-      </div>
+      </template>
     </UModal>
   </div>
 </template>
