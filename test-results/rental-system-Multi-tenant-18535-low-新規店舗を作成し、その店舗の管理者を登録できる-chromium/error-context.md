@@ -7,14 +7,14 @@
 # Test info
 
 - Name: rental-system.spec.ts >> Multi-tenant Management Flow >> 新規店舗を作成し、その店舗の管理者を登録できる
-- Location: e2e/rental-system.spec.ts:742:3
+- Location: e2e/rental-system.spec.ts:751:3
 
 # Error details
 
 ```
 TimeoutError: locator.click: Timeout 10000ms exceeded.
 Call log:
-  - waiting for getByRole('button', { name: /@admin/ }).first()
+  - waiting for locator('header').getByText(/^@/).first()
 
 ```
 
@@ -75,7 +75,7 @@ Call log:
                 - paragraph [ref=e56]: "0"
               - generic [ref=e58]:
                 - paragraph [ref=e60]: Available
-                - paragraph [ref=e63]: "2"
+                - paragraph [ref=e63]: "3"
               - generic [ref=e65]:
                 - paragraph [ref=e67]: Today's Transactions
                 - paragraph [ref=e70]: "2"
@@ -94,56 +94,66 @@ Call log:
                     - columnheader "Time" [ref=e85]
                     - columnheader "Status" [ref=e86]
                 - rowgroup [ref=e87]:
-                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Return Apr 21, 02:59 PM Completed" [ref=e88]:
+                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Return Apr 23, 06:21 PM Completed" [ref=e88]:
                     - cell "E2E Test Vehicle 1776531624725" [ref=e89]
                     - cell "CF Cody Fisher" [ref=e90]:
                       - generic [ref=e92]: CF
                       - generic [ref=e93]: Cody Fisher
                     - cell "Return" [ref=e94]:
                       - generic [ref=e96] [cursor=pointer]: Return
-                    - cell "Apr 21, 02:59 PM" [ref=e97]
+                    - cell "Apr 23, 06:21 PM" [ref=e97]
                     - cell "Completed" [ref=e98]:
                       - generic [ref=e100]: Completed
-                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Lend Apr 21, 02:59 PM Completed" [ref=e101]:
+                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Lend Apr 23, 06:21 PM Completed" [ref=e101]:
                     - cell "E2E Test Vehicle 1776531624725" [ref=e102]
                     - cell "CF Cody Fisher" [ref=e103]:
                       - generic [ref=e105]: CF
                       - generic [ref=e106]: Cody Fisher
                     - cell "Lend" [ref=e107]:
                       - generic [ref=e109] [cursor=pointer]: Lend
-                    - cell "Apr 21, 02:59 PM" [ref=e110]
+                    - cell "Apr 23, 06:21 PM" [ref=e110]
                     - cell "Completed" [ref=e111]:
                       - generic [ref=e113]: Completed
-                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Return Apr 19, 02:00 AM Completed" [ref=e114]:
+                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Return Apr 21, 02:59 PM Completed" [ref=e114]:
                     - cell "E2E Test Vehicle 1776531624725" [ref=e115]
                     - cell "CF Cody Fisher" [ref=e116]:
                       - generic [ref=e118]: CF
                       - generic [ref=e119]: Cody Fisher
                     - cell "Return" [ref=e120]:
                       - generic [ref=e122] [cursor=pointer]: Return
-                    - cell "Apr 19, 02:00 AM" [ref=e123]
+                    - cell "Apr 21, 02:59 PM" [ref=e123]
                     - cell "Completed" [ref=e124]:
                       - generic [ref=e126]: Completed
-                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Lend Apr 19, 02:00 AM Completed" [ref=e127]:
+                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Lend Apr 21, 02:59 PM Completed" [ref=e127]:
                     - cell "E2E Test Vehicle 1776531624725" [ref=e128]
                     - cell "CF Cody Fisher" [ref=e129]:
                       - generic [ref=e131]: CF
                       - generic [ref=e132]: Cody Fisher
                     - cell "Lend" [ref=e133]:
                       - generic [ref=e135] [cursor=pointer]: Lend
-                    - cell "Apr 19, 02:00 AM" [ref=e136]
+                    - cell "Apr 21, 02:59 PM" [ref=e136]
                     - cell "Completed" [ref=e137]:
                       - generic [ref=e139]: Completed
+                  - row "E2E Test Vehicle 1776531624725 CF Cody Fisher Return Apr 19, 02:00 AM Completed" [ref=e140]:
+                    - cell "E2E Test Vehicle 1776531624725" [ref=e141]
+                    - cell "CF Cody Fisher" [ref=e142]:
+                      - generic [ref=e144]: CF
+                      - generic [ref=e145]: Cody Fisher
+                    - cell "Return" [ref=e146]:
+                      - generic [ref=e148] [cursor=pointer]: Return
+                    - cell "Apr 19, 02:00 AM" [ref=e149]
+                    - cell "Completed" [ref=e150]:
+                      - generic [ref=e152]: Completed
   - generic:
     - img
-  - generic [ref=e140]:
-    - button "Toggle Nuxt DevTools" [ref=e141] [cursor=pointer]:
-      - img [ref=e142]
-    - generic "Page load time" [ref=e145]:
-      - generic [ref=e146]: "48"
-      - generic [ref=e147]: ms
-    - button "Toggle Component Inspector" [ref=e149] [cursor=pointer]:
-      - img [ref=e150]
+  - generic [ref=e153]:
+    - button "Toggle Nuxt DevTools" [ref=e154] [cursor=pointer]:
+      - img [ref=e155]
+    - generic "Page load time" [ref=e158]:
+      - generic [ref=e159]: "49"
+      - generic [ref=e160]: ms
+    - button "Toggle Component Inspector" [ref=e162] [cursor=pointer]:
+      - img [ref=e163]
   - region "Notifications (F8)":
     - list
 ```
@@ -151,146 +161,156 @@ Call log:
 # Test source
 
 ```ts
-  668 |       const count = await rows.count()
-  669 |       expect(count).toBeGreaterThanOrEqual(0)
-  670 |     }
-  671 |   })
-  672 | })
-  673 | 
-  674 | // ============================================================
-  675 | // 11. Settings & User Management
-  676 | // ============================================================
-  677 | test.describe('Settings & User Management', () => {
-  678 |   test('言語切替が機能し、UI全体に反映される', async ({ page }) => {
-  679 |     await page.goto('/settings')
-  680 |     await page.waitForLoadState('networkidle')
-  681 |     await waitForLoadingComplete(page)
+  679 |     }
+  680 |   })
+  681 | })
   682 | 
-  683 |     // Bahasa Melayu を選択
-  684 |     const malayOption = page.getByText('Bahasa Melayu')
-  685 |     await expect(malayOption).toBeVisible()
-  686 |     await malayOption.click()
-  687 | 
-  688 |     // 保存
-  689 |     await page.getByRole('button', { name: 'Save' }).click()
-  690 |     await page.waitForTimeout(1000)
+  683 | // ============================================================
+  684 | // 11. Settings & User Management
+  685 | // ============================================================
+  686 | test.describe('Settings & User Management', () => {
+  687 |   test('言語切替が機能し、UI全体に反映される', async ({ page }) => {
+  688 |     await page.goto('/settings')
+  689 |     await page.waitForLoadState('networkidle')
+  690 |     await waitForLoadingComplete(page)
   691 | 
-  692 |     // サイドバーのテキストがマレー語になっているか確認
-  693 |     // "Dashboard" -> "Papan Pemuka"
-  694 |     await expect(page.locator('aside')).toContainText('Papan Pemuka')
-  695 | 
-  696 |     // 元の言語（English）に戻す
-  697 |     await page.getByText('English').click()
+  692 |     // Bahasa Melayu を選択
+  693 |     const malayOption = page.getByText('Bahasa Melayu')
+  694 |     await expect(malayOption).toBeVisible()
+  695 |     await malayOption.click()
+  696 | 
+  697 |     // 保存
   698 |     await page.getByRole('button', { name: 'Save' }).click()
   699 |     await page.waitForTimeout(1000)
-  700 |     await expect(page.locator('aside')).toContainText('Dashboard')
-  701 |   })
-  702 | 
-  703 |   test('スタッフを新規追加および削除できる', async ({ page }) => {
-  704 |     await page.goto('/settings')
-  705 |     await page.waitForLoadState('networkidle')
-  706 |     await waitForLoadingComplete(page)
-  707 | 
-  708 |     // スタッフ追加モーダルを開く
-  709 |     await page.getByRole('button', { name: 'Add Staff' }).click()
-  710 |     await expect(page.getByText('Add New Staff')).toBeVisible()
+  700 | 
+  701 |     // サイドバーのテキストがマレー語になっているか確認
+  702 |     // "Dashboard" -> "Papan Pemuka"
+  703 |     await expect(page.locator('aside')).toContainText('Papan Pemuka')
+  704 | 
+  705 |     // 元の言語（English）に戻す
+  706 |     await page.getByText('English').click()
+  707 |     await page.getByRole('button', { name: 'Save' }).click()
+  708 |     await page.waitForTimeout(1000)
+  709 |     await expect(page.locator('aside')).toContainText('Dashboard')
+  710 |   })
   711 | 
-  712 |     const tempUser = `testuser${Date.now()}`
-  713 |     await page.getByPlaceholder('staff123').fill(tempUser)
-  714 |     await page.getByPlaceholder('••••••••').last().fill('password123')
-  715 | 
-  716 |     // 作成
-  717 |     await page.getByRole('button', { name: 'Create Account' }).click()
-  718 |     await page.waitForTimeout(3000)
-  719 | 
-  720 |     // 一覧に表示されるか確認
-  721 |     await expect(page.getByText(`@${tempUser}`)).toBeVisible()
-  722 | 
-  723 |     // ダイアログ（window.confirm）はクリック前にハンドラを登録する必要がある
-  724 |     page.on('dialog', dialog => dialog.accept())
-  725 | 
-  726 |     // 削除
-  727 |     const deleteBtn = page.locator('tr', { hasText: tempUser }).getByRole('button').last()
-  728 |     await deleteBtn.click()
-  729 | 
-  730 |     await page.waitForTimeout(2000)
-  731 |     await expect(page.getByText(`@${tempUser}`)).not.toBeVisible()
-  732 |   })
-  733 | })
+  712 |   test('スタッフを新規追加および削除できる', async ({ page }) => {
+  713 |     await page.goto('/settings')
+  714 |     await page.waitForLoadState('networkidle')
+  715 |     await waitForLoadingComplete(page)
+  716 | 
+  717 |     // スタッフ追加モーダルを開く
+  718 |     await page.getByRole('button', { name: 'Add Staff' }).click()
+  719 |     await expect(page.getByText('Add New Staff')).toBeVisible()
+  720 | 
+  721 |     const tempUser = `testuser${Date.now()}`
+  722 |     await page.getByPlaceholder('staff123').fill(tempUser)
+  723 |     await page.getByPlaceholder('••••••••').last().fill('password123')
+  724 | 
+  725 |     // 作成
+  726 |     await page.getByRole('button', { name: 'Create Account' }).click()
+  727 |     await page.waitForTimeout(3000)
+  728 | 
+  729 |     // 一覧に表示されるか確認
+  730 |     await expect(page.getByText(`@${tempUser}`)).toBeVisible()
+  731 | 
+  732 |     // ダイアログ（window.confirm）はクリック前にハンドラを登録する必要がある
+  733 |     page.on('dialog', dialog => dialog.accept())
   734 | 
-  735 | // ============================================================
-  736 | // 12. Multi-tenant Management Flow
-  737 | // ============================================================
-  738 | test.describe('Multi-tenant Management Flow', () => {
-  739 |   const NEW_STORE_NAME = `E2E Store ${Date.now()}`
-  740 |   const NEW_ADMIN_NAME = `admin${Date.now()}`
-  741 | 
-  742 |   test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
-  743 |     await login(page)
-  744 |     await page.goto('/admin/stores')
-  745 |     await page.waitForLoadState('networkidle')
-  746 |     await page.waitForTimeout(1000)
-  747 |     
-  748 |     // 店舗追加
-  749 |     await page.click('#btn-add-store')
-  750 |     await page.getByPlaceholder('Branch Name').fill(NEW_STORE_NAME)
-  751 |     await page.click('#btn-create-store')
-  752 |     
-  753 |     // 店舗がリストに現れるまで待機 (テーブル内のセルを確実に特定)
-  754 |     await expect(page.locator('td', { hasText: NEW_STORE_NAME }).first()).toBeVisible({ timeout: 15000 })
-  755 | 
-  756 |     // その店舗にAdminを追加
-  757 |     const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
-  758 |     await storeRow.waitFor({ state: 'visible' })
-  759 |     await page.waitForTimeout(500)
-  760 |     await storeRow.getByRole('button', { name: /Add Admin/i }).click()
-  761 |     await page.getByPlaceholder('branch_admin').fill(NEW_ADMIN_NAME)
-  762 |     await page.getByPlaceholder('••••••••').fill('password123')
-  763 |     await page.getByRole('button', { name: 'Create Admin' }).click()
-  764 |     await page.waitForTimeout(3000)
-  765 | 
-  766 |     // ログアウト
-  767 |     await page.goto('/')
-> 768 |     await page.getByRole('button', { name: /@admin/ }).first().click()
-      |                                                                ^ TimeoutError: locator.click: Timeout 10000ms exceeded.
-  769 |     await page.getByText('Logout').click()
-  770 |     await page.waitForURL('/login')
-  771 |   })
-  772 | 
-  773 |   test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page }) => {
-  774 |     // 新しいAdminでログイン
-  775 |     await page.goto('/login')
-  776 |     await page.getByPlaceholder('admin').fill(NEW_ADMIN_NAME)
-  777 |     await page.getByPlaceholder('••••••••').fill('password123')
-  778 |     await page.getByRole('button', { name: 'Sign In' }).click()
-  779 |     await page.waitForURL('/', { timeout: 15_000 })
-  780 | 
-  781 |     // 設定（スタッフ管理）へ
-  782 |     await page.goto('/settings')
-  783 |     await page.waitForLoadState('networkidle')
-  784 | 
-  785 |     // スタッフを追加
-  786 |     const staffName = `staff${Date.now()}`
-  787 |     await page.getByRole('button', { name: 'Add Staff' }).click()
-  788 |     await page.getByPlaceholder('staff123').fill(staffName)
-  789 |     await page.getByPlaceholder('••••••••').last().fill('password123')
-  790 |     await page.getByRole('button', { name: 'Create Account' }).click()
-  791 |     await page.waitForTimeout(2000)
-  792 |     await expect(page.getByText(`@${staffName}`)).toBeVisible()
-  793 | 
-  794 |     // スタッフのロール更新
-  795 |     const row = page.locator('tr', { hasText: staffName })
-  796 |     await row.locator('button[role="switch"]').click()
-  797 |     await page.waitForTimeout(1000)
-  798 | 
-  799 |     // window.confirm ハンドラはクリック前に登録する
-  800 |     page.on('dialog', d => d.accept())
+  735 |     // 削除
+  736 |     const deleteBtn = page.locator('tr', { hasText: tempUser }).getByRole('button').last()
+  737 |     await deleteBtn.click()
+  738 | 
+  739 |     await page.waitForTimeout(2000)
+  740 |     await expect(page.getByText(`@${tempUser}`)).not.toBeVisible()
+  741 |   })
+  742 | })
+  743 | 
+  744 | // ============================================================
+  745 | // 12. Multi-tenant Management Flow
+  746 | // ============================================================
+  747 | test.describe('Multi-tenant Management Flow', () => {
+  748 |   const NEW_STORE_NAME = `E2E Store ${Date.now()}`
+  749 |   const NEW_ADMIN_NAME = `admin${Date.now()}`
+  750 | 
+  751 |   test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
+  752 |     await login(page)
+  753 |     await page.goto('/admin/stores')
+  754 |     await page.waitForLoadState('networkidle')
+  755 |     await page.waitForTimeout(1000)
+  756 |     
+  757 |     // 店舗追加
+  758 |     await page.click('#btn-add-store')
+  759 |     await page.getByPlaceholder('Branch Name').fill(NEW_STORE_NAME)
+  760 |     await page.click('#btn-create-store')
+  761 |     
+  762 |     // 店舗がリストに現れるまで待機 (テーブル内のセルを確実に特定)
+  763 |     await expect(page.locator('td', { hasText: NEW_STORE_NAME }).first()).toBeVisible({ timeout: 15000 })
+  764 | 
+  765 |     // その店舗にAdminを追加
+  766 |     const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
+  767 |     await storeRow.waitFor({ state: 'visible' })
+  768 |     await page.waitForTimeout(500)
+  769 |     await storeRow.getByRole('button', { name: /Add Admin/i }).click()
+  770 |     await page.getByPlaceholder('branch_admin').fill(NEW_ADMIN_NAME)
+  771 |     await page.getByPlaceholder('••••••••').fill('password123')
+  772 |     await page.getByRole('button', { name: 'Create Admin' }).click()
+  773 |     await page.waitForTimeout(3000)
+  774 | 
+  775 |     // ログアウト
+  776 |     await page.goto('/')
+  777 |     await page.waitForLoadState('networkidle')
+  778 |     // Topbar のユーザーメニュートリガーは <div>（generic role）なのでテキストで特定する
+> 779 |     await page.locator('header').getByText(/^@/).first().click()
+      |                                                          ^ TimeoutError: locator.click: Timeout 10000ms exceeded.
+  780 |     await page.getByText('Logout').click()
+  781 |     await page.waitForURL('/login')
+  782 |   })
+  783 | 
+  784 |   test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page, context }) => {
+  785 |     // beforeEach でデフォルト admin としてログイン済みのため、
+  786 |     // auth.global.ts のリダイレクト対策としてセッションを明示的に破棄してから /login に遷移する
+  787 |     await context.clearCookies()
+  788 |     await page.goto('/login')
+  789 |     await page.evaluate(() => {
+  790 |       localStorage.clear()
+  791 |       sessionStorage.clear()
+  792 |     })
+  793 |     await page.reload()
+  794 |     await page.waitForURL('/login')
+  795 | 
+  796 |     // 新しいAdminでログイン
+  797 |     await page.getByPlaceholder('admin').fill(NEW_ADMIN_NAME)
+  798 |     await page.getByPlaceholder('••••••••').fill('password123')
+  799 |     await page.getByRole('button', { name: 'Sign In' }).click()
+  800 |     await page.waitForURL('/', { timeout: 15_000 })
   801 | 
-  802 |     // スタッフの削除
-  803 |     await row.getByRole('button').last().click()
-  804 |     await page.waitForTimeout(2000)
-  805 |     await expect(page.getByText(`@${staffName}`)).not.toBeVisible()
-  806 |   })
-  807 | })
-  808 | 
+  802 |     // 設定（スタッフ管理）へ
+  803 |     await page.goto('/settings')
+  804 |     await page.waitForLoadState('networkidle')
+  805 | 
+  806 |     // スタッフを追加
+  807 |     const staffName = `staff${Date.now()}`
+  808 |     await page.getByRole('button', { name: 'Add Staff' }).click()
+  809 |     await page.getByPlaceholder('staff123').fill(staffName)
+  810 |     await page.getByPlaceholder('••••••••').last().fill('password123')
+  811 |     await page.getByRole('button', { name: 'Create Account' }).click()
+  812 |     await page.waitForTimeout(2000)
+  813 |     await expect(page.getByText(`@${staffName}`)).toBeVisible()
+  814 | 
+  815 |     // スタッフのロール更新
+  816 |     const row = page.locator('tr', { hasText: staffName })
+  817 |     await row.locator('button[role="switch"]').click()
+  818 |     await page.waitForTimeout(1000)
+  819 | 
+  820 |     // window.confirm ハンドラはクリック前に登録する
+  821 |     page.on('dialog', d => d.accept())
+  822 | 
+  823 |     // スタッフの削除
+  824 |     await row.getByRole('button').last().click()
+  825 |     await page.waitForTimeout(2000)
+  826 |     await expect(page.getByText(`@${staffName}`)).not.toBeVisible()
+  827 |   })
+  828 | })
+  829 | 
 ```
