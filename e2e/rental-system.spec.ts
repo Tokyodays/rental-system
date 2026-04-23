@@ -486,18 +486,27 @@ test.describe('History', () => {
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
 
+    // "No transactions found" プレースホルダ行は除外して実データ行だけ扱う
+    const dataRows = page.locator('tbody tr').filter({ hasNotText: 'No transactions found' })
+    const initialCount = await dataRows.count()
+    test.skip(initialCount === 0, '現在月に取引履歴がないため検索フィルタのテストをスキップ')
+
+    // 検索語は実データから動的に取得 (Item列 = 2列目)。seed やテスト実行日に依存しない
+    const firstItemText = ((await dataRows.first().locator('td').nth(1).textContent()) ?? '').trim()
+    const searchTerm = firstItemText.split(/\s+/)[0]
+    expect(searchTerm.length).toBeGreaterThan(0)
+
     const searchInput = page.getByPlaceholder('Search items or users...')
     await expect(searchInput).toBeVisible()
-    await searchInput.fill('Suzuki')
+    await searchInput.fill(searchTerm)
     await page.waitForTimeout(500)
 
-    const rows = page.locator('tbody tr')
-    const count = await rows.count()
-    if (count > 0) {
-      for (let i = 0; i < Math.min(count, 3); i++) {
-        const text = await rows.nth(i).textContent()
-        expect(text?.toLowerCase()).toContain('suzuki')
-      }
+    // フィルタ後の行がすべて searchTerm を含むか確認
+    const filteredCount = await dataRows.count()
+    expect(filteredCount).toBeGreaterThan(0)
+    for (let i = 0; i < Math.min(filteredCount, 3); i++) {
+      const text = ((await dataRows.nth(i).textContent()) ?? '').toLowerCase()
+      expect(text).toContain(searchTerm.toLowerCase())
     }
   })
 
@@ -765,14 +774,26 @@ test.describe('Multi-tenant Management Flow', () => {
 
     // ログアウト
     await page.goto('/')
-    await page.getByRole('button', { name: /@admin/ }).first().click()
+    await page.waitForLoadState('networkidle')
+    // Topbar のユーザーメニュートリガーは <div>（generic role）なのでテキストで特定する
+    await page.locator('header').getByText(/^@/).first().click()
     await page.getByText('Logout').click()
     await page.waitForURL('/login')
   })
 
-  test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page }) => {
-    // 新しいAdminでログイン
+  test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page, context }) => {
+    // beforeEach でデフォルト admin としてログイン済みのため、
+    // auth.global.ts のリダイレクト対策としてセッションを明示的に破棄してから /login に遷移する
+    await context.clearCookies()
     await page.goto('/login')
+    await page.evaluate(() => {
+      localStorage.clear()
+      sessionStorage.clear()
+    })
+    await page.reload()
+    await page.waitForURL('/login')
+
+    // 新しいAdminでログイン
     await page.getByPlaceholder('admin').fill(NEW_ADMIN_NAME)
     await page.getByPlaceholder('••••••••').fill('password123')
     await page.getByRole('button', { name: 'Sign In' }).click()
