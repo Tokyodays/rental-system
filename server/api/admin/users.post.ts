@@ -50,21 +50,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: authError.message })
   }
 
-  // 5. 作成されたユーザーの staff レコードを更新
-  //    指定された store_id があればそれを使用、なければ管理者の店舗を使用
+  // 5. 作成されたユーザーの staff レコードを upsert
+  //    トリガーが store_id NOT NULL 制約で失敗した場合も INSERT で補完する
   if (authData.user) {
-    const { error: updateError } = await adminClient
+    const { error: upsertError } = await adminClient
       .from('staff')
-      .update({ 
-        role_id: role_id || '00000000-0000-0000-0001-000000000002', 
+      .upsert({
+        id: authData.user.id,
+        role_id: role_id || '00000000-0000-0000-0001-000000000002',
         store_id: store_id || adminStaff.store_id,
-        username: username.toLowerCase(),
-        email: internalEmail
-      })
-      .eq('id', authData.user.id)
+        username: username.toLowerCase()
+      }, { onConflict: 'id' })
 
-    if (updateError) {
-      console.error('[AdminAPI] Failed to update staff record:', updateError)
+    if (upsertError) {
+      console.error('[AdminAPI] Failed to upsert staff record:', upsertError)
     }
   }
 
