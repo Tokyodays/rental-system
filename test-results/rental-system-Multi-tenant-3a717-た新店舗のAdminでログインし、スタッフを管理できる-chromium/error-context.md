@@ -12,14 +12,73 @@
 # Error details
 
 ```
-Error: テスト用の認証情報が未設定です。
-実行時に環境変数を設定してください:
-  E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass npx playwright test
+TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to "/" until "load"
+============================================================
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - status [ref=e3]
+    - generic [ref=e5]:
+      - generic [ref=e9]:
+        - heading "Rental System" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Mobility Management SaaS
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e18]: Username (英数字)*
+          - textbox "Username (英数字)*" [ref=e21]:
+            - /placeholder: admin
+            - text: admin1782218963986
+        - generic [ref=e24]:
+          - generic [ref=e27]: Password*
+          - textbox "Password*" [ref=e30]:
+            - /placeholder: ••••••••
+            - text: password123
+        - button "Sign In" [ref=e33] [cursor=pointer]:
+          - generic [ref=e34]: Sign In
+        - button "Forgot password?" [ref=e36] [cursor=pointer]:
+          - generic [ref=e37]: Forgot password?
+      - paragraph [ref=e38]: © 2026 Slate Precision. All rights reserved.
+  - region "Notifications (F8)":
+    - list
+  - generic:
+    - img
+  - generic [ref=e39]:
+    - button "Toggle Nuxt DevTools" [ref=e40] [cursor=pointer]:
+      - img [ref=e41]
+    - generic "Page load time" [ref=e44]:
+      - generic [ref=e45]: "44"
+      - generic [ref=e46]: ms
+    - button "Toggle Component Inspector" [ref=e48] [cursor=pointer]:
+      - img [ref=e49]
 ```
 
 # Test source
 
 ```ts
+  1   | import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+  2   | 
+  3   | /**
+  4   |  * E2E Tests for Rental System
+  5   |  *
+  6   |  * 前提条件:
+  7   |  *   - `yarn dev` で localhost:3000 が起動済み
+  8   |  *   - Supabase にシードデータ（vehicles, customers, transactions）が存在すること
+  9   |  *   - 環境変数 E2E_USER_EMAIL と E2E_USER_PASSWORD が設定済み
+  10  |  *     または .env に TEST_USER_EMAIL / TEST_USER_PASSWORD が定義済み
+  11  |  *
+  12  |  * テスト実行:
+  13  |  *   E2E_USER_EMAIL=xxx E2E_USER_PASSWORD=yyy npx playwright test
+  14  |  *   npx playwright test --ui   (UIモード)
+  15  |  *
+  16  |  * 改善内容:
+  17  |  *   - セレクタの正確性向上
+  18  |  *   - waitForTimeout の削減
   19  |  *   - エラーメッセージ確認の追加
   20  |  *   - 認証・ユーザー管理テストの追加
   21  |  */
@@ -49,7 +108,8 @@ Error: テスト用の認証情報が未設定です。
   45  |   await page.getByRole('button', { name: 'Sign In' }).click()
   46  | 
   47  |   // ダッシュボードへリダイレクトされるまで待つ
-  48  |   await page.waitForURL('/', { timeout: 15_000 })
+> 48  |   await page.waitForURL('/', { timeout: 15_000 })
+      |              ^ TimeoutError: page.waitForURL: Timeout 15000ms exceeded.
   49  |   await page.waitForLoadState('networkidle')
   50  | }
   51  | 
@@ -120,8 +180,7 @@ Error: テスト用の認証情報が未設定です。
   116 | // ============================================================
   117 | test.beforeEach(async ({ page }) => {
   118 |   if (!TEST_EMAIL || !TEST_PASSWORD) {
-> 119 |     throw new Error(
-      |           ^ Error: テスト用の認証情報が未設定です。
+  119 |     throw new Error(
   120 |       'テスト用の認証情報が未設定です。\n' +
   121 |       '実行時に環境変数を設定してください:\n' +
   122 |       '  E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass npx playwright test'
@@ -151,75 +210,4 @@ Error: テスト用の認証情報が未設定です。
   146 |     const statValues = page.locator('.text-3xl.font-bold')
   147 |     const count = await statValues.count()
   148 |     expect(count).toBe(3)
-  149 |     for (let i = 0; i < count; i++) {
-  150 |       const text = await statValues.nth(i).textContent()
-  151 |       expect(text).not.toBeNull()
-  152 |       expect(Number(text?.trim())).not.toBeNaN()
-  153 |     }
-  154 |   })
-  155 | 
-  156 |   test('Recent Transactions テーブルが表示される', async ({ page }) => {
-  157 |     await page.goto('/')
-  158 |     await page.waitForLoadState('networkidle')
-  159 |     await waitForLoadingComplete(page)
-  160 | 
-  161 |     await expect(page.getByText('Recent Transactions')).toBeVisible()
-  162 | 
-  163 |     // テーブルヘッダーが存在する
-  164 |     await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible()
-  165 |     await expect(page.getByRole('columnheader', { name: 'User' })).toBeVisible()
-  166 |     await expect(page.getByRole('columnheader', { name: 'Action' })).toBeVisible()
-  167 |     await expect(page.getByRole('columnheader', { name: 'Time' })).toBeVisible()
-  168 |     await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
-  169 |   })
-  170 | 
-  171 |   test('Lending ボタンが /rentals/new へ遷移する', async ({ page }) => {
-  172 |     await page.goto('/')
-  173 |     await page.waitForLoadState('networkidle')
-  174 | 
-  175 |     const lendingButton = page.getByRole('main').getByRole('link', { name: 'Lending' })
-  176 |     await expect(lendingButton).toBeVisible()
-  177 |     await lendingButton.click()
-  178 |     await page.waitForLoadState('networkidle')
-  179 |     await expect(page).toHaveURL('/rentals/new')
-  180 |     await expect(page.getByText('New Lending')).toBeVisible()
-  181 |   })
-  182 | 
-  183 |   test('View All リンクが /history へ遷移する', async ({ page }) => {
-  184 |     await page.goto('/')
-  185 |     await page.waitForLoadState('networkidle')
-  186 | 
-  187 |     const viewAll = page.getByRole('link', { name: 'View All' })
-  188 |     await expect(viewAll).toBeVisible()
-  189 |     await viewAll.click()
-  190 |     await page.waitForLoadState('networkidle')
-  191 |     await expect(page).toHaveURL('/history')
-  192 |   })
-  193 | })
-  194 | 
-  195 | // ============================================================
-  196 | // 2. Vehicle List Tests
-  197 | // ============================================================
-  198 | test.describe('Vehicle List', () => {
-  199 |   test('車両一覧テーブルが正しく表示される', async ({ page }) => {
-  200 |     await page.goto('/vehicles')
-  201 |     await page.waitForLoadState('networkidle')
-  202 |     await waitForLoadingComplete(page)
-  203 | 
-  204 |     // テーブルヘッダーが存在する
-  205 |     await expect(page.getByRole('columnheader', { name: 'Vehicle Name' })).toBeVisible()
-  206 |     await expect(page.getByRole('columnheader', { name: 'Vehicle ID' })).toBeVisible()
-  207 |     await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
-  208 |     await expect(page.getByRole('columnheader', { name: 'Last Updated' })).toBeVisible()
-  209 | 
-  210 |     // 車両行が1件以上存在する
-  211 |     const rows = page.locator('tbody tr')
-  212 |     const count = await rows.count()
-  213 |     expect(count).toBeGreaterThan(0)
-  214 |   })
-  215 | 
-  216 |   test('検索フィルタが機能する', async ({ page }) => {
-  217 |     await page.goto('/vehicles')
-  218 |     await page.waitForLoadState('networkidle')
-  219 |     await waitForLoadingComplete(page)
 ```

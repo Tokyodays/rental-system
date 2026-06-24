@@ -86,8 +86,8 @@ async function createTestCustomer(page: Page, name: string, email: string = 'tes
   await page.getByRole('button', { name: 'Add New Customer' }).click()
   await expect(page.getByRole('heading', { name: 'Add New Customer' })).toBeVisible()
 
-  await page.getByPlaceholder(/john|John/i).fill(name)
-  await page.getByPlaceholder(/email|example.com/i).fill(email)
+  await page.getByPlaceholder('e.g. John Doe').fill(name)
+  await page.getByPlaceholder('john@example.com').fill(email)
   await page.getByRole('button', { name: /register|add/i }).click()
 
   // 新規顧客がテーブルに追加されるまで待機
@@ -282,7 +282,7 @@ test.describe('Vehicle List', () => {
 
     // サイドバーが表示される
     await expect(page.getByText('Vehicle Details')).toBeVisible()
-    const sidebar = page.locator('aside')
+    const sidebar = page.locator('aside').filter({ hasText: 'Vehicle Details' })
     await expect(sidebar).toBeVisible()
 
     // 主要な情報フィールドが表示されることを確認
@@ -312,11 +312,11 @@ test.describe('Add Vehicle', () => {
 
     // フォームに入力（より堅牢なセレクタ）
     const testName = `E2E Test Vehicle ${Date.now()}`
-    const vehicleNameInput = page.locator('input[type="text"]').first()
+    const vehicleNameInput = page.getByPlaceholder('e.g. Honda PCX 150')
     await vehicleNameInput.fill(testName)
 
     // Save ボタンをクリック
-    const saveButton = page.getByRole('button', { name: /Save|save/ })
+    const saveButton = page.getByRole('button', { name: 'Save Vehicle' })
     await saveButton.click()
 
     // 車両がテーブルに追加されるまで待機
@@ -345,7 +345,7 @@ test.describe('Lending Flow', () => {
     await expect(page.getByText('Step 2: Select Vehicle')).toBeVisible({ timeout: 10_000 })
     await waitForLoadingComplete(page)
     // 車両リストが表示されるまで待機
-    await page.locator('[role="button"]').filter({ hasText: /vehicle|Vehicle/ }).first().waitFor({ state: 'visible', timeout: 5000 })
+    await page.locator('.grid .cursor-pointer').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
 
     // Available vehicles リストから選択
     const vehicleCards = page.locator('.space-y-4 .grid .cursor-pointer')
@@ -398,12 +398,12 @@ test.describe('Return Flow', () => {
     await expect(page.getByText('Step 1: Identify Vehicle')).toBeVisible()
 
     // Lent vehicles リストが表示されるまで待機
-    const vehicleContainer = page.locator('[role="button"]').filter({ hasText: /vehicle|Vehicle/ }).first()
+    const vehicleContainer = page.locator('.max-h-80 .cursor-pointer').first()
     await vehicleContainer.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {
       // リストに車両がない可能性
     })
 
-    const lentVehicleCards = page.locator('[role="button"]').filter({ hasText: /lent|Lent|rented|Rented/ })
+    const lentVehicleCards = page.locator('.max-h-80 .cursor-pointer')
     const lentCount = await lentVehicleCards.count()
 
     if (lentCount > 0) {
@@ -679,13 +679,13 @@ test.describe('Error Handling & Edge Cases', () => {
     await waitForLoadingComplete(page)
 
     // Step 1で顧客を選択
-    const customerCard = page.locator('[role="button"]').filter({ hasText: /customer|Customer/ }).first()
+    const customerCard = page.locator('.grid .cursor-pointer').first()
     await expect(customerCard).toBeVisible({ timeout: 10_000 })
     await customerCard.click()
 
     // Step 2で無効なIDを入力
     await expect(page.getByText('Step 2')).toBeVisible({ timeout: 10_000 })
-    const manualInput = page.locator('input[type="text"]').first()
+    const manualInput = page.getByPlaceholder('e.g. B-HONDA-001')
     await manualInput.fill('INVALID-CODE-999')
 
     const identifyButton = page.getByRole('button', { name: /Identify|identify|Fetch|fetch/ })
@@ -707,7 +707,7 @@ test.describe('Error Handling & Edge Cases', () => {
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
 
-    const manualInput = page.locator('input[type="text"]').first()
+    const manualInput = page.getByPlaceholder('e.g. B-HONDA-001')
     await manualInput.fill('INVALID-CODE-999')
 
     const fetchButton = page.getByRole('button', { name: /Fetch|fetch|Identify|identify/ })
@@ -812,15 +812,15 @@ test.describe('Settings & User Management', () => {
     await expect(malayOption).toBeVisible()
     await malayOption.click()
 
-    // 保存
-    await page.getByRole('button', { name: 'Save' }).click()
+    // 保存（言語変更後はボタンラベルがMalay "Simpan" に変わるため両方に対応）
+    await page.getByRole('button', { name: /^(Save|Simpan)$/ }).click()
     // 言語の変更が反映されるまで待機
-    await expect(page.locator('aside')).toContainText('Papan Pemuka', { timeout: 5000 })
+    await expect(page.locator('aside').first()).toContainText('Papan Pemuka', { timeout: 5000 })
 
     // 元の言語（English）に戻す
     await page.getByText('English').click()
-    await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.locator('aside')).toContainText('Dashboard', { timeout: 5000 })
+    await page.getByRole('button', { name: /^(Save|Simpan)$/ }).click()
+    await expect(page.locator('aside').first()).toContainText('Dashboard', { timeout: 5000 })
   })
 
   test('スタッフを新規追加および削除できる', async ({ page }) => {
@@ -833,9 +833,9 @@ test.describe('Settings & User Management', () => {
     await expect(page.getByText('Add New Staff')).toBeVisible()
 
     const tempUser = `testuser${Date.now()}`
-    const inputs = page.locator('input')
-    await inputs.filter({ hasText: /staff|username/ }).first().fill(tempUser)
-    await inputs.filter({ hasText: /password/ }).last().fill('password123')
+    const modal = page.getByRole('dialog')
+    await modal.getByPlaceholder('staff123').fill(tempUser)
+    await modal.getByPlaceholder('••••••••').fill('password123')
 
     // 作成
     const createButton = page.getByRole('button', { name: /Create|create/ })
@@ -870,7 +870,7 @@ test.describe('Multi-tenant Management Flow', () => {
     await waitForLoadingComplete(page)
 
     // 店舗追加
-    const addStoreButton = page.getByRole('button', { name: /Add|add/ })
+    const addStoreButton = page.getByRole('button', { name: 'Add Store' })
     await addStoreButton.click()
 
     // 店舗名を入力
@@ -958,7 +958,8 @@ test.describe('Multi-tenant Management Flow', () => {
 // 13. Authentication & Security Tests (改善: 要件定義書の問題対応)
 // ============================================================
 test.describe('Authentication & Security', () => {
-  test('無効なパスワードでログイン失敗する', async ({ page }) => {
+  test('無効なパスワードでログイン失敗する', async ({ page, context }) => {
+    await clearSession(page, context)
     await page.goto('/login')
     await page.waitForLoadState('networkidle')
 
@@ -1011,9 +1012,9 @@ test.describe('User Management & Data Integrity', () => {
     await page.getByRole('button', { name: /Add|add/ }).click()
     await expect(page.getByRole('heading', { name: /Add|add/ })).toBeVisible({ timeout: 5000 })
 
-    const inputs = page.locator('input[type="text"], input[type="password"]')
-    await inputs.first().fill(staffName)
-    await inputs.last().fill(staffPassword)
+    const staffModal = page.getByRole('dialog')
+    await staffModal.getByPlaceholder('staff123').fill(staffName)
+    await staffModal.getByPlaceholder('••••••••').fill(staffPassword)
 
     const createButton = page.getByRole('button', { name: /Create|create|Register|register/ })
     await createButton.click()
@@ -1058,9 +1059,9 @@ test.describe('User Management & Data Integrity', () => {
 
     // Step 1: スタッフを作成
     await page.getByRole('button', { name: /Add|add/ }).click()
-    const inputs = page.locator('input[type="text"], input[type="password"]')
-    await inputs.first().fill(staffName)
-    await inputs.last().fill(staffPassword)
+    const deleteStaffModal = page.getByRole('dialog')
+    await deleteStaffModal.getByPlaceholder('staff123').fill(staffName)
+    await deleteStaffModal.getByPlaceholder('••••••••').fill(staffPassword)
     await page.getByRole('button', { name: /Create|create/ }).click()
     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
 

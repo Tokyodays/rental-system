@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const PORT = process.env.E2E_PORT || '3000'
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`

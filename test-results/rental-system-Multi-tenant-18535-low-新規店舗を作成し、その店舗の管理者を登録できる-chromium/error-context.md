@@ -12,214 +12,383 @@
 # Error details
 
 ```
-Error: テスト用の認証情報が未設定です。
-実行時に環境変数を設定してください:
-  E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass npx playwright test
+Error: locator.click: Error: strict mode violation: getByRole('button', { name: /Add|add/ }) resolved to 13 elements:
+    1) <button type="button" data-slot="base" id="btn-add-store" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2.5 py-1.5 text-sm gap-1.5 text-inverted bg-primary hover:bg-primary/75 active:bg-primary/75 disabled:bg-primary aria-disabled:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer">…</button> aka getByRole('button', { name: 'Add Store' })
+    2) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('row', { name: 'Main Store 123 Tokyo St. LAK' }).getByRole('button')
+    3) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('row', { name: 'E2E Store 1776532653436 — THB' }).getByRole('button')
+    4) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('row', { name: 'E2E Store 1776532691115 — THB' }).getByRole('button')
+    5) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('row', { name: 'E2E Store 1776532722134 — THB' }).getByRole('button')
+    6) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('row', { name: 'E2E Store 1776532772601 — THB' }).getByRole('button')
+    7) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka getByRole('button', { name: 'Add Admin' }).nth(5)
+    8) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka locator('tr:nth-child(7) > .px-6.py-4.text-right > .rounded-md')
+    9) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka locator('tr:nth-child(8) > .px-6.py-4.text-right > .rounded-md')
+    10) <button type="button" data-slot="base" class="rounded-md font-medium inline-flex items-center disabled:cursor-not-allowed aria-disabled:cursor-not-allowed disabled:opacity-75 aria-disabled:opacity-75 transition-colors px-2 py-1 text-xs gap-1 text-primary hover:bg-primary/10 active:bg-primary/10 focus:outline-none focus-visible:bg-primary/10 disabled:bg-transparent aria-disabled:bg-transparent dark:disabled:bg-transparent dark:aria-disabled:bg-transparent">…</button> aka locator('tr:nth-child(9) > .px-6.py-4.text-right > .rounded-md')
+    ...
+
+Call log:
+  - waiting for getByRole('button', { name: /Add|add/ })
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - status [ref=e3]
+    - generic [ref=e4]:
+      - complementary [ref=e5]:
+        - generic [ref=e9]:
+          - heading "Rental System" [level=1] [ref=e10]
+          - paragraph [ref=e11]: Vehicle Management
+        - navigation [ref=e12]:
+          - link "Dashboard" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - text: Dashboard
+          - link "Vehicles" [ref=e15] [cursor=pointer]:
+            - /url: /vehicles
+            - text: Vehicles
+          - link "Lending" [ref=e17] [cursor=pointer]:
+            - /url: /rentals/new
+            - text: Lending
+          - link "Return" [ref=e19] [cursor=pointer]:
+            - /url: /rentals/return
+            - text: Return
+          - link "Customers" [ref=e21] [cursor=pointer]:
+            - /url: /customers
+            - text: Customers
+          - link "History" [ref=e23] [cursor=pointer]:
+            - /url: /history
+            - text: History
+          - link "Store Management" [ref=e25] [cursor=pointer]:
+            - /url: /admin/stores
+            - text: Store Management
+        - link "Settings" [ref=e28] [cursor=pointer]:
+          - /url: /settings
+          - text: Settings
+      - generic [ref=e30]:
+        - banner [ref=e31]:
+          - heading "Rental System" [level=2] [ref=e33]
+          - generic [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]: "@admin"
+            - img "Avatar" [ref=e38]
+        - main [ref=e39]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]:
+                - heading "Store Management" [level=1] [ref=e43]
+                - paragraph [ref=e44]: Manage all business locations
+              - button "Add Store" [ref=e45] [cursor=pointer]:
+                - generic [ref=e47]: Add Store
+            - table [ref=e50]:
+              - rowgroup [ref=e51]:
+                - row "Name Address Currency Actions" [ref=e52]:
+                  - columnheader "Name" [ref=e53]
+                  - columnheader "Address" [ref=e54]
+                  - columnheader "Currency" [ref=e55]
+                  - columnheader "Actions" [ref=e56]
+              - rowgroup [ref=e57]:
+                - row "Main Store 123 Tokyo St. LAK Add Admin" [ref=e58]:
+                  - cell "Main Store" [ref=e59]
+                  - cell "123 Tokyo St." [ref=e60]
+                  - cell "LAK" [ref=e61]
+                  - cell "Add Admin" [ref=e62]:
+                    - button "Add Admin" [ref=e63]:
+                      - generic [ref=e65]: Add Admin
+                - row "E2E Store 1776532653436 — THB Add Admin" [ref=e66]:
+                  - cell "E2E Store 1776532653436" [ref=e67]
+                  - cell "—" [ref=e68]
+                  - cell "THB" [ref=e69]
+                  - cell "Add Admin" [ref=e70]:
+                    - button "Add Admin" [ref=e71]:
+                      - generic [ref=e73]: Add Admin
+                - row "E2E Store 1776532691115 — THB Add Admin" [ref=e74]:
+                  - cell "E2E Store 1776532691115" [ref=e75]
+                  - cell "—" [ref=e76]
+                  - cell "THB" [ref=e77]
+                  - cell "Add Admin" [ref=e78]:
+                    - button "Add Admin" [ref=e79]:
+                      - generic [ref=e81]: Add Admin
+                - row "E2E Store 1776532722134 — THB Add Admin" [ref=e82]:
+                  - cell "E2E Store 1776532722134" [ref=e83]
+                  - cell "—" [ref=e84]
+                  - cell "THB" [ref=e85]
+                  - cell "Add Admin" [ref=e86]:
+                    - button "Add Admin" [ref=e87]:
+                      - generic [ref=e89]: Add Admin
+                - row "E2E Store 1776532772601 — THB Add Admin" [ref=e90]:
+                  - cell "E2E Store 1776532772601" [ref=e91]
+                  - cell "—" [ref=e92]
+                  - cell "THB" [ref=e93]
+                  - cell "Add Admin" [ref=e94]:
+                    - button "Add Admin" [ref=e95]:
+                      - generic [ref=e97]: Add Admin
+                - row "E2E Store 1776532807107 — THB Add Admin" [ref=e98]:
+                  - cell "E2E Store 1776532807107" [ref=e99]
+                  - cell "—" [ref=e100]
+                  - cell "THB" [ref=e101]
+                  - cell "Add Admin" [ref=e102]:
+                    - button "Add Admin" [ref=e103]:
+                      - generic [ref=e105]: Add Admin
+                - row "E2E Store 1776532851474 — THB Add Admin" [ref=e106]:
+                  - cell "E2E Store 1776532851474" [ref=e107]
+                  - cell "—" [ref=e108]
+                  - cell "THB" [ref=e109]
+                  - cell "Add Admin" [ref=e110]:
+                    - button "Add Admin" [ref=e111]:
+                      - generic [ref=e113]: Add Admin
+                - row "E2E Store 1776532898109 — THB Add Admin" [ref=e114]:
+                  - cell "E2E Store 1776532898109" [ref=e115]
+                  - cell "—" [ref=e116]
+                  - cell "THB" [ref=e117]
+                  - cell "Add Admin" [ref=e118]:
+                    - button "Add Admin" [ref=e119]:
+                      - generic [ref=e121]: Add Admin
+                - row "E2E Store 1776532941549 — THB Add Admin" [ref=e122]:
+                  - cell "E2E Store 1776532941549" [ref=e123]
+                  - cell "—" [ref=e124]
+                  - cell "THB" [ref=e125]
+                  - cell "Add Admin" [ref=e126]:
+                    - button "Add Admin" [ref=e127]:
+                      - generic [ref=e129]: Add Admin
+                - row "E2E Store 1776532981934 — THB Add Admin" [ref=e130]:
+                  - cell "E2E Store 1776532981934" [ref=e131]
+                  - cell "—" [ref=e132]
+                  - cell "THB" [ref=e133]
+                  - cell "Add Admin" [ref=e134]:
+                    - button "Add Admin" [ref=e135]:
+                      - generic [ref=e137]: Add Admin
+                - row "E2E Store 1776751354150 — THB Add Admin" [ref=e138]:
+                  - cell "E2E Store 1776751354150" [ref=e139]
+                  - cell "—" [ref=e140]
+                  - cell "THB" [ref=e141]
+                  - cell "Add Admin" [ref=e142]:
+                    - button "Add Admin" [ref=e143]:
+                      - generic [ref=e145]: Add Admin
+                - row "E2E Store 1776936225045 — THB Add Admin" [ref=e146]:
+                  - cell "E2E Store 1776936225045" [ref=e147]
+                  - cell "—" [ref=e148]
+                  - cell "THB" [ref=e149]
+                  - cell "Add Admin" [ref=e150]:
+                    - button "Add Admin" [ref=e151]:
+                      - generic [ref=e153]: Add Admin
+  - generic:
+    - img
+  - generic [ref=e154]:
+    - button "Toggle Nuxt DevTools" [ref=e155] [cursor=pointer]:
+      - img [ref=e156]
+    - generic "Page load time" [ref=e159]:
+      - generic [ref=e160]: "121"
+      - generic [ref=e161]: ms
+    - button "Toggle Component Inspector" [ref=e163] [cursor=pointer]:
+      - img [ref=e164]
+  - region "Notifications (F8)":
+    - list
 ```
 
 # Test source
 
 ```ts
-  19  |  *   - エラーメッセージ確認の追加
-  20  |  *   - 認証・ユーザー管理テストの追加
-  21  |  */
-  22  | 
-  23  | // テストユーザー認証情報（環境変数から取得）
-  24  | const TEST_EMAIL = process.env.E2E_USER_EMAIL || ''
-  25  | const TEST_PASSWORD = process.env.E2E_USER_PASSWORD || ''
-  26  | const TEST_USERNAME = TEST_EMAIL.split('@')[0] // ユーザー名部分を抽出
-  27  | 
-  28  | // ============================================================
-  29  | // Helper functions
-  30  | // ============================================================
-  31  | 
-  32  | /** ログインしてセッションを確立する */
-  33  | async function login(page: Page, username: string = TEST_USERNAME, password: string = TEST_PASSWORD) {
-  34  |   await page.goto('/login')
-  35  |   await page.waitForLoadState('networkidle')
-  36  | 
-  37  |   // 既にログイン済みならスキップ
-  38  |   if (!page.url().includes('/login')) return
-  39  | 
-  40  |   // ユーザー名・パスワードを入力
-  41  |   await page.getByPlaceholder('admin').fill(username)
-  42  |   await page.getByPlaceholder('••••••••').fill(password)
-  43  | 
-  44  |   // Sign In ボタンをクリック
-  45  |   await page.getByRole('button', { name: 'Sign In' }).click()
-  46  | 
-  47  |   // ダッシュボードへリダイレクトされるまで待つ
-  48  |   await page.waitForURL('/', { timeout: 15_000 })
-  49  |   await page.waitForLoadState('networkidle')
-  50  | }
-  51  | 
-  52  | /** ローディングスピナーが消えるまで待つ（改善版） */
-  53  | async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
-  54  |   try {
-  55  |     await page.locator('.animate-spin').waitFor({ state: 'hidden', timeout })
-  56  |   } catch {
-  57  |     // スピナーが見つからなかった場合は無視
-  58  |   }
-  59  | }
-  60  | 
-  61  | /** ログアウトする */
-  62  | async function logout(page: Page) {
-  63  |   // ユーザーメニュー（header の @xxx）をクリック
-  64  |   const userMenu = page.locator('header').locator('text=/^@/').first()
-  65  |   await expect(userMenu).toBeVisible()
-  66  |   await userMenu.click()
-  67  | 
-  68  |   // Logout ボタンをクリック
-  69  |   await page.getByRole('menuitem', { name: 'Logout' }).click()
-  70  |   await page.waitForURL('/login', { timeout: 10_000 })
-  71  | }
-  72  | 
-  73  | /** セッション情報をクリアする */
-  74  | async function clearSession(page: Page, context: BrowserContext) {
-  75  |   await context.clearCookies()
-  76  |   await page.evaluate(() => {
-  77  |     localStorage.clear()
-  78  |     sessionStorage.clear()
-  79  |   })
-  80  | }
-  81  | 
-  82  | /** テスト用の顧客を作成する */
-  83  | async function createTestCustomer(page: Page, name: string, email: string = 'test@example.com') {
-  84  |   const customerCount = await page.locator('tbody tr').count()
-  85  | 
-  86  |   await page.getByRole('button', { name: 'Add New Customer' }).click()
-  87  |   await expect(page.getByRole('heading', { name: 'Add New Customer' })).toBeVisible()
-  88  | 
-  89  |   await page.getByPlaceholder(/john|John/i).fill(name)
-  90  |   await page.getByPlaceholder(/email|example.com/i).fill(email)
-  91  |   await page.getByRole('button', { name: /register|add/i }).click()
-  92  | 
-  93  |   // 新規顧客がテーブルに追加されるまで待機
-  94  |   await expect(page.locator('tbody').getByText(name)).toBeVisible({ timeout: 10_000 })
-  95  |   return name
-  96  | }
-  97  | 
-  98  | /** テスト用の顧客を削除する */
-  99  | async function deleteTestCustomer(page: Page, name: string) {
-  100 |   const row = page.locator('tr').filter({ hasText: name }).first()
-  101 |   await expect(row).toBeVisible()
-  102 | 
-  103 |   // 削除ボタン（ゴミ箱アイコン）をクリック
-  104 |   const deleteButton = row.locator('button').last()
-  105 |   await deleteButton.click()
-  106 | 
-  107 |   // 確認ダイアログをハンドル
-  108 |   page.on('dialog', dialog => dialog.accept())
-  109 | 
-  110 |   // 削除完了を待機
-  111 |   await expect(page.locator('tbody').getByText(name)).not.toBeVisible({ timeout: 10_000 })
-  112 | }
-  113 | 
-  114 | // ============================================================
-  115 | // Global setup: 全テストの前にログイン
-  116 | // ============================================================
-  117 | test.beforeEach(async ({ page }) => {
-  118 |   if (!TEST_EMAIL || !TEST_PASSWORD) {
-> 119 |     throw new Error(
-      |           ^ Error: テスト用の認証情報が未設定です。
-  120 |       'テスト用の認証情報が未設定です。\n' +
-  121 |       '実行時に環境変数を設定してください:\n' +
-  122 |       '  E2E_USER_EMAIL=your@email.com E2E_USER_PASSWORD=yourpass npx playwright test'
-  123 |     )
-  124 |   }
-  125 |   await login(page, TEST_USERNAME, TEST_PASSWORD)
-  126 | })
-  127 | 
-  128 | // ============================================================
-  129 | // 1. Dashboard Tests
-  130 | // ============================================================
-  131 | test.describe('Dashboard', () => {
-  132 |   test('Stats cards (Lending, Available, Today\'s Transactions) が表示される', async ({ page }) => {
-  133 |     await page.goto('/')
-  134 |     await page.waitForLoadState('networkidle')
-  135 |     await waitForLoadingComplete(page)
-  136 | 
-  137 |     // ページ見出し
-  138 |     await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
-  139 | 
-  140 |     // 3つの統計カードが表示される
-  141 |     await expect(page.getByText('Lending').first()).toBeVisible()
-  142 |     await expect(page.getByText('Available').first()).toBeVisible()
-  143 |     await expect(page.getByText("Today's Transactions")).toBeVisible()
-  144 | 
-  145 |     // 各カードの値が数値である（ローディング完了後）
-  146 |     const statValues = page.locator('.text-3xl.font-bold')
-  147 |     const count = await statValues.count()
-  148 |     expect(count).toBe(3)
-  149 |     for (let i = 0; i < count; i++) {
-  150 |       const text = await statValues.nth(i).textContent()
-  151 |       expect(text).not.toBeNull()
-  152 |       expect(Number(text?.trim())).not.toBeNaN()
-  153 |     }
-  154 |   })
-  155 | 
-  156 |   test('Recent Transactions テーブルが表示される', async ({ page }) => {
-  157 |     await page.goto('/')
-  158 |     await page.waitForLoadState('networkidle')
-  159 |     await waitForLoadingComplete(page)
-  160 | 
-  161 |     await expect(page.getByText('Recent Transactions')).toBeVisible()
-  162 | 
-  163 |     // テーブルヘッダーが存在する
-  164 |     await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible()
-  165 |     await expect(page.getByRole('columnheader', { name: 'User' })).toBeVisible()
-  166 |     await expect(page.getByRole('columnheader', { name: 'Action' })).toBeVisible()
-  167 |     await expect(page.getByRole('columnheader', { name: 'Time' })).toBeVisible()
-  168 |     await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
-  169 |   })
-  170 | 
-  171 |   test('Lending ボタンが /rentals/new へ遷移する', async ({ page }) => {
-  172 |     await page.goto('/')
-  173 |     await page.waitForLoadState('networkidle')
-  174 | 
-  175 |     const lendingButton = page.getByRole('main').getByRole('link', { name: 'Lending' })
-  176 |     await expect(lendingButton).toBeVisible()
-  177 |     await lendingButton.click()
-  178 |     await page.waitForLoadState('networkidle')
-  179 |     await expect(page).toHaveURL('/rentals/new')
-  180 |     await expect(page.getByText('New Lending')).toBeVisible()
-  181 |   })
-  182 | 
-  183 |   test('View All リンクが /history へ遷移する', async ({ page }) => {
-  184 |     await page.goto('/')
-  185 |     await page.waitForLoadState('networkidle')
-  186 | 
-  187 |     const viewAll = page.getByRole('link', { name: 'View All' })
-  188 |     await expect(viewAll).toBeVisible()
-  189 |     await viewAll.click()
-  190 |     await page.waitForLoadState('networkidle')
-  191 |     await expect(page).toHaveURL('/history')
-  192 |   })
-  193 | })
-  194 | 
-  195 | // ============================================================
-  196 | // 2. Vehicle List Tests
-  197 | // ============================================================
-  198 | test.describe('Vehicle List', () => {
-  199 |   test('車両一覧テーブルが正しく表示される', async ({ page }) => {
-  200 |     await page.goto('/vehicles')
-  201 |     await page.waitForLoadState('networkidle')
-  202 |     await waitForLoadingComplete(page)
-  203 | 
-  204 |     // テーブルヘッダーが存在する
-  205 |     await expect(page.getByRole('columnheader', { name: 'Vehicle Name' })).toBeVisible()
-  206 |     await expect(page.getByRole('columnheader', { name: 'Vehicle ID' })).toBeVisible()
-  207 |     await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
-  208 |     await expect(page.getByRole('columnheader', { name: 'Last Updated' })).toBeVisible()
-  209 | 
-  210 |     // 車両行が1件以上存在する
-  211 |     const rows = page.locator('tbody tr')
-  212 |     const count = await rows.count()
-  213 |     expect(count).toBeGreaterThan(0)
-  214 |   })
-  215 | 
-  216 |   test('検索フィルタが機能する', async ({ page }) => {
-  217 |     await page.goto('/vehicles')
-  218 |     await page.waitForLoadState('networkidle')
-  219 |     await waitForLoadingComplete(page)
+  774 | 
+  775 |       const statusBadges = page.locator('tbody tr td:nth-child(3) span')
+  776 |       const count = await statusBadges.count()
+  777 |       for (let i = 0; i < count; i++) {
+  778 |         const text = await statusBadges.nth(i).textContent()
+  779 |         expect(text?.trim()).toBe('Available')
+  780 |       }
+  781 |     }
+  782 |   })
+  783 | 
+  784 |   test('Customer一覧のステータスフィルタが機能する', async ({ page }) => {
+  785 |     await page.goto('/customers')
+  786 |     await page.waitForLoadState('networkidle')
+  787 |     await waitForLoadingComplete(page)
+  788 | 
+  789 |     const activeFilter = page.locator('button', { hasText: 'Active' })
+  790 |     if (await activeFilter.first().isVisible()) {
+  791 |       await activeFilter.first().click()
+  792 |       await page.waitForTimeout(500)
+  793 | 
+  794 |       const rows = page.locator('tbody tr')
+  795 |       const count = await rows.count()
+  796 |       expect(count).toBeGreaterThanOrEqual(0)
+  797 |     }
+  798 |   })
+  799 | })
+  800 | 
+  801 | // ============================================================
+  802 | // 11. Settings & User Management
+  803 | // ============================================================
+  804 | test.describe('Settings & User Management', () => {
+  805 |   test('言語切替が機能し、UI全体に反映される', async ({ page }) => {
+  806 |     await page.goto('/settings')
+  807 |     await page.waitForLoadState('networkidle')
+  808 |     await waitForLoadingComplete(page)
+  809 | 
+  810 |     // Bahasa Melayu を選択
+  811 |     const malayOption = page.getByText('Bahasa Melayu')
+  812 |     await expect(malayOption).toBeVisible()
+  813 |     await malayOption.click()
+  814 | 
+  815 |     // 保存
+  816 |     await page.getByRole('button', { name: 'Save' }).click()
+  817 |     // 言語の変更が反映されるまで待機
+  818 |     await expect(page.locator('aside')).toContainText('Papan Pemuka', { timeout: 5000 })
+  819 | 
+  820 |     // 元の言語（English）に戻す
+  821 |     await page.getByText('English').click()
+  822 |     await page.getByRole('button', { name: 'Save' }).click()
+  823 |     await expect(page.locator('aside')).toContainText('Dashboard', { timeout: 5000 })
+  824 |   })
+  825 | 
+  826 |   test('スタッフを新規追加および削除できる', async ({ page }) => {
+  827 |     await page.goto('/settings')
+  828 |     await page.waitForLoadState('networkidle')
+  829 |     await waitForLoadingComplete(page)
+  830 | 
+  831 |     // スタッフ追加モーダルを開く
+  832 |     await page.getByRole('button', { name: 'Add Staff' }).click()
+  833 |     await expect(page.getByText('Add New Staff')).toBeVisible()
+  834 | 
+  835 |     const tempUser = `testuser${Date.now()}`
+  836 |     const inputs = page.locator('input')
+  837 |     await inputs.filter({ hasText: /staff|username/ }).first().fill(tempUser)
+  838 |     await inputs.filter({ hasText: /password/ }).last().fill('password123')
+  839 | 
+  840 |     // 作成
+  841 |     const createButton = page.getByRole('button', { name: /Create|create/ })
+  842 |     await createButton.click()
+  843 | 
+  844 |     // 一覧に表示されるまで待機
+  845 |     await expect(page.locator('tbody').getByText(tempUser)).toBeVisible({ timeout: 10_000 })
+  846 | 
+  847 |     // ダイアログ（window.confirm）はクリック前にハンドラを登録する必要がある
+  848 |     page.on('dialog', dialog => dialog.accept())
+  849 | 
+  850 |     // 削除
+  851 |     const deleteBtn = page.locator('tr').filter({ hasText: tempUser }).locator('button').last()
+  852 |     await deleteBtn.click()
+  853 | 
+  854 |     // 削除が完了するまで待機
+  855 |     await expect(page.locator('tbody').getByText(tempUser)).not.toBeVisible({ timeout: 10_000 })
+  856 |   })
+  857 | })
+  858 | 
+  859 | // ============================================================
+  860 | // 12. Multi-tenant Management Flow
+  861 | // ============================================================
+  862 | test.describe('Multi-tenant Management Flow', () => {
+  863 |   const NEW_STORE_NAME = `E2E Store ${Date.now()}`
+  864 |   const NEW_ADMIN_NAME = `admin${Date.now()}`
+  865 | 
+  866 |   test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
+  867 |     await login(page, TEST_USERNAME, TEST_PASSWORD)
+  868 |     await page.goto('/admin/stores')
+  869 |     await page.waitForLoadState('networkidle')
+  870 |     await waitForLoadingComplete(page)
+  871 | 
+  872 |     // 店舗追加
+  873 |     const addStoreButton = page.getByRole('button', { name: /Add|add/ })
+> 874 |     await addStoreButton.click()
+      |                          ^ Error: locator.click: Error: strict mode violation: getByRole('button', { name: /Add|add/ }) resolved to 13 elements:
+  875 | 
+  876 |     // 店舗名を入力
+  877 |     const storeNameInput = page.locator('input[type="text"]').first()
+  878 |     await storeNameInput.fill(NEW_STORE_NAME)
+  879 | 
+  880 |     // 作成ボタンをクリック
+  881 |     const createButton = page.getByRole('button', { name: /Create|create/ })
+  882 |     await createButton.click()
+  883 | 
+  884 |     // 店舗がリストに現れるまで待機
+  885 |     await expect(page.locator('tbody').getByText(NEW_STORE_NAME)).toBeVisible({ timeout: 15000 })
+  886 | 
+  887 |     // その店舗にAdminを追加
+  888 |     const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
+  889 |     await expect(storeRow).toBeVisible()
+  890 | 
+  891 |     const addAdminButton = storeRow.getByRole('button', { name: /Add|add/ })
+  892 |     await addAdminButton.click()
+  893 | 
+  894 |     // 管理者情報を入力
+  895 |     const inputs = page.locator('input[type="text"], input[type="password"]')
+  896 |     await inputs.first().fill(NEW_ADMIN_NAME)
+  897 |     await inputs.last().fill('password123')
+  898 | 
+  899 |     const createAdminButton = page.getByRole('button', { name: /Create|create/ })
+  900 |     await createAdminButton.click()
+  901 | 
+  902 |     // 管理者作成完了を待機
+  903 |     await page.locator('tbody').getByText(NEW_ADMIN_NAME).waitFor({ state: 'visible', timeout: 10000 })
+  904 | 
+  905 |     // ログアウト
+  906 |     await logout(page)
+  907 |   })
+  908 | 
+  909 |   test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page, context }) => {
+  910 |     // セッションを明示的にクリア
+  911 |     await clearSession(page, context)
+  912 |     await page.goto('/login')
+  913 |     await page.waitForURL('/login')
+  914 | 
+  915 |     // 新しいAdminでログイン
+  916 |     await login(page, NEW_ADMIN_NAME, 'password123')
+  917 | 
+  918 |     // 設定（スタッフ管理）へ
+  919 |     await page.goto('/settings')
+  920 |     await page.waitForLoadState('networkidle')
+  921 |     await waitForLoadingComplete(page)
+  922 | 
+  923 |     // スタッフを追加
+  924 |     const staffName = `staff${Date.now()}`
+  925 |     const addStaffButton = page.getByRole('button', { name: /Add|add/ })
+  926 |     await addStaffButton.click()
+  927 | 
+  928 |     const inputs = page.locator('input[type="text"], input[type="password"]')
+  929 |     await inputs.first().fill(staffName)
+  930 |     await inputs.last().fill('password123')
+  931 | 
+  932 |     const createButton = page.getByRole('button', { name: /Create|create/ })
+  933 |     await createButton.click()
+  934 | 
+  935 |     // スタッフが作成されるまで待機
+  936 |     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
+  937 | 
+  938 |     // スタッフのロール更新（オプション）
+  939 |     const row = page.locator('tr').filter({ hasText: staffName })
+  940 |     const roleSwitch = row.locator('button[role="switch"]')
+  941 |     if (await roleSwitch.isVisible()) {
+  942 |       await roleSwitch.click()
+  943 | 
+  944 |       // window.confirm ハンドラはクリック前に登録する
+  945 |       page.on('dialog', d => d.accept())
+  946 |     }
+  947 | 
+  948 |     // スタッフの削除
+  949 |     const deleteButton = row.getByRole('button').last()
+  950 |     await deleteButton.click()
+  951 | 
+  952 |     // 削除が完了するまで待機
+  953 |     await expect(page.locator('tbody').getByText(staffName)).not.toBeVisible({ timeout: 10_000 })
+  954 |   })
+  955 | })
+  956 | 
+  957 | // ============================================================
+  958 | // 13. Authentication & Security Tests (改善: 要件定義書の問題対応)
+  959 | // ============================================================
+  960 | test.describe('Authentication & Security', () => {
+  961 |   test('無効なパスワードでログイン失敗する', async ({ page }) => {
+  962 |     await page.goto('/login')
+  963 |     await page.waitForLoadState('networkidle')
+  964 | 
+  965 |     // 無効なパスワードを入力
+  966 |     await page.getByPlaceholder('admin').fill(TEST_USERNAME)
+  967 |     await page.getByPlaceholder('••••••••').fill('wrongpassword123')
+  968 |     await page.getByRole('button', { name: 'Sign In' }).click()
+  969 | 
+  970 |     // エラーメッセージが表示される
+  971 |     await expect(page.locator('[role="alert"], .text-red-500, .text-error').first())
+  972 |       .toBeVisible({ timeout: 5000 })
+  973 | 
+  974 |     // ログイン画面のままであることを確認
 ```
