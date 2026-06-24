@@ -51,7 +51,7 @@ const userMenuItems = computed(() => [
 
     <div class="flex items-center gap-4">
       <UDropdownMenu :items="userMenuItems">
-        <div class="flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+        <div data-testid="user-menu" class="flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
           <!-- Loading State -->
           <div v-if="isLoading" class="flex items-center gap-2">
             <div class="animate-pulse w-20 h-4 bg-slate-100 dark:bg-slate-800 rounded"></div>

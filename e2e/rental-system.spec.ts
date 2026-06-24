@@ -60,9 +60,9 @@ async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
 
 /** ログアウトする */
 async function logout(page: Page) {
-  // ユーザーメニュー（header の @xxx）をクリック
-  const userMenu = page.locator('header').locator('text=/^@/').first()
-  await expect(userMenu).toBeVisible()
+  // AppTopbar の data-testid="user-menu" からドロップダウンを開く
+  const userMenu = page.getByTestId('user-menu')
+  await expect(userMenu).toBeVisible({ timeout: 10_000 })
   await userMenu.click()
 
   // Logout ボタンをクリック
@@ -989,6 +989,8 @@ test.describe('Authentication & Security', () => {
 // ============================================================
 test.describe('User Management & Data Integrity', () => {
   test('スタッフ作成直後にそのスタッフでログイン可能', async ({ page, context }) => {
+    // セッション状態を問わず確実にログイン済み状態にする
+    await login(page, TEST_USERNAME, TEST_PASSWORD)
     await page.goto('/settings')
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
@@ -1018,7 +1020,7 @@ test.describe('User Management & Data Integrity', () => {
 
     // ログインに成功すればダッシュボードへ
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('Overview')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
 
     // Step 5: クリーンアップ（元のアカウントで戻ってから削除）
     await logout(page)
@@ -1029,15 +1031,17 @@ test.describe('User Management & Data Integrity', () => {
     // 作成したスタッフを削除
     const staffRow = page.locator('tr').filter({ hasText: staffName }).first()
     if (await staffRow.isVisible()) {
+      // window.confirm を常に true にしてから削除ボタンをクリック
+      await page.evaluate(() => { window.confirm = () => true })
       const deleteButton = staffRow.locator('button').last()
       await deleteButton.click()
-
-      page.on('dialog', dialog => dialog.accept())
       await expect(page.locator('tbody').getByText(staffName)).not.toBeVisible({ timeout: 10_000 })
     }
   })
 
   test('スタッフ削除後、そのスタッフはログインできない', async ({ page, context }) => {
+    // セッション状態を問わず確実にログイン済み状態にする
+    await login(page, TEST_USERNAME, TEST_PASSWORD)
     await page.goto('/settings')
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
@@ -1053,12 +1057,11 @@ test.describe('User Management & Data Integrity', () => {
     await page.getByRole('button', { name: /Create|create/ }).click()
     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
 
-    // Step 2: スタッフを削除
+    // Step 2: スタッフを削除（window.confirm を上書きしてからクリック）
+    await page.evaluate(() => { window.confirm = () => true })
     const staffRow = page.locator('tr').filter({ hasText: staffName }).first()
     const deleteButton = staffRow.locator('button').last()
     await deleteButton.click()
-
-    page.on('dialog', dialog => dialog.accept())
     await expect(page.locator('tbody').getByText(staffName)).not.toBeVisible({ timeout: 10_000 })
 
     // Step 3: ログアウト
