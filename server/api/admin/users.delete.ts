@@ -1,4 +1,4 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   // 1. 認証チェック
@@ -7,16 +7,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  // 2. 権限チェック
-  const client = await serverSupabaseClient(event)
-  const { data: staffMember } = await client
+  const adminClient = useSupabaseAdmin()
+  const userId = user.sub || user.id
+
+  // 2. 権限チェック（adminClient で RLS をバイパスして確実に取得）
+  const { data: adminStaff, error: staffError } = await adminClient
     .from('staff')
-    .select('role_id')
-    .eq('id', user.id)
+    .select('role_id, store_id')
+    .eq('id', userId)
     .single()
 
   const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-  if (staffMember?.role_id !== ADMIN_ROLE_ID) {
+  if (staffError || adminStaff?.role_id !== ADMIN_ROLE_ID) {
     throw createError({ statusCode: 403, message: 'Forbidden' })
   }
 
@@ -29,17 +31,26 @@ export default defineEventHandler(async (event) => {
   }
 
   // 自分自身は削除できないようにする
-  if (id === user.id) {
+  if (id === userId) {
     throw createError({ statusCode: 400, message: 'Cannot delete your own account' })
   }
 
-  // 4. Supabase Admin API を使用してユーザーを削除
-  const adminClient = useSupabaseAdmin()
-  
-  // auth.users から削除（カスケード設定があれば public.staff も削除されるはずだが、安全のため明示的に消すことも検討）
+  // 4. public.staff を先に削除（staff.id → auth.users.id FK が NO ACTION のため子を先に消す）
+  const { error: staffDeleteError } = await adminClient
+    .from('staff')
+    .delete()
+    .eq('id', id)
+
+  if (staffDeleteError) {
+    console.error('[AdminAPI] Failed to delete staff record:', staffDeleteError)
+    throw createError({ statusCode: 400, message: staffDeleteError.message })
+  }
+
+  // 5. auth.users から削除
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(id)
 
   if (deleteError) {
+    console.error('[AdminAPI] Failed to delete auth user:', deleteError)
     throw createError({ statusCode: 400, message: deleteError.message })
   }
 

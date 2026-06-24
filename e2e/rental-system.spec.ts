@@ -834,8 +834,8 @@ test.describe('Settings & User Management', () => {
     // 一覧に表示されるまで待機
     await expect(page.locator('tbody').getByText(tempUser)).toBeVisible({ timeout: 10_000 })
 
-    // ダイアログ（window.confirm）はクリック前にハンドラを登録する必要がある
-    page.on('dialog', dialog => dialog.accept())
+    // window.confirm を常に true を返すよう上書きして削除フローを確実に通す
+    await page.evaluate(() => { window.confirm = () => true })
 
     // 削除
     const deleteBtn = page.locator('tr').filter({ hasText: tempUser }).locator('button').last()
