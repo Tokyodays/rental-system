@@ -80,15 +80,13 @@ async function clearSession(page: Page, context: BrowserContext) {
 }
 
 /** テスト用の顧客を作成する */
-async function createTestCustomer(page: Page, name: string, email: string = 'test@example.com') {
-  const customerCount = await page.locator('tbody tr').count()
-
+async function createTestCustomer(page: Page, name: string, email: string = `e2e-${Date.now()}@example.com`) {
   await page.getByRole('button', { name: 'Add New Customer' }).click()
   await expect(page.getByRole('heading', { name: 'Add New Customer' })).toBeVisible()
 
   await page.getByPlaceholder('e.g. John Doe').fill(name)
   await page.getByPlaceholder('john@example.com').fill(email)
-  await page.getByRole('button', { name: /register|add/i }).click()
+  await page.getByRole('button', { name: 'Register Customer' }).click()
 
   // 新規顧客がテーブルに追加されるまで待機
   await expect(page.locator('tbody').getByText(name)).toBeVisible({ timeout: 10_000 })
@@ -475,12 +473,11 @@ test.describe('Customers', () => {
     await expect(page.getByRole('heading', { name: /Update|update/ })).toBeVisible({ timeout: 5000 })
 
     // 名前を更新
-    const fullNameInput = page.locator('input[type="text"]').first()
     const updatedName = `${testCustomerName} Updated`
-    await fullNameInput.fill(updatedName)
+    await page.getByPlaceholder('e.g. John Doe').fill(updatedName)
 
     // Update ボタンをクリック
-    const updateButton = page.getByRole('button', { name: /Update|update|Save|save/ })
+    const updateButton = page.getByRole('button', { name: 'Update Customer' })
     await updateButton.click()
 
     // 更新が完了するまで待機
@@ -499,21 +496,18 @@ test.describe('Customers', () => {
     const testEmail = `e2e-${Date.now()}@example.com`
 
     // Add New Customer ボタンをクリック
-    const addButton = page.getByRole('button', { name: /add|Add/ })
-    await expect(addButton).toBeVisible()
-    await addButton.click()
+    await page.getByRole('button', { name: 'Add New Customer' }).click()
 
     // モーダルが表示される
-    await expect(page.getByRole('heading', { name: /Add|add|New|new/ })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: 'Add New Customer' })).toBeVisible({ timeout: 5000 })
 
-    // フォームに入力（より堅牢なセレクタ）
-    const inputs = page.locator('input[type="text"]')
-    await inputs.nth(0).fill(testName)
-    await inputs.nth(1).fill(testEmail)
+    // フォームに入力（ダイアログ内のプレースホルダーで特定）
+    const modal = page.getByRole('dialog')
+    await modal.getByPlaceholder('e.g. John Doe').fill(testName)
+    await modal.getByPlaceholder('john@example.com').fill(testEmail)
 
     // Register ボタンをクリック
-    const registerButton = page.getByRole('button', { name: /Register|register|Add|add/ })
-    await registerButton.click()
+    await modal.getByRole('button', { name: 'Register Customer' }).click()
 
     // 追加された顧客がリストに表示されるまで待機
     await expect(page.locator('tbody').getByText(testName)).toBeVisible({ timeout: 10_000 })
@@ -588,9 +582,9 @@ test.describe('History', () => {
       test.skip()
     }
 
-    // 検索キーワードを実データから動的に取得
-    const firstRowText = ((await dataRows.first().textContent()) ?? '').trim()
-    const searchTerm = firstRowText.split(/\s+/)[0]
+    // 検索キーワードを実データから動的に取得（vehicle name = 2列目）
+    const vehicleNameText = ((await dataRows.first().locator('td').nth(1).textContent()) ?? '').trim()
+    const searchTerm = vehicleNameText.split('\n')[0].trim()
     expect(searchTerm.length).toBeGreaterThan(0)
 
     // 検索を実行
@@ -699,7 +693,7 @@ test.describe('Error Handling & Edge Cases', () => {
       })
 
     // Step 2 のままであることを確認
-    await expect(page.getByText(/Step 2|vehicle/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Step 2: Select Vehicle' })).toBeVisible()
   })
 
   test('Return画面で無効なVehicle IDはエラーになる', async ({ page }) => {
@@ -860,8 +854,14 @@ test.describe('Settings & User Management', () => {
 // 12. Multi-tenant Management Flow
 // ============================================================
 test.describe('Multi-tenant Management Flow', () => {
-  const NEW_STORE_NAME = `E2E Store ${Date.now()}`
-  const NEW_ADMIN_NAME = `admin${Date.now()}`
+  let NEW_STORE_NAME: string
+  let NEW_ADMIN_NAME: string
+
+  test.beforeAll(async () => {
+    const ts = Date.now()
+    NEW_STORE_NAME = `E2E Store ${ts}`
+    NEW_ADMIN_NAME = `admin${ts}`
+  })
 
   test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
     await login(page, TEST_USERNAME, TEST_PASSWORD)
@@ -870,16 +870,14 @@ test.describe('Multi-tenant Management Flow', () => {
     await waitForLoadingComplete(page)
 
     // 店舗追加
-    const addStoreButton = page.getByRole('button', { name: 'Add Store' })
-    await addStoreButton.click()
+    await page.getByRole('button', { name: 'Add Store' }).click()
 
-    // 店舗名を入力
-    const storeNameInput = page.locator('input[type="text"]').first()
-    await storeNameInput.fill(NEW_STORE_NAME)
+    // 店舗名を入力（ダイアログ内）
+    const storeModal = page.getByRole('dialog')
+    await storeModal.getByPlaceholder('Branch Name').fill(NEW_STORE_NAME)
 
     // 作成ボタンをクリック
-    const createButton = page.getByRole('button', { name: /Create|create/ })
-    await createButton.click()
+    await storeModal.getByRole('button', { name: 'Create Store' }).click()
 
     // 店舗がリストに現れるまで待機
     await expect(page.locator('tbody').getByText(NEW_STORE_NAME)).toBeVisible({ timeout: 15000 })
@@ -888,19 +886,16 @@ test.describe('Multi-tenant Management Flow', () => {
     const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
     await expect(storeRow).toBeVisible()
 
-    const addAdminButton = storeRow.getByRole('button', { name: /Add|add/ })
-    await addAdminButton.click()
+    await storeRow.getByRole('button', { name: 'Add Admin' }).click()
 
-    // 管理者情報を入力
-    const inputs = page.locator('input[type="text"], input[type="password"]')
-    await inputs.first().fill(NEW_ADMIN_NAME)
-    await inputs.last().fill('password123')
+    // 管理者情報を入力（ダイアログ内）
+    const adminModal = page.getByRole('dialog')
+    await adminModal.getByPlaceholder('branch_admin').fill(NEW_ADMIN_NAME)
+    await adminModal.getByPlaceholder('••••••••').fill('password123')
+    await adminModal.getByRole('button', { name: 'Create Admin' }).click()
 
-    const createAdminButton = page.getByRole('button', { name: /Create|create/ })
-    await createAdminButton.click()
-
-    // 管理者作成完了を待機
-    await page.locator('tbody').getByText(NEW_ADMIN_NAME).waitFor({ state: 'visible', timeout: 10000 })
+    // 管理者作成完了を待機（ダイアログが閉じることを確認）
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10_000 })
 
     // ログアウト
     await logout(page)
@@ -922,15 +917,12 @@ test.describe('Multi-tenant Management Flow', () => {
 
     // スタッフを追加
     const staffName = `staff${Date.now()}`
-    const addStaffButton = page.getByRole('button', { name: /Add|add/ })
-    await addStaffButton.click()
+    await page.getByRole('button', { name: 'Add Staff' }).click()
 
-    const inputs = page.locator('input[type="text"], input[type="password"]')
-    await inputs.first().fill(staffName)
-    await inputs.last().fill('password123')
-
-    const createButton = page.getByRole('button', { name: /Create|create/ })
-    await createButton.click()
+    const staffModal = page.getByRole('dialog')
+    await staffModal.getByPlaceholder('staff123').fill(staffName)
+    await staffModal.getByPlaceholder('••••••••').fill('password123')
+    await staffModal.getByRole('button', { name: 'Create Account' }).click()
 
     // スタッフが作成されるまで待機
     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
