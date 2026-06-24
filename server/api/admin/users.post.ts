@@ -12,16 +12,16 @@ export default defineEventHandler(async (event) => {
   const userId = user.sub || user.id
   const { data: adminStaff, error: staffError } = await adminClient
     .from('staff')
-    .select('role_id, store_id')
+    .select('store_id, staff_roles(name)')
     .eq('id', userId)
     .single()
 
-  const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-  if (staffError || adminStaff?.role_id !== ADMIN_ROLE_ID) {
+  const roleName = (adminStaff?.staff_roles as any)?.name
+  if (staffError || roleName?.toLowerCase() !== 'admin') {
     throw createError({ statusCode: 403, message: 'Forbidden: Admin access required' })
   }
 
-  if (!adminStaff.store_id) {
+  if (!adminStaff!.store_id) {
     throw createError({ statusCode: 400, message: 'Admin must belong to a store' })
   }
 
