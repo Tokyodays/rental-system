@@ -102,8 +102,8 @@ async function deleteTestCustomer(page: Page, name: string) {
   const deleteButton = row.locator('button').last()
   await deleteButton.click()
 
-  // 確認ダイアログをハンドル
-  page.on('dialog', dialog => dialog.accept())
+  // UModal の削除確認ダイアログで "Delete" ボタンをクリック
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
   // 削除完了を待機
   await expect(page.locator('tbody').getByText(name)).not.toBeVisible({ timeout: 10_000 })
@@ -533,12 +533,8 @@ test.describe('Customers', () => {
     const deleteButton = customerRow.locator('button').last()
     await deleteButton.click()
 
-    // 確認ダイアログをハンドル
-    page.on('dialog', dialog => {
-      if (dialog.message().includes('delete') || dialog.message().includes('Delete')) {
-        dialog.accept()
-      }
-    })
+    // UModal の削除確認ダイアログで "Delete" ボタンをクリック
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
 
     // 削除が完了するまで待機
     await expect(page.locator('tbody').getByText(testCustomerName)).not.toBeVisible({ timeout: 10_000 })

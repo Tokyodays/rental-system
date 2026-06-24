@@ -1,4 +1,4 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   // 1. リクエスト送信者の認証チェック
@@ -7,12 +7,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  // 2. リクエスト送信者の権限と所属店舗のチェック
-  const client = await serverSupabaseClient(event)
-  const { data: adminStaff, error: staffError } = await client
+  // 2. リクエスト送信者の権限と所属店舗のチェック（stores.post.ts と同様に adminClient + user.sub || user.id を使用）
+  const adminClient = useSupabaseAdmin()
+  const userId = user.sub || user.id
+  const { data: adminStaff, error: staffError } = await adminClient
     .from('staff')
     .select('role_id, store_id')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single()
 
   const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
@@ -36,8 +37,6 @@ export default defineEventHandler(async (event) => {
   const internalEmail = `${username.toLowerCase()}@rental.local`
 
   // 4. Supabase Admin API を使用してユーザーを作成
-  const adminClient = useSupabaseAdmin()
-  
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email: internalEmail,
     password,
