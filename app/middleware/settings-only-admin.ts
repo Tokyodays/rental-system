@@ -3,10 +3,11 @@
  * adminロールのユーザーのみアクセス可能
  */
 export default defineNuxtRouteMiddleware(async () => {
-  const { isAdmin, fetchStaff } = useStaff()
+  const { isAdmin, syncUser } = useStaff()
 
-  // staffデータが未ロードの場合は取得する
-  await fetchStaff()
+  // フルナビゲーション時は useState('verified-supabase-user') が null に戻るため、
+  // fetchStaff ではなく syncUser を呼んで supabase.auth.getUser() から user → staff の順で解決する
+  await syncUser()
 
   if (!isAdmin.value) {
     return navigateTo('/')

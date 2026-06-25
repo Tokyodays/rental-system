@@ -538,13 +538,24 @@ const filteredCustomers = computed(() => {
                   />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <UButton
-                    icon="i-lucide-chevron-right"
-                    variant="ghost"
-                    color="neutral"
-                    size="xs"
-                    class="cursor-pointer"
-                  />
+                  <div class="flex items-center justify-end gap-1">
+                    <UButton
+                      icon="i-lucide-pencil"
+                      variant="ghost"
+                      color="neutral"
+                      size="xs"
+                      class="cursor-pointer"
+                      @click.stop="openUpdateModal(c)"
+                    />
+                    <UButton
+                      icon="i-lucide-trash-2"
+                      variant="ghost"
+                      color="error"
+                      size="xs"
+                      class="cursor-pointer"
+                      @click.stop="confirmDelete(c)"
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -711,9 +722,10 @@ const filteredCustomers = computed(() => {
             <UInput v-model="newCustomer.passport_number" placeholder="e.g. TK1234567" />
           </UFormField>
 
-          <div class="flex justify-end gap-3 mt-6">
+          <div class="flex justify-end gap-3 mt-6 flex-wrap">
             <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton label="Next: Passport Photo" color="primary" class="cursor-pointer font-bold" @click="addStep = 2; startCamera()" />
+            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2; startCamera()" />
+            <UButton label="Register Customer" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
 
