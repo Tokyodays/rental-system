@@ -25,6 +25,10 @@ const TEST_EMAIL = process.env.E2E_USER_EMAIL || ''
 const TEST_PASSWORD = process.env.E2E_USER_PASSWORD || ''
 const TEST_USERNAME = TEST_EMAIL.split('@')[0] // ユーザー名部分を抽出
 
+// スーパー管理者（オーナー）の認証情報（admin コンソールテスト用）
+const SUPER_ADMIN_USERNAME = 'admin'
+const SUPER_ADMIN_PASSWORD = 'password123'
+
 // ============================================================
 // Helper functions
 // ============================================================
@@ -58,7 +62,7 @@ async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
   }
 }
 
-/** ログアウトする */
+/** ログアウトする（スタッフ/ブランチ管理者用） */
 async function logout(page: Page) {
   // AppTopbar の data-testid="user-menu" からドロップダウンを開く
   const userMenu = page.getByTestId('user-menu')
@@ -68,6 +72,29 @@ async function logout(page: Page) {
   // Logout ボタンをクリック
   await page.getByRole('menuitem', { name: 'Logout' }).click()
   await page.waitForURL('/login', { timeout: 10_000 })
+}
+
+/** 管理者コンソールにログインする（super_admin 用） */
+async function adminLogin(page: Page, username: string = SUPER_ADMIN_USERNAME, password: string = SUPER_ADMIN_PASSWORD) {
+  await page.goto('/admin/login')
+  await page.waitForLoadState('networkidle')
+
+  if (!page.url().includes('/admin/login')) return
+
+  await page.getByPlaceholder('admin').fill(username)
+  await page.getByPlaceholder('••••••••').fill(password)
+  await page.getByRole('button', { name: 'Sign In' }).click()
+
+  await page.waitForURL('**/admin/stores', { timeout: 15_000 })
+  await page.waitForLoadState('networkidle')
+}
+
+/** 管理者コンソールからログアウトする */
+async function adminLogout(page: Page) {
+  const logoutBtn = page.getByTestId('admin-logout')
+  await expect(logoutBtn).toBeVisible({ timeout: 10_000 })
+  await logoutBtn.click()
+  await page.waitForURL('/admin/login', { timeout: 10_000 })
 }
 
 /** セッション情報をクリアする */
@@ -578,9 +605,9 @@ test.describe('History', () => {
       test.skip()
     }
 
-    // 検索キーワードを実データから動的に取得（vehicle name = 2列目）
-    const vehicleNameText = ((await dataRows.first().locator('td').nth(1).textContent()) ?? '').trim()
-    const searchTerm = vehicleNameText.split('\n')[0].trim()
+    // 検索キーワードを実データから動的に取得（ITEM列の最初の<p>がvehicle name）
+    const vehicleNameText = ((await dataRows.first().locator('td').nth(1).locator('p').first().textContent()) ?? '').trim()
+    const searchTerm = vehicleNameText.trim()
     expect(searchTerm.length).toBeGreaterThan(0)
 
     // 検索を実行
@@ -860,8 +887,7 @@ test.describe('Multi-tenant Management Flow', () => {
   })
 
   test('新規店舗を作成し、その店舗の管理者を登録できる', async ({ page }) => {
-    await login(page, TEST_USERNAME, TEST_PASSWORD)
-    await page.goto('/admin/stores')
+    await adminLogin(page)
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
 
@@ -893,8 +919,8 @@ test.describe('Multi-tenant Management Flow', () => {
     // 管理者作成完了を待機（ダイアログが閉じることを確認）
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10_000 })
 
-    // ログアウト
-    await logout(page)
+    // ログアウト（管理者コンソール用）
+    await adminLogout(page)
   })
 
   test('作成した新店舗のAdminでログインし、スタッフを管理できる', async ({ page, context }) => {
@@ -940,6 +966,33 @@ test.describe('Multi-tenant Management Flow', () => {
     // 削除が完了するまで待機
     await expect(page.locator('tbody').getByText(staffName)).not.toBeVisible({ timeout: 10_000 })
   })
+
+  test('作成した店舗を削除できる', async ({ page, context }) => {
+    await clearSession(page, context)
+    await adminLogin(page)
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // 対象店舗の行を確認
+    const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
+    await expect(storeRow).toBeVisible({ timeout: 10_000 })
+
+    // Delete ボタンをクリック
+    await storeRow.getByRole('button', { name: 'Delete' }).click()
+
+    // 確認ダイアログが表示される
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5_000 })
+    await expect(dialog.getByText(NEW_STORE_NAME)).toBeVisible()
+
+    // 削除を確定
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+
+    // 店舗がリストから消えるまで待機
+    await expect(page.locator('tbody').getByText(NEW_STORE_NAME)).not.toBeVisible({ timeout: 15_000 })
+
+    await adminLogout(page)
+  })
 })
 
 // ============================================================
@@ -965,7 +1018,8 @@ test.describe('Authentication & Security', () => {
   })
 
   test('ログイン済みユーザーが/loginにアクセスするとリダイレクトされる', async ({ page }) => {
-    // beforeEach でログイン済みの状態
+    // ログイン状態を確立してから /login にアクセス
+    await login(page)
     await page.goto('/login')
     await page.waitForLoadState('networkidle')
 
@@ -1069,6 +1123,7 @@ test.describe('User Management & Data Integrity', () => {
 
     // Step 4: 削除されたスタッフでログイン試行
     await page.goto('/login')
+    await page.waitForLoadState('networkidle')
     await page.getByPlaceholder('admin').fill(staffName)
     await page.getByPlaceholder('••••••••').fill(staffPassword)
     await page.getByRole('button', { name: 'Sign In' }).click()

@@ -18,6 +18,13 @@ logs
 .fleet
 .idea
 
+# Claude Code / MCP (secrets)
+.env
+.env.local
+
+# Serena indexes (large, auto-regenerated)
+.serena/lsp_cache/
+
 # Local env files
 .env
 .env.*

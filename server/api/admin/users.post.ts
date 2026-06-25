@@ -16,12 +16,14 @@ export default defineEventHandler(async (event) => {
     .eq('id', userId)
     .single()
 
-  const roleName = (adminStaff?.staff_roles as any)?.name
-  if (staffError || roleName?.toLowerCase() !== 'admin') {
+  const roleName = (adminStaff?.staff_roles as any)?.name?.toLowerCase()
+  const ALLOWED_ROLES = ['admin', 'super_admin']
+  if (staffError || !ALLOWED_ROLES.includes(roleName)) {
     throw createError({ statusCode: 403, message: 'Forbidden: Admin access required' })
   }
 
-  if (!adminStaff!.store_id) {
+  // super_admin は store_id を body から受け取る（自身の store_id を持たない）
+  if (roleName === 'admin' && !adminStaff!.store_id) {
     throw createError({ statusCode: 400, message: 'Admin must belong to a store' })
   }
 

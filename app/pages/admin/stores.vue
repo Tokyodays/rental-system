@@ -1,4 +1,9 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'admin',
+  middleware: 'super-admin-only'
+})
+
 const supabase = useSupabaseClient()
 const { t } = useI18n()
 const toast = useToast()
@@ -7,6 +12,7 @@ const stores = ref<any[]>([])
 const isLoading = ref(false)
 const isAddingStore = ref(false)
 const isAddingAdmin = ref(false)
+const isDeletingStore = ref(false)
 const selectedStore = ref<any>(null)
 
 const newStore = reactive({
@@ -74,6 +80,27 @@ function openAdminModal(store: any) {
   isAddingAdmin.value = true
 }
 
+function openDeleteModal(store: any) {
+  selectedStore.value = store
+  isDeletingStore.value = true
+}
+
+async function handleDeleteStore() {
+  if (!selectedStore.value) return
+  try {
+    await $fetch('/api/admin/stores', {
+      method: 'DELETE',
+      body: { id: selectedStore.value.id }
+    })
+    toast.add({ title: 'Store Deleted', description: `Store "${selectedStore.value.name}" has been deleted.`, color: 'success' })
+    isDeletingStore.value = false
+    selectedStore.value = null
+    await fetchStores()
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.data?.message || err.message, color: 'error' })
+  }
+}
+
 onMounted(() => {
   fetchStores()
 })
@@ -110,13 +137,21 @@ onMounted(() => {
             <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">{{ store.name }}</td>
             <td class="px-6 py-4 text-slate-600 dark:text-slate-400">{{ store.address || '—' }}</td>
             <td class="px-6 py-4 text-slate-600 dark:text-slate-400">{{ store.currency?.currency_text || 'USD' }}</td>
-            <td class="px-6 py-4 text-right">
+            <td class="px-6 py-4 text-right space-x-2">
               <UButton
                 icon="i-lucide-user-plus"
                 label="Add Admin"
                 size="xs"
                 variant="ghost"
                 @click="openAdminModal(store)"
+              />
+              <UButton
+                icon="i-lucide-trash-2"
+                label="Delete"
+                size="xs"
+                variant="ghost"
+                color="error"
+                @click="openDeleteModal(store)"
               />
             </td>
           </tr>
@@ -139,6 +174,20 @@ onMounted(() => {
             <UButton id="btn-create-store" type="submit" label="Create Store" color="primary" />
           </div>
         </form>
+      </template>
+    </UModal>
+
+    <!-- Delete Store Confirmation Modal -->
+    <UModal v-model:open="isDeletingStore" title="Delete Store">
+      <template #body>
+        <p class="text-slate-600 dark:text-slate-400">
+          Are you sure you want to delete <span class="font-semibold text-slate-900 dark:text-white">{{ selectedStore?.name }}</span>?
+          This action cannot be undone.
+        </p>
+        <div class="flex justify-end gap-3 mt-6">
+          <UButton label="Cancel" color="neutral" variant="ghost" @click="isDeletingStore = false" />
+          <UButton label="Delete" color="error" icon="i-lucide-trash-2" @click="handleDeleteStore" />
+        </div>
       </template>
     </UModal>
 

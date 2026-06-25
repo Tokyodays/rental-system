@@ -31,16 +31,24 @@ export const useStaff = () => {
     stores: StoreRecord | null
   }
 
+  const SUPER_ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000000'
   const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
 
   const staff = useState<StaffRecord | null>('current-staff', () => null)
   const isLoading = useState<boolean>('current-staff-loading', () => false)
 
+  // super_admin: オーナー（店舗管理専用）
+  const isSuperAdmin = computed(() => {
+    if (!staff.value) return false
+    return staff.value.role_id === SUPER_ADMIN_ROLE_ID ||
+      staff.value.staff_roles?.name === 'super_admin'
+  })
+
+  // isAdmin: ブランチ管理者（super_admin は含まない）
   const isAdmin = computed(() => {
     if (!staff.value) return false
-    const hasAdminRoleName = staff.value.staff_roles?.name === 'admin'
-    const hasAdminRoleId = staff.value.role_id === ADMIN_ROLE_ID
-    return !!(hasAdminRoleName || hasAdminRoleId)
+    return staff.value.role_id === ADMIN_ROLE_ID ||
+      staff.value.staff_roles?.name === 'admin'
   })
 
   /**
@@ -95,23 +103,31 @@ export const useStaff = () => {
     }
   }
 
-  // 初期化およびイベント監視
+  // 初期化およびイベント監視（コンポーネントの setup 内のみ登録）
   if (process.client) {
-    onMounted(() => {
-      syncUser()
-    })
+    const instance = getCurrentInstance()
+    if (instance) {
+      onMounted(() => {
+        syncUser()
+      })
+    }
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[useStaff] auth event context:', event)
-      if (session?.user) {
-        user.value = session.user
-        await fetchStaff()
-      } else {
-        user.value = null
-        staff.value = null
-      }
-    })
+    // onAuthStateChange はアプリ全体で1回だけ登録
+    const listenerRegistered = useState<boolean>('staff-auth-listener', () => false)
+    if (!listenerRegistered.value) {
+      listenerRegistered.value = true
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('[useStaff] auth event context:', event)
+        if (session?.user) {
+          user.value = session.user
+          await fetchStaff()
+        } else {
+          user.value = null
+          staff.value = null
+        }
+      })
+    }
   }
 
-  return { user, staff, isAdmin, isLoading, fetchStaff, syncUser }
+  return { user, staff, isAdmin, isSuperAdmin, isLoading, fetchStaff, syncUser }
 }

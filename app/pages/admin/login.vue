@@ -14,16 +14,14 @@ const toast = useToast()
 const { syncUser, isSuperAdmin } = useStaff()
 
 async function handleLogin() {
-  // バリデーション: 英数字のみ
   if (!/^[a-zA-Z0-9]+$/.test(state.username)) {
     toast.add({ title: 'Invalid Username', description: 'Username must be alphanumeric.', color: 'error' })
     return
   }
 
   isLoading.value = true
-  
+
   try {
-    // ユーザー名を内部的なメールアドレス形式に変換
     const internalEmail = `${state.username.toLowerCase()}@rental.local`
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -34,16 +32,27 @@ async function handleLogin() {
     if (error) throw error
     if (!data.session) throw new Error('Login failed: Session not created.')
 
-    toast.add({ title: 'Welcome', description: 'Successfully logged in.', color: 'success' })
-
-    // ロールを同期してリダイレクト先を分岐（window.location で完全リロード→競合状態を回避）
+    // ロール確認
     await syncUser()
-    setTimeout(() => {
-      window.location.href = isSuperAdmin.value ? '/admin/stores' : '/'
-    }, 100)
+
+    if (!isSuperAdmin.value) {
+      // super_admin 以外はログアウトしてエラー
+      await supabase.auth.signOut()
+      toast.add({
+        title: 'Access Denied',
+        description: 'このページはオーナーアカウント専用です。',
+        color: 'error'
+      })
+      return
+    }
+
+    toast.add({ title: 'Welcome', description: 'Admin console へようこそ。', color: 'success' })
+    setTimeout(() => { window.location.href = '/admin/stores' }, 100)
   } catch (error: any) {
-    console.error('Login error:', error)
-    const errorMsg = error.message === 'Invalid login credentials' ? 'ユーザー名またはパスワードが正しくありません' : error.message
+    console.error('Admin login error:', error)
+    const errorMsg = error.message === 'Invalid login credentials'
+      ? 'ユーザー名またはパスワードが正しくありません'
+      : error.message
     toast.add({ title: 'Login Failed', description: errorMsg, color: 'error' })
   } finally {
     isLoading.value = false
@@ -52,23 +61,23 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+  <div class="min-h-screen flex items-center justify-center bg-slate-900 p-6">
     <div class="w-full max-w-sm space-y-8">
       <!-- Logo -->
       <div class="flex flex-col items-center gap-4">
-        <div class="size-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-          <UIcon name="i-lucide-package" class="size-8" />
+        <div class="size-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+          <UIcon name="i-lucide-shield" class="size-8" />
         </div>
         <div class="text-center">
-          <h1 class="text-2xl font-black text-slate-900 dark:text-white">Rental System</h1>
-          <p class="text-slate-500 text-sm">Mobility Management SaaS</p>
+          <h1 class="text-2xl font-black text-white">Admin Console</h1>
+          <p class="text-slate-400 text-sm">Rental System — Owner Portal</p>
         </div>
       </div>
 
       <!-- Login Form Card -->
-      <UCard class="border-slate-200 dark:border-slate-800 shadow-xl">
+      <UCard class="border-slate-700 bg-slate-800 shadow-xl">
         <UForm :state="state" class="space-y-6" @submit="handleLogin">
-          <UFormField label="Username (英数字)" name="username" required>
+          <UFormField label="Username" name="username" required>
             <UInput
               v-model="state.username"
               placeholder="admin"
@@ -88,7 +97,7 @@ async function handleLogin() {
           </UFormField>
 
           <UButton
-            label="Sign In"
+            label="Sign In to Admin Console"
             type="submit"
             color="primary"
             block
@@ -96,14 +105,14 @@ async function handleLogin() {
             class="cursor-pointer font-bold"
             :loading="isLoading"
           />
-
-          <div class="text-center">
-             <UButton label="Forgot password?" variant="link" color="neutral" size="xs" class="cursor-pointer" />
-          </div>
         </UForm>
       </UCard>
 
-      <p class="text-center text-xs text-slate-400">
+      <p class="text-center text-xs text-slate-500">
+        Staff login: <NuxtLink to="/login" class="text-slate-400 hover:text-white underline">/login</NuxtLink>
+      </p>
+
+      <p class="text-center text-xs text-slate-600">
         &copy; 2026 Slate Precision. All rights reserved.
       </p>
     </div>
