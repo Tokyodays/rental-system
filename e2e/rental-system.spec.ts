@@ -966,6 +966,33 @@ test.describe('Multi-tenant Management Flow', () => {
     // 削除が完了するまで待機
     await expect(page.locator('tbody').getByText(staffName)).not.toBeVisible({ timeout: 10_000 })
   })
+
+  test('作成した店舗を削除できる', async ({ page, context }) => {
+    await clearSession(page, context)
+    await adminLogin(page)
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // 対象店舗の行を確認
+    const storeRow = page.locator('tr').filter({ hasText: NEW_STORE_NAME }).first()
+    await expect(storeRow).toBeVisible({ timeout: 10_000 })
+
+    // Delete ボタンをクリック
+    await storeRow.getByRole('button', { name: 'Delete' }).click()
+
+    // 確認ダイアログが表示される
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible({ timeout: 5_000 })
+    await expect(dialog.getByText(NEW_STORE_NAME)).toBeVisible()
+
+    // 削除を確定
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+
+    // 店舗がリストから消えるまで待機
+    await expect(page.locator('tbody').getByText(NEW_STORE_NAME)).not.toBeVisible({ timeout: 15_000 })
+
+    await adminLogout(page)
+  })
 })
 
 // ============================================================
