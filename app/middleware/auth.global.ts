@@ -1,13 +1,30 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-  const user = useSupabaseUser()
+export default defineNuxtRouteMiddleware(async (to) => {
+  const isAdminPath = to.path.startsWith('/admin')
+  const isAdminLogin = to.path === '/admin/login'
+  const isStaffLogin = to.path === '/login'
 
-  // 未ログインユーザーが /login 以外のページにアクセスした場合、/login へリダイレクト
-  if (!user.value && to.path !== '/login') {
-    return navigateTo('/login')
+  const { user, isSuperAdmin, syncUser } = useStaff()
+
+  // フルリロード後などセッション未解決の場合は同期（localStorage → Supabase 確認）
+  if (!user.value) {
+    await syncUser()
   }
 
-  // ログイン済みユーザーが /login にアクセスした場合、トップページ (/) へリダイレクト
-  if (user.value && to.path === '/login') {
-    return navigateTo('/')
+  // 未ログイン
+  if (!user.value) {
+    if (isAdminPath && !isAdminLogin) return navigateTo('/admin/login')
+    if (!isAdminPath && !isStaffLogin) return navigateTo('/login')
+    return
   }
+
+  // super_admin のアクセス制御
+  if (isSuperAdmin.value) {
+    if (isStaffLogin || isAdminLogin) return navigateTo('/admin/stores')
+    if (!isAdminPath) return navigateTo('/admin/stores')
+    return
+  }
+
+  // admin / staff のアクセス制御
+  if (isStaffLogin) return navigateTo('/')
+  if (isAdminPath && !isAdminLogin) return navigateTo('/')
 })

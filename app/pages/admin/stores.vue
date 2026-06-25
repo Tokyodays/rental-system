@@ -1,4 +1,9 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'admin',
+  middleware: 'super-admin-only'
+})
+
 const supabase = useSupabaseClient()
 const { t } = useI18n()
 const toast = useToast()

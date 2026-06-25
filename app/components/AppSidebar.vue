@@ -7,6 +7,7 @@ onMounted(() => {
   fetchStaff()
 })
 
+// Store Management は super_admin 専用の管理コンソールに移動
 const items = computed(() => [
   { label: t('dashboard'), icon: 'i-lucide-layout-dashboard', to: '/' },
   { label: t('vehicles'), icon: 'i-lucide-package', to: '/vehicles' },
@@ -14,7 +15,6 @@ const items = computed(() => [
   { label: t('return'), icon: 'i-lucide-log-in', to: '/rentals/return' },
   { label: t('customers'), icon: 'i-lucide-users', to: '/customers' },
   { label: t('history'), icon: 'i-lucide-history', to: '/history' },
-  { label: t('store_management'), icon: 'i-lucide-building-2', to: '/admin/stores' }
 ])
 
 // デバッグ用: 現在の権限状態をログ出力

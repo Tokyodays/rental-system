@@ -19,8 +19,9 @@ export default defineEventHandler(async (event) => {
 
   const roleName = (staff?.staff_roles as any)?.name
 
-  if (staffError || roleName?.toLowerCase() !== 'admin') {
-    throw createError({ statusCode: 403, message: `Forbidden: Admin access required` })
+  // 店舗作成は super_admin のみ許可
+  if (staffError || roleName?.toLowerCase() !== 'super_admin') {
+    throw createError({ statusCode: 403, message: 'Forbidden: Super admin access required' })
   }
 
   // 3. パラメータの取得
