@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const route = useRoute()
 const isSidebarOpen = ref(false)
+const { appEnv } = useRuntimeConfig().public
+const isDev = appEnv === 'development'
 
 const pageTitle = computed(() => {
   const path = route.path
@@ -16,7 +18,12 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-[sans-serif]">
+  <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-[sans-serif]">
+    <!-- Dev environment banner -->
+    <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide shrink-0">
+      🔧 DEVELOPMENT ENVIRONMENT
+    </div>
+    <div class="flex flex-1 min-h-0">
     <!-- Sidebar -->
     <AppSidebar />
 
@@ -32,10 +39,11 @@ const pageTitle = computed(() => {
     <!-- Main Content -->
     <div class="flex-1 flex flex-col min-w-0">
       <AppTopbar :title="pageTitle" @toggle-sidebar="isSidebarOpen = true" />
-      
+
       <main class="flex-1 p-6 overflow-y-auto">
         <slot />
       </main>
+    </div>
     </div>
   </div>
 </template>

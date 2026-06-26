@@ -8,6 +8,8 @@ const state = reactive({
   password: ''
 })
 const isLoading = ref(false)
+const { appEnv } = useRuntimeConfig().public
+const isDev = appEnv === 'development'
 
 const supabase = useSupabaseClient()
 const toast = useToast()
@@ -52,7 +54,11 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+  <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+    <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide shrink-0">
+      🔧 DEVELOPMENT ENVIRONMENT
+    </div>
+  <div class="flex-1 flex items-center justify-center p-6">
     <div class="w-full max-w-sm space-y-8">
       <!-- Logo -->
       <div class="flex flex-col items-center gap-4">
@@ -107,5 +113,6 @@ async function handleLogin() {
         &copy; 2026 Slate Precision. All rights reserved.
       </p>
     </div>
+  </div>
   </div>
 </template>

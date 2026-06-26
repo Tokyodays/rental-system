@@ -9,5 +9,10 @@ export default defineNuxtConfig({
     redirect: false
   },
   css: ['~/assets/css/main.css'],
-  devtools: { enabled: true }
+  devtools: { enabled: true },
+  runtimeConfig: {
+    public: {
+      appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'development'
+    }
+  }
 })
