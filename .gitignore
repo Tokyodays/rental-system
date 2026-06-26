@@ -35,3 +35,5 @@ logs
 test-results/
 playwright-report/
 playwright-video/
+.vercel
+.env*

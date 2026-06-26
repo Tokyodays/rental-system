@@ -1,9 +1,14 @@
 -- 1. カラム名の変更 (full_name -> username)
--- すでに username がある場合はエラーを無視するようにします
+-- username が既に存在する場合はリネームせず full_name を削除するだけにする
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'staff' AND column_name = 'full_name') THEN
-        ALTER TABLE public.staff RENAME COLUMN full_name TO username;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'staff' AND column_name = 'username') THEN
+            -- username 列が既にある場合は full_name を削除するだけ
+            ALTER TABLE public.staff DROP COLUMN full_name;
+        ELSE
+            ALTER TABLE public.staff RENAME COLUMN full_name TO username;
+        END IF;
     END IF;
 END $$;
 
