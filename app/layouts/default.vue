@@ -6,7 +6,7 @@ const isDev = appEnv === 'development'
 
 const pageTitle = computed(() => {
   const path = route.path
-  if (path === '/') return 'Dashboard Overview'
+  if (path === '/dashboard') return 'Dashboard Overview'
   if (path.startsWith('/vehicles')) return 'Vehicle List'
   if (path.startsWith('/rentals/new')) return 'Lending Transaction'
   if (path.startsWith('/rentals/return')) return 'Return Transaction'

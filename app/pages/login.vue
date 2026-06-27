@@ -41,7 +41,7 @@ async function handleLogin() {
     // ロールを同期してリダイレクト先を分岐（window.location で完全リロード→競合状態を回避）
     await syncUser()
     setTimeout(() => {
-      window.location.href = isSuperAdmin.value ? '/admin/stores' : '/'
+      window.location.href = isSuperAdmin.value ? '/admin/stores' : '/dashboard'
     }, 100)
   } catch (error: any) {
     console.error('Login error:', error)
