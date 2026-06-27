@@ -2,6 +2,8 @@
 const supabase = useSupabaseClient()
 const toast = useToast()
 const { staff } = useStaff()
+const { appEnv } = useRuntimeConfig().public
+const isDev = appEnv === 'development'
 
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
@@ -15,6 +17,10 @@ const handleLogout = async () => {
 
 <template>
   <div class="min-h-screen bg-slate-950">
+    <!-- Dev environment banner -->
+    <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide">
+      🔧 DEVELOPMENT ENVIRONMENT
+    </div>
     <!-- Top Navigation Bar -->
     <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 sticky top-0 z-10">
       <div class="flex items-center gap-3">

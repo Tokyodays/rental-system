@@ -9,7 +9,7 @@ onMounted(() => {
 
 // Store Management は super_admin 専用の管理コンソールに移動
 const items = computed(() => [
-  { label: t('dashboard'), icon: 'i-lucide-layout-dashboard', to: '/' },
+  { label: t('dashboard'), icon: 'i-lucide-layout-dashboard', to: '/dashboard' },
   { label: t('vehicles'), icon: 'i-lucide-package', to: '/vehicles' },
   { label: t('lending'), icon: 'i-lucide-log-out', to: '/rentals/new' },
   { label: t('return'), icon: 'i-lucide-log-in', to: '/rentals/return' },

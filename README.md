@@ -1,6 +1,23 @@
-# Nuxt Minimal Starter
+# Rental System
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+マルチテナント対応の車両レンタル管理システム（Nuxt 4 + Supabase）
+
+## デプロイ環境
+
+| 環境 | URL | Supabase | ブランチ |
+|------|-----|----------|---------|
+| **本番** | https://rental-system-tokyodays-projects.vercel.app | rental-system-prod | `deployment/production` |
+| **開発** | https://rental-system-dev.vercel.app | rental-system-dev | `deployment/development` |
+
+### デプロイフロー
+
+```
+feature/* → main（PR & merge）
+              ↓
+  main → deployment/development（PR & merge）→ 開発環境へ自動デプロイ
+              ↓ 動作確認後
+  deployment/development → deployment/production（PR & merge）→ 本番へ自動デプロイ
+```
 
 ## Setup
 
