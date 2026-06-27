@@ -36,7 +36,7 @@ const router = useRouter()
         block
         color="primary"
         size="lg"
-        to="/"
+        to="/dashboard"
         class="cursor-pointer"
       />
       <UButton

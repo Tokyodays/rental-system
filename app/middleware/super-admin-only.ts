@@ -5,6 +5,6 @@ export default defineNuxtRouteMiddleware(async () => {
     await syncUser()
   }
   if (!isSuperAdmin.value) {
-    return navigateTo('/')
+    return navigateTo('/dashboard')
   }
 })

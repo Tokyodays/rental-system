@@ -13,6 +13,6 @@ export default defineNuxtRouteMiddleware(async () => {
   }
 
   if (!isAdmin.value) {
-    return navigateTo('/')
+    return navigateTo('/dashboard')
   }
 })

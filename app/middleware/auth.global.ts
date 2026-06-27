@@ -1,4 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+  // Landing page is public
+  if (to.path === '/') return
+
   const isAdminPath = to.path.startsWith('/admin')
   const isAdminLogin = to.path === '/admin/login'
   const isStaffLogin = to.path === '/login'
@@ -25,6 +28,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // admin / staff のアクセス制御
-  if (isStaffLogin) return navigateTo('/')
-  if (isAdminPath && !isAdminLogin) return navigateTo('/')
+  if (isStaffLogin) return navigateTo('/dashboard')
+  if (isAdminPath && !isAdminLogin) return navigateTo('/dashboard')
 })

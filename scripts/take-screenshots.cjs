@@ -25,7 +25,7 @@ async function login(page) {
   await page.getByPlaceholder('admin').fill(USERNAME)
   await page.getByPlaceholder('••••••••').fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign In' }).click()
-  await page.waitForURL(`${BASE_URL}/`, { timeout: 15000 })
+  await page.waitForURL(`${BASE_URL}/dashboard`, { timeout: 15000 })
   await page.waitForLoadState('networkidle')
 
   // Wait for useStaff() to fully initialize store_id before navigating away
@@ -66,8 +66,8 @@ async function main() {
 
   console.log('Taking screenshots...')
 
-  // 1. Dashboard (already on '/' after login wait)
-  await page.goto(`${BASE_URL}/`)
+  // 1. Dashboard
+  await page.goto(`${BASE_URL}/dashboard`)
   await page.waitForLoadState('networkidle')
   await shot(page, '01_dashboard')
 
