@@ -39,7 +39,7 @@ const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-sett
       </div>
       <div>
         <h1 class="text-base font-bold leading-tight text-slate-900 dark:text-white">Rental System</h1>
-        <p class="text-xs text-slate-500">Vehicle Management</p>
+        <p class="text-xs text-slate-500">Rent Flow</p>
       </div>
     </div>
 
