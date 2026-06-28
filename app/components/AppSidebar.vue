@@ -38,8 +38,8 @@ const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-sett
         <UIcon name="i-lucide-package" class="size-5" />
       </div>
       <div>
-        <h1 class="text-base font-bold leading-tight text-slate-900 dark:text-white">Rental System</h1>
-        <p class="text-xs text-slate-500">Vehicle Management</p>
+        <h1 class="text-base font-bold leading-tight text-slate-900 dark:text-white">{{ staff?.stores?.name || 'Rental System' }}</h1>
+        <p class="text-xs text-slate-500">Rent Flow</p>
       </div>
     </div>
 
