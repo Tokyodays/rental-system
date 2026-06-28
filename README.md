@@ -2,6 +2,14 @@
 
 マルチテナント対応の車両レンタル管理システム（Nuxt 4 + Supabase）
 
+## 管理者ログイン画面
+
+### 本番環境
+https://rental-system-tokyodays-projects.vercel.app/admin/login/
+
+### 開発環境
+https://rental-system-dev.vercel.app/admin/login/
+
 ## デプロイ環境
 
 | 環境 | URL | Supabase | ブランチ |
