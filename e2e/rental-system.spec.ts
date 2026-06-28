@@ -49,7 +49,7 @@ async function login(page: Page, username: string = TEST_USERNAME, password: str
   await page.getByRole('button', { name: 'Sign In' }).click()
 
   // ダッシュボードへリダイレクトされるまで待つ
-  await page.waitForURL('/', { timeout: 15_000 })
+  await page.waitForURL('/dashboard', { timeout: 15_000 })
   await page.waitForLoadState('networkidle')
 }
 
@@ -155,7 +155,7 @@ test.beforeEach(async ({ page }) => {
 // ============================================================
 test.describe('Dashboard', () => {
   test('Stats cards (Lending, Available, Today\'s Transactions) が表示される', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
 
@@ -179,7 +179,7 @@ test.describe('Dashboard', () => {
   })
 
   test('Recent Transactions テーブルが表示される', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
     await waitForLoadingComplete(page)
 
@@ -194,7 +194,7 @@ test.describe('Dashboard', () => {
   })
 
   test('Lending ボタンが /rentals/new へ遷移する', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
 
     const lendingButton = page.getByRole('main').getByRole('link', { name: 'Lending' })
@@ -206,7 +206,7 @@ test.describe('Dashboard', () => {
   })
 
   test('View All リンクが /history へ遷移する', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
 
     const viewAll = page.getByRole('link', { name: 'View All' })
@@ -647,7 +647,7 @@ test.describe('History', () => {
 // ============================================================
 test.describe('Navigation & Layout', () => {
   test('サイドバーのナビゲーションリンクが正しく機能する', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
 
     // Vehicles リンク
@@ -1024,7 +1024,7 @@ test.describe('Authentication & Security', () => {
     await page.waitForLoadState('networkidle')
 
     // ダッシュボードにリダイレクトされることを確認
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/dashboard')
   })
 
   test('未ログインユーザーが保護ページにアクセスするとリダイレクトされる', async ({ page, context }) => {
@@ -1073,7 +1073,7 @@ test.describe('User Management & Data Integrity', () => {
     await login(page, staffName, staffPassword)
 
     // ログインに成功すればダッシュボードへ
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/dashboard')
     await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible()
 
     // Step 5: クリーンアップ（元のアカウントで戻ってから削除）
