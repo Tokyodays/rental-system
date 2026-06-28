@@ -31,8 +31,9 @@ const mkIcon = (paths: string[]) =>
 const langs = [
   { code: 'EN', label: 'English' },
   { code: 'TH', label: 'ภาษาไทย' },
+  { code: 'LA', label: 'ພາສາລາວ' },
   { code: 'VI', label: 'Tiếng Việt' },
-  { code: 'ID', label: 'Bahasa Indonesia' }
+  { code: 'MY', label: 'Bahasa Melayu' }
 ]
 
 const currentLabel = computed(() => langs.find(l => l.code === currentLang.value)?.label ?? 'English')
