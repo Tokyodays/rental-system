@@ -30,7 +30,6 @@ const mkIcon = (paths: string[]) =>
 
 const langs = [
   { code: 'EN', label: 'English' },
-  { code: 'JA', label: '日本語' },
   { code: 'TH', label: 'ภาษาไทย' },
   { code: 'VI', label: 'Tiếng Việt' },
   { code: 'ID', label: 'Bahasa Indonesia' }
@@ -187,7 +186,7 @@ onMounted(() => {
 
     <!-- HERO -->
     <section id="top" style="position:relative;">
-      <div style="position:relative;overflow:hidden;background:#0B1220;background-size:cover;background-position:calc(50% + 200px) calc(50% - 100px);" :style="{ backgroundImage: `url(${imgTop})` }">
+      <div class="rf-hero-bg" style="position:relative;overflow:hidden;" :style="{ backgroundImage: `url(${imgTop})` }">
         <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(8,12,22,.98) 0%, rgba(8,12,22,.97) 25%, rgba(8,12,22,.92) 45%, rgba(8,12,22,.60) 65%, rgba(8,12,22,.20) 85%, rgba(8,12,22,.08) 100%);" />
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(8,12,22,.2) 0%, transparent 25%, transparent 72%, rgba(8,12,22,.6) 100%);" />
         <div style="position:relative;max-width:1200px;margin:0 auto;padding:clamp(76px,11vw,132px) 32px;text-align:left;">
@@ -380,6 +379,17 @@ onMounted(() => {
 <style>
 html { scroll-behavior: smooth; }
 @keyframes rf-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+.rf-hero-bg {
+  background-color: #0B1220;
+  background-size: cover;
+  background-position: calc(50% + 200px) calc(50% - 50px);
+}
+@media (max-width: 1024px) {
+  .rf-hero-bg {
+    background-position: center 30%;
+  }
+}
 
 .rf-nav-login:hover { background: color-mix(in srgb, var(--accent, #2563EB) 8%, #fff); }
 .rf-nav-demo:hover { transform: translateY(-1px); box-shadow: 0 12px 24px -6px color-mix(in srgb, var(--accent, #2563EB) 65%, transparent); }
