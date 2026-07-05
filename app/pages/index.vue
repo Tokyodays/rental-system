@@ -8,25 +8,9 @@ import imgHistory from '~/assets/images/05_history.png'
 
 definePageMeta({ layout: false })
 
-useHead({
-  link: [
-    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap' }
-  ]
-})
-
-const accent = '#2563EB'
 const langOpen = ref(false)
+const menuOpen = ref(false)
 const currentLang = ref('EN')
-const showFloatingStats = true
-
-const toggleLang = () => { langOpen.value = !langOpen.value }
-
-const mkIcon = (paths: string[]) =>
-  'data:image/svg+xml,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths.map(d => `<path d="${d}"/>`).join('')}</svg>`
-  )
 
 const langs = [
   { code: 'EN', label: 'English' },
@@ -43,75 +27,77 @@ const selectLang = (code: string) => {
   langOpen.value = false
 }
 
-const brands = ['MetroCycles', 'UrbanDrive', 'PedalPoint', 'GoScoot', 'HarborRentals']
+const brands = [
+  { name: 'MetroCycles', initials: 'MC' },
+  { name: 'UrbanDrive', initials: 'UD' },
+  { name: 'PedalPoint', initials: 'PP' },
+  { name: 'GoScoot', initials: 'GS' },
+  { name: 'HarborRentals', initials: 'HR' }
+]
 
-const features = [
+const splitFeatures = [
   {
-    no: '01 · FLEET', dir: 'row', url: 'rentflow.com/vehicles', img: imgVehicles,
-    iconSvg: mkIcon(['M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z', 'm3.3 7 8.7 5 8.7-5', 'M12 22V12']),
+    icon: 'i-lucide-package', img: imgVehicles, reverse: false,
     title: 'Vehicle fleet management',
     body: 'Every bike, car and bicycle in one searchable list. Filter by category and status, then act in a single click.',
     points: ['Filter by Bike, Car or Bicycle', 'Live Available / Lent / Reserved status', 'Quick-action menu on every vehicle']
   },
   {
-    no: '02 · LENDING', dir: 'row-reverse', url: 'rentflow.com/lending', img: imgLending,
-    iconSvg: mkIcon(['M17 8 21 12 17 16', 'M3 12h18', 'M7 16 3 12 7 8']),
+    icon: 'i-lucide-arrow-right-left', img: imgLending, reverse: true,
     title: 'Step-by-step lending flow',
-    body: 'A guided wizard takes staff from customer to vehicle to confirmation — fast to learn, hard to get wrong.',
-    points: ['Select customer → vehicle → confirm', 'Only active customers surfaced', 'Clear progress at every step']
-  },
+    body: 'A guided wizard takes staff from customer to vehicle to confirmation. Fast to learn, hard to get wrong.',
+    points: ['Select customer, vehicle, then confirm', 'Only active customers surfaced', 'Clear progress at every step']
+  }
+]
+
+const cardFeatures = [
   {
-    no: '03 · CUSTOMERS', dir: 'row', url: 'rentflow.com/customers', img: imgCustomers,
-    iconSvg: mkIcon(['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M5 7a4 4 0 1 0 8 0a4 4 0 1 0-8 0', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75']),
+    icon: 'i-lucide-users', img: imgCustomers, tone: 'peach',
     title: 'Customer management',
     body: 'A clean database of everyone who rents from you, with contact details, document tracking and live rental status.',
-    points: ['Active / Renting / Inactive tracking', 'Contact info and documents on file', 'Add and edit customers inline']
+    points: ['Active / Renting / Inactive tracking', 'Contact info and documents on file']
   },
   {
-    no: '04 · REVENUE', dir: 'row-reverse', url: 'rentflow.com/history', img: imgHistory,
-    iconSvg: mkIcon(['M3 3v16a2 2 0 0 0 2 2h16', 'm19 9-5 5-4-4-3 3']),
+    icon: 'i-lucide-chart-line', img: imgHistory, tone: 'azure',
     title: 'Transaction history & export',
     body: 'Browse every transaction by month with duration and revenue per rental, then export the whole period to CSV in one click.',
-    points: ['Month-by-month history view', 'Duration and revenue per transaction', 'One-click CSV export']
+    points: ['Month-by-month history view', 'One-click CSV export']
   }
 ]
 
 const capabilities = [
-  { title: 'QR code scanner', body: 'Scan a vehicle to pull up its record instantly — no typing, no lookup.', iconSvg: mkIcon(['M3 7V5a2 2 0 0 1 2-2h2', 'M17 3h2a2 2 0 0 1 2 2v2', 'M21 17v2a2 2 0 0 1-2 2h-2', 'M7 21H5a2 2 0 0 1-2-2v-2', 'M3 12h18']) },
-  { title: 'Multi-store management', body: 'Run every branch from a single admin console with one source of truth.', iconSvg: mkIcon(['M3 21h18', 'M5 21V7l8-4v18', 'M19 21V11l-6-4', 'M9 9v.01', 'M9 13v.01', 'M9 17v.01']) },
-  { title: 'Role-based access', body: 'Owner, Branch Admin and Staff each see exactly what they should.', iconSvg: mkIcon(['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z', 'm9 12 2 2 4-4']) },
-  { title: 'Multi-currency support', body: 'Price and report in the currency each branch operates in.', iconSvg: mkIcon(['M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0', 'M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8', 'M12 6v2', 'M12 16v2']) }
+  { icon: 'i-lucide-qr-code', title: 'QR code scanner', body: 'Scan a vehicle to pull up its record instantly. No typing, no lookup.' },
+  { icon: 'i-lucide-building-2', title: 'Multi-store management', body: 'Run every branch from a single admin console with one source of truth.' },
+  { icon: 'i-lucide-shield-check', title: 'Role-based access', body: 'Owner, Branch Admin and Staff each see exactly what they should.' },
+  { icon: 'i-lucide-coins', title: 'Multi-currency support', body: 'Price and report in the currency each branch operates in.' }
 ]
 
-const testimonials = [
-  { quote: 'We replaced three spreadsheets and a notebook with Rent Flow. Lending a scooter now takes under a minute and nothing falls through the cracks.', name: 'Maya Okonkwo', role: 'Owner · CityRide Scooters', initials: 'MO' },
+const featuredQuote = {
+  quote: 'We replaced three spreadsheets and a notebook with Rent Flow. Lending a scooter now takes under a minute and nothing falls through the cracks.',
+  name: 'Maya Okonkwo', role: 'Owner · CityRide Scooters', initials: 'MO'
+}
+
+const sideQuotes = [
   { quote: "The fleet view alone paid for itself. I can see what's available across both branches without calling anyone.", name: 'Daniel Reyes', role: 'Branch Admin · Coastline Bikes', initials: 'DR' },
   { quote: "Month-end used to take a full afternoon. Now I export to CSV and I'm done before lunch.", name: 'Priya Anand', role: 'Owner · GreenWheel Rentals', initials: 'PA' }
 ]
 
 onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
   const EASE = 'cubic-bezier(.22,1,.36,1)'
   const heroEls = Array.from(document.querySelectorAll('[data-hero]')) as HTMLElement[]
   const revealEls = Array.from(document.querySelectorAll('[data-reveal]')) as HTMLElement[]
 
   heroEls.forEach((el, i) => {
-    const d = 0.10 + i * 0.10
+    const d = 0.08 + i * 0.09
     el.style.opacity = '0'
-    el.style.transform = 'translateX(-36px)'
+    el.style.transform = 'translateY(22px)'
     el.style.transition = `opacity .6s ${EASE} ${d}s, transform .7s ${EASE} ${d}s`
-    el.style.willChange = 'opacity, transform'
   })
-  const showHero = () => heroEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none' })
-  requestAnimationFrame(() => requestAnimationFrame(showHero))
-  setTimeout(() => {
-    heroEls.forEach(el => {
-      if (parseFloat(getComputedStyle(el).opacity) < 0.99) {
-        el.style.transition = 'none'
-        el.style.opacity = '1'
-        el.style.transform = 'none'
-      }
-    })
-  }, 1300)
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    heroEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none' })
+  }))
 
   const groups = new Map<Element, HTMLElement[]>()
   revealEls.forEach(el => {
@@ -124,9 +110,8 @@ onMounted(() => {
   revealEls.forEach(el => {
     const d = (el as any)._rfDelay ?? 0
     el.style.opacity = '0'
-    el.style.transform = 'translateY(28px)'
+    el.style.transform = 'translateY(26px)'
     el.style.transition = `opacity .7s ${EASE} ${d}s, transform .7s ${EASE} ${d}s`
-    el.style.willChange = 'opacity, transform'
   })
   const io = new IntersectionObserver(entries => {
     entries.forEach(e => {
@@ -143,134 +128,170 @@ onMounted(() => {
 </script>
 
 <template>
-  <div style="--accent:#2563EB;font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:#0F172A;overflow-x:hidden;background:#fff;color-scheme:light;">
+  <div class="font-body bg-sand-200 text-ink overflow-x-hidden [color-scheme:light]">
 
     <!-- NAV -->
-    <header style="position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-bottom:1px solid #EEF1F6;">
-      <nav style="max-width:1200px;margin:0 auto;height:72px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;">
-        <a href="#top" style="display:flex;align-items:center;gap:11px;text-decoration:none;">
-          <span style="width:34px;height:34px;border-radius:9px;background:var(--accent,#2563EB);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -4px color-mix(in srgb,var(--accent,#2563EB) 55%,transparent);">
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    <header class="sticky top-0 z-50 bg-sand-200/85 backdrop-blur-md border-b border-sand-400/50">
+      <nav class="max-w-6xl mx-auto h-16 lg:h-[72px] px-5 lg:px-8 flex items-center justify-between gap-4">
+        <a href="#top" class="flex items-center gap-2.5 no-underline shrink-0">
+          <span class="w-9 h-9 rounded-xl bg-tangerine-500 flex items-center justify-center">
+            <UIcon name="i-lucide-package" class="w-5 h-5 text-ink" />
           </span>
-          <span style="font-weight:800;font-size:18px;letter-spacing:-.02em;color:#0F172A;white-space:nowrap;">Rent Flow</span>
+          <span class="font-display font-bold text-lg tracking-tight text-ink whitespace-nowrap">Rent Flow</span>
         </a>
-        <div style="display:flex;align-items:center;gap:20px;">
-          <div style="display:flex;align-items:center;gap:30px;margin-right:8px;">
-            <a href="#features" style="text-decoration:none;color:#475569;font-weight:500;font-size:15px;">Features</a>
-            <a href="#capabilities" style="text-decoration:none;color:#475569;font-weight:500;font-size:15px;">Capabilities</a>
-            <span style="color:#94A3B8;font-weight:500;font-size:15px;display:inline-flex;align-items:center;gap:7px;">Pricing<span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;color:#64748B;background:#F1F5F9;border:1px solid #E2E8F0;padding:2px 6px;border-radius:5px;">SOON</span></span>
-          </div>
-          <div style="position:relative;">
-            <button type="button" class="rf-lang-btn" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:9px 12px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;color:#334155;line-height:1;" @click="toggleLang">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span>{{ currentLabel }}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+
+        <!-- Desktop nav -->
+        <div class="hidden lg:flex items-center gap-2">
+          <a href="#features" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">Features</a>
+          <a href="#capabilities" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">Capabilities</a>
+        </div>
+
+        <div class="flex items-center gap-2 lg:gap-3">
+          <!-- Language switcher -->
+          <div class="relative">
+            <button
+              type="button"
+              class="flex items-center gap-2 bg-sand-50 border border-sand-400/70 rounded-xl px-3 py-2 cursor-pointer text-sm font-semibold text-ink-soft hover:border-azure-500/50 transition-colors"
+              @click="langOpen = !langOpen"
+            >
+              <UIcon name="i-lucide-globe" class="w-4 h-4 text-azure-700" />
+              <span class="hidden sm:inline">{{ currentLabel }}</span>
+              <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-ink-mute" />
             </button>
             <template v-if="langOpen">
-              <div style="position:fixed;inset:0;z-index:55;" @click="langOpen = false" />
-              <div style="position:absolute;top:calc(100% + 8px);right:0;min-width:184px;background:#fff;border:1px solid #EAEEF4;border-radius:12px;box-shadow:0 18px 40px -12px rgba(15,23,42,.22);padding:6px;z-index:60;">
-                <button v-for="lang in langs" :key="lang.code" type="button" class="rf-lang-item" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:none;border-radius:8px;padding:10px 12px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:500;color:#334155;" @click="selectLang(lang.code)">
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;width:22px;flex-shrink:0;">{{ lang.code }}</span>{{ lang.label }}
+              <div class="fixed inset-0 z-[55]" @click="langOpen = false" />
+              <div class="absolute top-[calc(100%+8px)] right-0 min-w-46 bg-sand-50 border border-sand-400/70 rounded-xl shadow-xl shadow-ink/10 p-1.5 z-[60]">
+                <button
+                  v-for="lang in langs" :key="lang.code" type="button"
+                  class="flex items-center gap-3 w-full text-left bg-transparent border-none rounded-lg px-3 py-2.5 cursor-pointer text-sm font-medium text-ink-soft hover:bg-sand-200 transition-colors"
+                  @click="selectLang(lang.code)"
+                >
+                  <span class="text-xs font-semibold text-azure-500 w-6 shrink-0">{{ lang.code }}</span>{{ lang.label }}
                 </button>
               </div>
             </template>
           </div>
-          <span style="width:1px;height:24px;background:#E2E8F0;margin:0 2px;" />
-          <NuxtLink to="/login" class="rf-nav-login" style="text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:var(--accent,#2563EB);font-weight:600;font-size:15px;padding:10px 14px;border-radius:10px;transition:background .15s ease;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#2563EB)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+
+          <NuxtLink to="/login" class="hidden lg:inline-flex items-center gap-1.5 no-underline text-azure-700 font-semibold text-[15px] px-3.5 py-2.5 rounded-xl hover:bg-sand-300/60 transition-colors">
+            <UIcon name="i-lucide-log-in" class="w-4 h-4" />
             Log in
           </NuxtLink>
-          <a href="#cta" class="rf-nav-demo" style="text-decoration:none;white-space:nowrap;background:var(--accent,#2563EB);color:#fff;font-weight:600;font-size:15px;padding:11px 20px;border-radius:10px;box-shadow:0 8px 18px -6px color-mix(in srgb,var(--accent,#2563EB) 60%,transparent);transition:transform .15s ease,box-shadow .15s ease;">Request Demo</a>
+          <a href="#cta" class="hidden lg:inline-block no-underline whitespace-nowrap bg-tangerine-500 text-ink font-bold text-[15px] px-5 py-2.5 rounded-xl hover:bg-tangerine-600 hover:-translate-y-px active:translate-y-0 transition-all">Request Demo</a>
+
+          <!-- Mobile menu button -->
+          <button type="button" class="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl border border-sand-400/70 bg-sand-50 cursor-pointer" aria-label="Menu" @click="menuOpen = !menuOpen">
+            <UIcon :name="menuOpen ? 'i-lucide-x' : 'i-lucide-menu'" class="w-5 h-5 text-ink" />
+          </button>
         </div>
       </nav>
+
+      <!-- Mobile menu panel -->
+      <div v-if="menuOpen" class="lg:hidden border-t border-sand-400/50 bg-sand-100 px-5 py-4 flex flex-col gap-1">
+        <a href="#features" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Features</a>
+        <a href="#capabilities" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Capabilities</a>
+        <NuxtLink to="/login" class="no-underline text-azure-700 font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Log in</NuxtLink>
+        <a href="#cta" class="no-underline text-center bg-tangerine-500 text-ink font-bold text-base px-5 py-3.5 rounded-xl mt-2" @click="menuOpen = false">Request Demo</a>
+      </div>
     </header>
 
     <!-- HERO -->
-    <section id="top" style="position:relative;">
-      <div class="rf-hero-bg" style="position:relative;overflow:hidden;" :style="{ backgroundImage: `url(${imgTop})` }">
-        <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(8,12,22,.98) 0%, rgba(8,12,22,.97) 25%, rgba(8,12,22,.92) 45%, rgba(8,12,22,.60) 65%, rgba(8,12,22,.20) 85%, rgba(8,12,22,.08) 100%);" />
-        <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(8,12,22,.2) 0%, transparent 25%, transparent 72%, rgba(8,12,22,.6) 100%);" />
-        <div style="position:relative;max-width:1200px;margin:0 auto;padding:clamp(76px,11vw,132px) 32px;text-align:left;">
-          <div data-hero data-hd="0" style="display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);margin-bottom:26px;">
-            <span style="width:7px;height:7px;border-radius:50%;background:var(--accent,#2563EB);" />
-            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.02em;color:rgba(255,255,255,.82);">Rental operations, simplified</span>
-          </div>
-          <h1 data-hero data-hd="1" style="margin:0;max-width:760px;font-size:clamp(38px,5.4vw,68px);line-height:1.04;letter-spacing:-.035em;font-weight:800;color:#fff;text-wrap:balance;">The smarter way to run your <span style="color:var(--accent,#2563EB);">rental business</span></h1>
-          <p data-hero data-hd="2" style="margin:24px 0 0;max-width:560px;font-size:clamp(17px,1.6vw,20px);line-height:1.55;color:#CBD5E1;text-wrap:pretty;">Manage your fleet, lending, customers and revenue from one clean console — built for bike, car, bicycle and scooter rental shops.</p>
-          <div data-hero data-hd="3" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:34px;">
-            <a href="#cta" class="rf-hero-cta" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;background:var(--accent,#2563EB);color:#fff;font-weight:600;font-size:17px;padding:15px 30px;border-radius:12px;box-shadow:0 14px 30px -10px color-mix(in srgb,var(--accent,#2563EB) 70%,transparent);transition:transform .15s ease,box-shadow .15s ease;">Request Demo
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    <section id="top" class="relative overflow-hidden bg-gradient-to-br from-azure-900 via-azure-800 to-azure-700">
+      <div class="relative max-w-6xl mx-auto px-5 lg:px-8 pt-14 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+        <div class="lg:col-span-6">
+          <h1 data-hero class="m-0 font-display font-extrabold text-[clamp(38px,5vw,62px)] leading-[1.05] tracking-tight text-sand-50 text-balance">
+            The smarter way to run your <span class="text-peach-300">rental business</span>
+          </h1>
+          <p data-hero class="mt-6 mb-0 max-w-lg text-[clamp(16px,1.5vw,19px)] leading-relaxed text-azure-100/90 text-pretty">
+            Fleet, lending, customers and revenue in one clean console, built for bike, scooter and car rental shops.
+          </p>
+          <div data-hero class="mt-9">
+            <a href="#cta" class="inline-flex items-center gap-2.5 no-underline bg-tangerine-500 text-ink font-bold text-[17px] px-8 py-4 rounded-xl hover:bg-tangerine-600 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+              Request Demo
+              <UIcon name="i-lucide-arrow-right" class="w-4.5 h-4.5" />
             </a>
-            <span style="font-size:13.5px;color:rgba(255,255,255,.6);">No credit card required · Live walkthrough in 20 minutes</span>
           </div>
         </div>
-      </div>
-
-      <!-- HERO MOCKUP -->
-      <div style="position:relative;margin:64px auto 0;max-width:1080px;">
-        <div style="border-radius:16px;overflow:hidden;border:1px solid #E2E8F0;box-shadow:0 50px 90px -30px rgba(15,23,42,.32),0 12px 28px -12px rgba(15,23,42,.14);background:#fff;">
-          <div style="height:42px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#F8FAFC;border-bottom:1px solid #EEF2F7;">
-            <span style="width:11px;height:11px;border-radius:50%;background:#F87171;" />
-            <span style="width:11px;height:11px;border-radius:50%;background:#FBBF24;" />
-            <span style="width:11px;height:11px;border-radius:50%;background:#34D399;" />
-            <div style="margin:0 auto;font-family:'JetBrains Mono',monospace;font-size:12px;color:#94A3B8;background:#fff;border:1px solid #E9EEF4;padding:5px 16px;border-radius:7px;">app.rentflow.com/dashboard</div>
+        <div data-hero class="lg:col-span-6 relative">
+          <div class="absolute -inset-3 lg:-inset-4 rounded-3xl bg-peach-300/20 rotate-2" aria-hidden="true" />
+          <div class="relative rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-2xl shadow-azure-900/60 bg-sand-50">
+            <img :src="imgDashboard" alt="Rent Flow dashboard" class="block w-full h-auto" >
           </div>
-          <img :src="imgDashboard" alt="Rent Flow dashboard" style="display:block;width:100%;height:auto;" />
+          <div class="hidden lg:flex absolute -left-8 -bottom-6 items-center gap-3 bg-sand-50 border border-sand-400/60 rounded-2xl px-4.5 py-3.5 shadow-xl shadow-azure-900/30">
+            <span class="w-9 h-9 rounded-xl bg-peach-200 flex items-center justify-center">
+              <UIcon name="i-lucide-check" class="w-5 h-5 text-azure-700" />
+            </span>
+            <div>
+              <div class="text-xl font-extrabold leading-none text-ink">19</div>
+              <div class="text-xs text-ink-mute mt-1">Available now</div>
+            </div>
+          </div>
         </div>
-        <template v-if="showFloatingStats">
-          <div style="position:absolute;left:-26px;top:30%;background:#fff;border:1px solid #EEF1F6;border-radius:14px;padding:14px 18px;box-shadow:0 22px 40px -16px rgba(15,23,42,.28);display:flex;align-items:center;gap:13px;animation:rf-float 6s ease-in-out infinite;">
-            <span style="width:38px;height:38px;border-radius:10px;background:#ECFDF5;display:flex;align-items:center;justify-content:center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-            <div style="text-align:left;"><div style="font-size:22px;font-weight:800;line-height:1;color:#0F172A;">19</div><div style="font-size:12px;color:#64748B;margin-top:3px;">Available now</div></div>
-          </div>
-          <div style="position:absolute;right:-22px;bottom:18%;background:#fff;border:1px solid #EEF1F6;border-radius:14px;padding:14px 18px;box-shadow:0 22px 40px -16px rgba(15,23,42,.28);display:flex;align-items:center;gap:13px;animation:rf-float 6s ease-in-out infinite;animation-delay:1.5s;">
-            <span style="width:38px;height:38px;border-radius:10px;background:color-mix(in srgb,var(--accent,#2563EB) 12%,#fff);display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#2563EB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span>
-            <div style="text-align:left;"><div style="font-size:13px;color:#64748B;">Today's transactions</div><div style="font-size:13px;font-weight:600;color:#0F172A;margin-top:3px;">Synced live</div></div>
-          </div>
-        </template>
       </div>
     </section>
 
     <!-- TRUST BAR -->
-    <section style="max-width:1200px;margin:0 auto;padding:46px 32px 8px;">
-      <p style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#94A3B8;margin:0 0 26px;">Trusted by rental businesses</p>
-      <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:44px 60px;opacity:.62;">
-        <span v-for="brand in brands" :key="brand" style="font-weight:700;font-size:21px;letter-spacing:-.02em;color:#64748B;display:inline-flex;align-items:center;gap:9px;">
-          <span style="width:18px;height:18px;border-radius:5px;background:#CBD5E1;display:inline-block;" />{{ brand }}
+    <section class="max-w-6xl mx-auto px-5 lg:px-8 pt-12 pb-2">
+      <p class="text-center text-sm text-ink-mute m-0 mb-7">Trusted by rental businesses</p>
+      <div class="flex flex-wrap justify-center items-center gap-x-10 gap-y-5">
+        <span v-for="brand in brands" :key="brand.name" class="inline-flex items-center gap-2.5 text-azure-700/70">
+          <span class="w-8 h-8 rounded-lg bg-azure-700/10 flex items-center justify-center text-[11px] font-extrabold tracking-wide text-azure-700">{{ brand.initials }}</span>
+          <span class="font-bold text-lg tracking-tight">{{ brand.name }}</span>
         </span>
       </div>
     </section>
 
     <!-- FEATURES -->
-    <section id="features" style="max-width:1200px;margin:0 auto;padding:96px 32px 40px;">
-      <div data-reveal style="text-align:center;max-width:680px;margin:0 auto 14px;">
-        <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#2563EB);margin:0 0 16px;font-weight:500;">Core platform</p>
-        <h2 style="margin:0;font-size:clamp(30px,3.6vw,46px);line-height:1.08;letter-spacing:-.03em;font-weight:800;color:#0F172A;text-wrap:balance;">Everything your shop runs on, in one place</h2>
-        <p style="margin:18px auto 0;max-width:560px;font-size:17px;line-height:1.55;color:#475569;">From the first vehicle you add to the monthly revenue report — Rent Flow handles the whole operation.</p>
+    <section id="features" class="max-w-6xl mx-auto px-5 lg:px-8 pt-20 lg:pt-28 pb-8">
+      <div data-reveal class="max-w-2xl">
+        <h2 class="m-0 font-display font-extrabold text-[clamp(30px,3.4vw,44px)] leading-[1.08] tracking-tight text-ink text-balance">Everything your shop runs on, in one place</h2>
+        <p class="mt-4 mb-0 text-[17px] leading-relaxed text-ink-soft">From the first vehicle you add to the monthly revenue report, Rent Flow handles the whole operation.</p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:30px;margin-top:64px;">
-        <div v-for="feat in features" :key="feat.no" data-reveal style="display:flex;flex-wrap:wrap;align-items:center;gap:clamp(28px,4vw,68px);background:#fff;border:1px solid #EDF1F6;border-radius:22px;padding:clamp(26px,3vw,48px);box-shadow:0 1px 2px rgba(15,23,42,.03);" :style="{ flexDirection: feat.dir as any }">
-          <div style="flex:1 1 320px;min-width:300px;">
-            <span style="display:inline-flex;align-items:center;gap:9px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;color:#94A3B8;margin-bottom:16px;">{{ feat.no }}</span>
-            <div style="width:46px;height:46px;border-radius:12px;background:color-mix(in srgb,var(--accent,#2563EB) 11%,#fff);display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
-              <img :src="feat.iconSvg" width="23" height="23" alt="" style="display:block;" />
+
+      <!-- Split rows (x2) -->
+      <div class="flex flex-col gap-16 lg:gap-24 mt-14 lg:mt-20">
+        <div v-for="feat in splitFeatures" :key="feat.title" data-reveal class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+          <div :class="feat.reverse ? 'lg:order-2' : ''">
+            <div class="w-11 h-11 rounded-xl bg-azure-700/10 flex items-center justify-center mb-5">
+              <UIcon :name="feat.icon" class="w-5.5 h-5.5 text-azure-700" />
             </div>
-            <h3 style="margin:0;font-size:clamp(22px,2.4vw,29px);line-height:1.12;letter-spacing:-.02em;font-weight:800;color:#0F172A;">{{ feat.title }}</h3>
-            <p style="margin:14px 0 0;font-size:16.5px;line-height:1.6;color:#475569;text-wrap:pretty;">{{ feat.body }}</p>
-            <ul style="list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:11px;">
-              <li v-for="pt in feat.points" :key="pt" style="display:flex;align-items:flex-start;gap:11px;font-size:15px;color:#334155;font-weight:500;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent,#2563EB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M20 6 9 17l-5-5"/></svg>{{ pt }}
+            <h3 class="m-0 font-display font-bold text-[clamp(22px,2.3vw,28px)] leading-tight tracking-tight text-ink">{{ feat.title }}</h3>
+            <p class="mt-3.5 mb-0 text-base leading-relaxed text-ink-soft text-pretty">{{ feat.body }}</p>
+            <ul class="list-none mt-5 mb-0 p-0 flex flex-col gap-2.5">
+              <li v-for="pt in feat.points" :key="pt" class="flex items-start gap-2.5 text-[15px] font-medium text-ink-soft">
+                <UIcon name="i-lucide-check" class="w-4.5 h-4.5 text-tangerine-600 shrink-0 mt-0.5" />{{ pt }}
               </li>
             </ul>
           </div>
-          <div style="flex:1 1 420px;min-width:320px;">
-            <div style="border-radius:14px;overflow:hidden;border:1px solid #E5EAF1;box-shadow:0 30px 60px -28px rgba(15,23,42,.32);background:#fff;">
-              <div style="height:34px;display:flex;align-items:center;gap:7px;padding:0 14px;background:#F8FAFC;border-bottom:1px solid #EEF2F7;">
-                <span style="width:9px;height:9px;border-radius:50%;background:#F87171;" />
-                <span style="width:9px;height:9px;border-radius:50%;background:#FBBF24;" />
-                <span style="width:9px;height:9px;border-radius:50%;background:#34D399;" />
-                <div style="margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;">{{ feat.url }}</div>
-              </div>
-              <img :src="feat.img" :alt="feat.title" style="display:block;width:100%;height:auto;" />
+          <div :class="feat.reverse ? 'lg:order-1' : ''">
+            <div class="rounded-2xl overflow-hidden border border-sand-400/60 shadow-xl shadow-ink/10 bg-sand-50">
+              <img :src="feat.img" :alt="feat.title" class="block w-full h-auto" >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card duo -->
+      <div class="grid lg:grid-cols-2 gap-6 mt-16 lg:mt-24">
+        <div
+          v-for="feat in cardFeatures" :key="feat.title" data-reveal
+          class="rounded-3xl overflow-hidden border border-sand-400/50 flex flex-col"
+          :class="feat.tone === 'peach' ? 'bg-peach-200' : 'bg-azure-100'"
+        >
+          <div class="p-7 lg:p-9 pb-0 lg:pb-0">
+            <div class="w-11 h-11 rounded-xl bg-sand-50/80 flex items-center justify-center mb-5">
+              <UIcon :name="feat.icon" class="w-5.5 h-5.5 text-azure-700" />
+            </div>
+            <h3 class="m-0 font-display font-bold text-2xl leading-tight tracking-tight text-ink">{{ feat.title }}</h3>
+            <p class="mt-3 mb-0 text-[15.5px] leading-relaxed text-ink-soft text-pretty">{{ feat.body }}</p>
+            <ul class="list-none mt-4 mb-0 p-0 flex flex-wrap gap-x-6 gap-y-2">
+              <li v-for="pt in feat.points" :key="pt" class="flex items-center gap-2 text-sm font-medium text-ink-soft">
+                <UIcon name="i-lucide-check" class="w-4 h-4 text-tangerine-600 shrink-0" />{{ pt }}
+              </li>
+            </ul>
+          </div>
+          <div class="px-7 lg:px-9 mt-7 flex-1 flex items-end">
+            <div class="rounded-t-xl overflow-hidden border border-b-0 border-sand-400/60 shadow-lg shadow-ink/10 w-full">
+              <img :src="feat.img" :alt="feat.title" class="block w-full h-auto" >
             </div>
           </div>
         </div>
@@ -278,98 +299,104 @@ onMounted(() => {
     </section>
 
     <!-- CAPABILITIES -->
-    <section id="capabilities" style="background:#F8FAFC;border-top:1px solid #EEF1F6;border-bottom:1px solid #EEF1F6;margin-top:64px;">
-      <div style="max-width:1200px;margin:0 auto;padding:90px 32px;">
-        <div data-reveal style="text-align:center;max-width:640px;margin:0 auto 52px;">
-          <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#2563EB);margin:0 0 16px;font-weight:500;">Built for scale</p>
-          <h2 style="margin:0;font-size:clamp(28px,3.4vw,42px);line-height:1.1;letter-spacing:-.03em;font-weight:800;color:#0F172A;text-wrap:balance;">More power as you grow</h2>
+    <section id="capabilities" class="mt-20 lg:mt-28 bg-peach-100 border-y border-sand-400/40">
+      <div class="max-w-6xl mx-auto px-5 lg:px-8 py-20 lg:py-24">
+        <div data-reveal class="max-w-2xl">
+          <h2 class="m-0 font-display font-extrabold text-[clamp(28px,3.2vw,40px)] leading-[1.1] tracking-tight text-ink text-balance">More power as you grow</h2>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;">
-          <div v-for="cap in capabilities" :key="cap.title" data-reveal class="rf-cap-card" style="background:#fff;border:1px solid #EAEEF4;border-radius:16px;padding:28px;transition:transform .18s ease,box-shadow .18s ease;">
-            <div style="width:44px;height:44px;border-radius:11px;background:color-mix(in srgb,var(--accent,#2563EB) 11%,#fff);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
-              <img :src="cap.iconSvg" width="22" height="22" alt="" style="display:block;" />
-            </div>
-            <h3 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#0F172A;">{{ cap.title }}</h3>
-            <p style="margin:9px 0 0;font-size:14.5px;line-height:1.55;color:#64748B;text-wrap:pretty;">{{ cap.body }}</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10 mt-12">
+          <div v-for="cap in capabilities" :key="cap.title" data-reveal class="border-l-2 border-tangerine-500/70 pl-5">
+            <UIcon :name="cap.icon" class="w-6 h-6 text-azure-700" />
+            <h3 class="mt-4 mb-0 text-[17px] font-bold tracking-tight text-ink">{{ cap.title }}</h3>
+            <p class="mt-2 mb-0 text-sm leading-relaxed text-ink-soft text-pretty">{{ cap.body }}</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- TESTIMONIALS -->
-    <section style="max-width:1200px;margin:0 auto;padding:96px 32px;">
-      <div data-reveal style="text-align:center;max-width:640px;margin:0 auto 54px;">
-        <p style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent,#2563EB);margin:0 0 16px;font-weight:500;">From the field</p>
-        <h2 style="margin:0;font-size:clamp(28px,3.4vw,42px);line-height:1.1;letter-spacing:-.03em;font-weight:800;color:#0F172A;text-wrap:balance;">Rental owners who switched to flow</h2>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;">
-        <figure v-for="t in testimonials" :key="t.name" data-reveal style="margin:0;background:#fff;border:1px solid #EAEEF4;border-radius:18px;padding:30px;display:flex;flex-direction:column;gap:22px;">
-          <div style="display:flex;gap:3px;">
-            <svg v-for="i in 5" :key="i" width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-          </div>
-          <blockquote style="margin:0;font-size:16.5px;line-height:1.6;color:#1E293B;font-weight:500;text-wrap:pretty;">{{ t.quote }}</blockquote>
-          <figcaption style="display:flex;align-items:center;gap:13px;margin-top:auto;">
-            <span style="width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--accent,#2563EB) 14%,#fff);color:var(--accent,#2563EB);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;">{{ t.initials }}</span>
+    <section class="max-w-6xl mx-auto px-5 lg:px-8 py-20 lg:py-28">
+      <div class="grid lg:grid-cols-5 gap-12 lg:gap-16">
+        <figure data-reveal class="lg:col-span-3 m-0 flex flex-col justify-between gap-8">
+          <blockquote class="m-0 font-display font-bold text-[clamp(22px,2.6vw,32px)] leading-snug tracking-tight text-ink text-pretty">
+            &ldquo;{{ featuredQuote.quote }}&rdquo;
+          </blockquote>
+          <figcaption class="flex items-center gap-3.5">
+            <span class="w-11 h-11 rounded-full bg-peach-300 text-ink flex items-center justify-center font-bold text-[15px]">{{ featuredQuote.initials }}</span>
             <div>
-              <div style="font-weight:700;font-size:15px;color:#0F172A;">{{ t.name }}</div>
-              <div style="font-size:13px;color:#94A3B8;">{{ t.role }}</div>
+              <div class="font-bold text-[15px] text-ink">{{ featuredQuote.name }}</div>
+              <div class="text-[13px] text-ink-mute">{{ featuredQuote.role }}</div>
             </div>
           </figcaption>
         </figure>
+        <div class="lg:col-span-2 flex flex-col gap-8">
+          <figure v-for="t in sideQuotes" :key="t.name" data-reveal class="m-0 border-t-2 border-sand-400/60 pt-6">
+            <blockquote class="m-0 text-[15.5px] leading-relaxed text-ink-soft font-medium text-pretty">&ldquo;{{ t.quote }}&rdquo;</blockquote>
+            <figcaption class="flex items-center gap-3 mt-5">
+              <span class="w-9 h-9 rounded-full bg-azure-700/10 text-azure-700 flex items-center justify-center font-bold text-[13px]">{{ t.initials }}</span>
+              <div>
+                <div class="font-bold text-sm text-ink">{{ t.name }}</div>
+                <div class="text-xs text-ink-mute">{{ t.role }}</div>
+              </div>
+            </figcaption>
+          </figure>
+        </div>
       </div>
     </section>
 
     <!-- CTA -->
-    <section id="cta" style="max-width:1200px;margin:0 auto;padding:0 32px 96px;">
-      <div data-reveal style="position:relative;overflow:hidden;border-radius:28px;background:#0B1220;padding:clamp(48px,6vw,84px) clamp(32px,5vw,72px);text-align:center;">
-        <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 120% at 50% -10%,color-mix(in srgb,var(--accent,#2563EB) 45%,transparent),transparent 60%);" />
-        <div style="position:relative;">
-          <h2 style="margin:0 auto;max-width:680px;font-size:clamp(28px,3.8vw,48px);line-height:1.08;letter-spacing:-.03em;font-weight:800;color:#fff;text-wrap:balance;">Ready to streamline your rental operations?</h2>
-          <p style="margin:18px auto 0;max-width:480px;font-size:17px;line-height:1.55;color:#94A3B8;">See Rent Flow on your own fleet. We'll walk you through it.</p>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:34px;">
-            <a href="#top" class="rf-cta-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:10px;background:var(--accent,#2563EB);color:#fff;font-weight:600;font-size:17px;padding:16px 32px;border-radius:12px;box-shadow:0 16px 34px -10px color-mix(in srgb,var(--accent,#2563EB) 80%,transparent);transition:transform .15s ease;">Request Demo
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    <section id="cta" class="max-w-6xl mx-auto px-5 lg:px-8 pb-20 lg:pb-28">
+      <div data-reveal class="relative overflow-hidden rounded-3xl">
+        <img :src="imgTop" alt="" class="absolute inset-0 w-full h-full object-cover" >
+        <div class="absolute inset-0 bg-azure-900/85" />
+        <div class="relative px-6 py-16 lg:px-16 lg:py-20 text-center">
+          <h2 class="m-0 mx-auto max-w-2xl font-display font-extrabold text-[clamp(28px,3.6vw,46px)] leading-[1.08] tracking-tight text-sand-50 text-balance">Ready to streamline your rental operations?</h2>
+          <p class="mt-4 mb-0 mx-auto max-w-md text-[17px] leading-relaxed text-azure-100/90">See Rent Flow on your own fleet. We'll walk you through it.</p>
+          <div class="flex flex-col items-center gap-3.5 mt-9">
+            <a href="#top" class="inline-flex items-center gap-2.5 no-underline bg-tangerine-500 text-ink font-bold text-[17px] px-9 py-4 rounded-xl hover:bg-tangerine-600 hover:-translate-y-0.5 active:translate-y-0 transition-all">
+              Request Demo
+              <UIcon name="i-lucide-arrow-right" class="w-4.5 h-4.5" />
             </a>
-            <span style="font-size:13.5px;color:#64748B;">No credit card required</span>
+            <span class="text-[13.5px] text-azure-100/70">No credit card required</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- FOOTER -->
-    <footer style="border-top:1px solid #EEF1F6;background:#fff;">
-      <div style="max-width:1200px;margin:0 auto;padding:54px 32px 40px;display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between;">
-        <div style="max-width:300px;">
-          <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px;">
-            <span style="width:32px;height:32px;border-radius:9px;background:var(--accent,#2563EB);display:flex;align-items:center;justify-content:center;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+    <footer class="border-t border-sand-400/50 bg-sand-100">
+      <div class="max-w-6xl mx-auto px-5 lg:px-8 pt-14 pb-10 flex flex-wrap gap-10 justify-between">
+        <div class="max-w-72">
+          <div class="flex items-center gap-2.5 mb-3.5">
+            <span class="w-8 h-8 rounded-lg bg-tangerine-500 flex items-center justify-center">
+              <UIcon name="i-lucide-package" class="w-4.5 h-4.5 text-ink" />
             </span>
-            <span style="font-weight:800;font-size:17px;color:#0F172A;">Rent Flow</span>
+            <span class="font-display font-bold text-[17px] text-ink">Rent Flow</span>
           </div>
-          <p style="margin:0;font-size:14.5px;line-height:1.55;color:#94A3B8;">The smarter way to run your rental business.</p>
+          <p class="m-0 text-sm leading-relaxed text-ink-mute">The smarter way to run your rental business.</p>
         </div>
-        <div style="display:flex;gap:64px;flex-wrap:wrap;">
+        <div class="flex gap-16 flex-wrap">
           <div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:16px;">Product</div>
-            <div style="display:flex;flex-direction:column;gap:11px;">
-              <a href="#features" style="text-decoration:none;color:#475569;font-size:14.5px;font-weight:500;">Features</a>
-              <span style="color:#94A3B8;font-size:14.5px;font-weight:500;">Pricing <span style="font-size:11px;color:#CBD5E1;">(coming soon)</span></span>
-              <a href="#capabilities" style="text-decoration:none;color:#475569;font-size:14.5px;font-weight:500;">Capabilities</a>
+            <div class="text-sm font-bold text-ink mb-4">Product</div>
+            <div class="flex flex-col gap-2.5">
+              <a href="#features" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Features</a>
+              <a href="#capabilities" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Capabilities</a>
+              <span class="text-ink-mute text-sm font-medium">Pricing <span class="text-xs text-ink-mute/70">(coming soon)</span></span>
             </div>
           </div>
           <div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#94A3B8;margin-bottom:16px;">Company</div>
-            <div style="display:flex;flex-direction:column;gap:11px;">
-              <a href="#cta" style="text-decoration:none;color:#475569;font-size:14.5px;font-weight:500;">Contact</a>
-              <a href="#cta" style="text-decoration:none;color:#475569;font-size:14.5px;font-weight:500;">Request Demo</a>
+            <div class="text-sm font-bold text-ink mb-4">Company</div>
+            <div class="flex flex-col gap-2.5">
+              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Contact</a>
+              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Request Demo</a>
             </div>
           </div>
         </div>
       </div>
-      <div style="border-top:1px solid #F1F5F9;">
-        <div style="max-width:1200px;margin:0 auto;padding:22px 32px;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;color:#94A3B8;">© 2026 Rent Flow. All rights reserved.</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#CBD5E1;">Built for rental shops worldwide</span>
+      <div class="border-t border-sand-300">
+        <div class="max-w-6xl mx-auto px-5 lg:px-8 py-5 flex flex-wrap gap-3 justify-between items-center">
+          <span class="text-[13px] text-ink-mute">© 2026 Rent Flow. All rights reserved.</span>
+          <span class="text-[13px] text-ink-mute">Built for rental shops worldwide</span>
         </div>
       </div>
     </footer>
@@ -379,24 +406,7 @@ onMounted(() => {
 
 <style>
 html { scroll-behavior: smooth; }
-@keyframes rf-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-.rf-hero-bg {
-  background-color: #0B1220;
-  background-size: cover;
-  background-position: calc(50% + 200px) calc(50% - 50px);
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
-@media (max-width: 1024px) {
-  .rf-hero-bg {
-    background-position: center 30%;
-  }
-}
-
-.rf-nav-login:hover { background: color-mix(in srgb, var(--accent, #2563EB) 8%, #fff); }
-.rf-nav-demo:hover { transform: translateY(-1px); box-shadow: 0 12px 24px -6px color-mix(in srgb, var(--accent, #2563EB) 65%, transparent); }
-.rf-hero-cta:hover { transform: translateY(-2px); box-shadow: 0 20px 38px -10px color-mix(in srgb, var(--accent, #2563EB) 75%, transparent); }
-.rf-lang-btn:hover { border-color: #CBD5E1; }
-.rf-lang-item:hover { background: #F1F5F9; }
-.rf-cap-card:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -20px rgba(15, 23, 42, .22); }
-.rf-cta-btn:hover { transform: translateY(-2px); }
 </style>
