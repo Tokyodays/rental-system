@@ -1,19 +1,19 @@
 ---
-description: Deploy the rental-system application
+description: Deploy the rental-system application to production or preview. Use for "デプロイして", "本番に出して", "preview deployment". Frontend is Vercel (project already linked), backend is Supabase. For DB schema changes use the db-migrate skill; for advanced Vercel CLI operations see the vercel-cli skill.
 ---
 
 # deploy skill — rental-system
 
-## Current deployment target
+## Deployment setup (fixed, do not re-discover)
 
-**Supabase** (backend) + **Vercel / static hosting** (frontend)
-
-> Note: Confirm the actual hosting provider before running deploy commands.
+- **Frontend**: Vercel — already linked (`.vercel/project.json`, project `rental-system`). Git pushes trigger deployments automatically.
+- **Backend**: Supabase (DB + auth). Schema changes are NOT deployed by Vercel — apply migrations separately via the **db-migrate** skill.
+- **Branch policy**: `main` → production. All other branches (issue branches named `NN-<title>`) get preview deployments. PRs are required for all changes to `main`.
 
 ## Pre-deploy checklist
 
 ```bash
-# 1. All tests pass
+# 1. All tests pass (requires dev server, see run skill)
 npx playwright test --reporter=line
 
 # 2. TypeScript errors
@@ -23,30 +23,24 @@ npx nuxt typecheck 2>&1 | grep -E "error|Error" | head -20
 npm run build
 ```
 
-## Database migrations
+## Deploy
 
-Migrations are in `supabase/migrations/`. Apply via:
-
-```bash
-node scripts/migrate.js
-```
-
-Or directly via psql for urgent fixes:
+**Preview** (default): push the current issue branch and open/update a PR. Vercel builds it automatically. Get the preview URL from the PR's commit status checks, or:
 
 ```bash
-PGPASSWORD='<DB_PASS>' psql -h db.iznvoooqixudvsenqcuj.supabase.co -U postgres -d postgres -c "SQL_HERE"
+vercel ls --format json   # latest entry's url = preview URL
 ```
 
-## Environment variables required in production
+**Production**: merge the PR into `main`. Never deploy to production with `vercel --prod` directly — production goes through `main` only.
+
+## DB migrations
+
+If the change includes anything under `supabase/migrations/`, apply migrations **before** merging to `main` — use the **db-migrate** skill.
+
+## Environment variables required in production (Vercel dashboard)
 
 | Variable | Description |
 |----------|-------------|
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_KEY` | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server-side only) |
-
-## Branch policy
-
-- `main` → production
-- `refactoring_claude` → current development branch
-- PRs required for all changes to `main`
