@@ -117,7 +117,6 @@ export const useStaff = () => {
     if (!listenerRegistered.value) {
       listenerRegistered.value = true
       supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('[useStaff] auth event context:', event)
         if (session?.user) {
           user.value = session.user
           await fetchStaff()

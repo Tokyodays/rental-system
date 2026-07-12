@@ -48,7 +48,6 @@ async function handleAddStore() {
     newStore.address = ''
     await fetchStores()
   } catch (err: any) {
-    console.log('DEBUG API ERROR:', err.data?.message || err.message)
     toast.add({ title: 'Error', description: err.message, color: 'error' })
   }
 }

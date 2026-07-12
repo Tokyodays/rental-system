@@ -17,16 +17,6 @@ const items = computed(() => [
   { label: t('history'), icon: 'i-lucide-history', to: '/history' },
 ])
 
-// デバッグ用: 現在の権限状態をログ出力
-watch([isAdmin, staff], ([newAdmin, newStaff]) => {
-  console.log('[AppSidebar] Admin Check:', {
-    isAdmin: newAdmin,
-    username: newStaff?.username,
-    roleName: newStaff?.staff_roles?.name,
-    roleId: newStaff?.role_id
-  })
-}, { immediate: true })
-
 const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-settings', to: '/settings' }))
 </script>
 

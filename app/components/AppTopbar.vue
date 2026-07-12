@@ -13,11 +13,6 @@ const user = useSupabaseUser()
 const { staff, isLoading } = useStaff()
 const { t } = useI18n()
 
-// デバッグ用: ロード完了時にログを出す
-watch(staff, (val) => {
-  if (val) console.log('[AppTopbar] Staff data loaded:', val.username)
-}, { immediate: true })
-
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) {

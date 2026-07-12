@@ -62,8 +62,6 @@ async function fetchVehicles() {
       throw error
     }
     
-    console.log('Fetched vehicles:', data)
-    
     vehicles.value = data?.map((v: any) => ({
       id: v.code,
       name: v.name,
