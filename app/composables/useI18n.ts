@@ -192,7 +192,7 @@ export const useI18n = () => {
 
   // 店舗のデフォルト言語設定と同期するロジック
   const { staff } = useStaff()
-  if (process.client) {
+  if (import.meta.client) {
     watch(() => staff.value?.stores?.default_locale, (newDefault) => {
       if (newDefault && newDefault !== locale.value) {
         locale.value = newDefault as Locale

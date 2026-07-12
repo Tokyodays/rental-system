@@ -23,12 +23,12 @@ interface Customer {
 const customers = ref<Customer[]>([])
 const isLoading = ref(true)
 const fetchError = ref<string | null>(null)
-const statuses = ref<{ id: string, name: string }[]>([])
+const { ensureLoaded, customerStatuses, customerStatusId } = useStatusIds()
 const statusFilter = ref('all')
 
-const activeStatusId = computed(() => statuses.value.find(s => s.name === 'Active')?.id)
-const unactiveStatusId = computed(() => statuses.value.find(s => s.name === 'Unactive')?.id)
-const rentingStatusId = computed(() => statuses.value.find(s => s.name === 'Renting')?.id)
+const activeStatusId = computed(() => customerStatusId('Active'))
+const unactiveStatusId = computed(() => customerStatusId('Unactive'))
+const rentingStatusId = computed(() => customerStatusId('Renting'))
 
 const statusOptions = computed(() => [
   { label: 'Active', value: activeStatusId.value || '' },
@@ -37,7 +37,7 @@ const statusOptions = computed(() => [
 
 const filterStatuses = computed(() => [
   { name: 'All Statuses', id: 'all' },
-  ...statuses.value
+  ...customerStatuses.value
 ])
 
 // Add Customer Modal State
@@ -106,79 +106,20 @@ function getPassportPublicUrl(path: string | null | undefined) {
   return data.publicUrl
 }
 
-const selectedFile = ref<File | null>(0 as any) // Dummy cast to avoid selection error
-const fileInput = ref<HTMLInputElement | null>(null)
-
 // Camera related
-const videoRef = ref<HTMLVideoElement | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const cameraStream = ref<MediaStream | null>(null)
 const capturedPhoto = ref<string | null>(null) // DataURL for preview
 const capturedBlob = ref<Blob | null>(null) // Blob for upload
-const isCameraLoading = ref(false)
-const isCapturing = ref(false)
-
-async function startCamera() {
-  isCameraLoading.value = true
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' }, // 手元のパスポートを撮るため背面カメラ優先
-      audio: false 
-    })
-    cameraStream.value = stream
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-    }
-  } catch (err) {
-    console.error('Camera error:', err)
-    toast.add({ title: 'Camera Error', description: 'Could not access camera.', color: 'error' })
-  } finally {
-    isCameraLoading.value = false
-  }
-}
-
-function stopCamera() {
-  if (cameraStream.value) {
-    cameraStream.value.getTracks().forEach(track => track.stop())
-    cameraStream.value = null
-  }
-}
-
-function takePhoto() {
-  if (videoRef.value && canvasRef.value) {
-    const video = videoRef.value
-    const canvas = canvasRef.value
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const context = canvas.getContext('2d')
-    if (context) {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height)
-      capturedPhoto.value = canvas.toDataURL('image/webp', 0.8)
-      canvas.toBlob((blob) => {
-        capturedBlob.value = blob
-      }, 'image/webp', 0.8)
-    }
-  }
-}
+const isCameraOpen = ref(false)
 
 function resetPhoto() {
   capturedPhoto.value = null
   capturedBlob.value = null
 }
 
-function handleFileChange(event: any) {
-  const file = event.target.files?.[0]
-  if (file) {
-    // If user uploaded a file manually, we don't force webp conversion here 
-    // unless you want to re-process it through canvas.
-    // For now, just keep the original blob for manual uploads.
-    capturedBlob.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      capturedPhoto.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
+function onCapture(blob: Blob) {
+  capturedBlob.value = blob
+  capturedPhoto.value = URL.createObjectURL(blob) // プレビュー用
+  isCameraOpen.value = false
 }
 
 async function fetchCustomers() {
@@ -208,15 +149,6 @@ async function fetchCustomers() {
   }
 }
 
-async function fetchStatuses() {
-  const { data, error } = await client
-    .from('customer_statuses')
-    .select('id, name')
-  if (!error && data) {
-    statuses.value = data
-  }
-}
-
 async function handleAddCustomer() {
   isSubmitting.value = true
   try {
@@ -237,7 +169,7 @@ async function handleAddCustomer() {
         .from('customer-passports')
         .upload(filePath, capturedBlob.value, {
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: 'image/webp'
         })
       
       if (uploadError) throw uploadError
@@ -245,12 +177,8 @@ async function handleAddCustomer() {
     }
 
     // 3. Get Status ID (Active)
-    const { data: activeStatus } = await client
-      .from('customer_statuses')
-      .select('id')
-      .eq('name', 'Active')
-      .single() as any
-    const statusId = activeStatus?.id || null
+    await ensureLoaded()
+    const statusId = customerStatusId('Active') || null
 
     // 4. Perform SINGLE INSERT with all information including passport_url
     const { error: insertError } = await client
@@ -277,8 +205,7 @@ async function handleAddCustomer() {
     capturedBlob.value = null
     capturedPhoto.value = null
     addStep.value = 1
-    stopCamera()
-    
+
     await fetchCustomers()
     toast.add({
       title: 'Success',
@@ -362,7 +289,7 @@ async function handleUpdateCustomer() {
         .from('customer-passports')
         .upload(filePath, capturedBlob.value, {
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: 'image/webp'
         })
       
       if (uploadError) throw uploadError
@@ -390,7 +317,6 @@ async function handleUpdateCustomer() {
     if (error) throw error
 
     isUpdateModalOpen.value = false
-    stopCamera()
     resetPhoto()
     await fetchCustomers()
     toast.add({
@@ -412,7 +338,7 @@ async function handleUpdateCustomer() {
 
 onMounted(() => {
   fetchCustomers()
-  fetchStatuses()
+  ensureLoaded()
 })
 
 const filteredCustomers = computed(() => {
@@ -724,53 +650,32 @@ const filteredCustomers = computed(() => {
 
           <div class="flex justify-end gap-3 mt-6 flex-wrap">
             <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2; startCamera()" />
+            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
             <UButton label="Register Customer" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
 
         <!-- Step 2: Camera Capture -->
         <div v-else class="space-y-6">
-          <!-- Camera Preview / Captured Photo -->
-          <div class="relative aspect-[4/3] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-inner flex items-center justify-center group">
-            <video v-show="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover shadow-xl"></video>
-            <img v-if="capturedPhoto" :src="capturedPhoto" class="w-full h-full object-cover" />
-            
-            <div v-if="isCameraLoading" class="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-               <UIcon name="i-lucide-loader-2" class="size-10 animate-spin text-white" />
-            </div>
-
-            <!-- Focus box overlay -->
-            <div v-if="!capturedPhoto" class="absolute inset-0 border-[40px] border-black/40 pointer-events-none flex items-center justify-center">
-              <div class="w-full h-full border-2 border-white/50 border-dashed rounded-lg flex items-center justify-center">
-                 <p class="text-white/70 text-[10px] font-bold uppercase tracking-widest bg-black/20 px-2 py-1 rounded">Align Passport Here</p>
-              </div>
-            </div>
+          <!-- Captured Photo Preview -->
+          <div v-if="capturedPhoto" class="relative aspect-[4/3] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-inner">
+            <img :src="capturedPhoto" class="w-full h-full object-cover" />
+          </div>
+          <div v-else class="flex flex-col items-center gap-4 py-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            <UIcon name="i-lucide-camera" class="size-12 text-slate-300" />
+            <p class="text-sm text-slate-500 text-center px-6">Take a photo of the passport identification page.</p>
+            <UButton
+              label="Open Camera"
+              icon="i-lucide-camera"
+              color="primary"
+              size="xl"
+              class="cursor-pointer font-bold"
+              @click="isCameraOpen = true"
+            />
           </div>
 
           <div class="flex flex-col gap-3">
-             <div v-if="!capturedPhoto" class="grid grid-cols-2 gap-3">
-               <UButton
-                 label="Capture Photo"
-                 icon="i-lucide-camera"
-                 color="primary"
-                 size="xl"
-                 block
-                 class="cursor-pointer font-bold"
-                 @click="takePhoto"
-               />
-               <UButton
-                 label="Skip and Register"
-                 variant="subtle"
-                 color="neutral"
-                 size="xl"
-                 block
-                 class="cursor-pointer"
-                 :loading="isSubmitting"
-                 @click="handleAddCustomer"
-               />
-             </div>
-             <div v-else class="grid grid-cols-2 gap-3">
+             <div v-if="capturedPhoto" class="grid grid-cols-2 gap-3">
                <UButton
                  label="Retake"
                  variant="outline"
@@ -791,19 +696,27 @@ const filteredCustomers = computed(() => {
                  @click="handleAddCustomer"
                />
              </div>
-             
+             <UButton
+               v-else
+               label="Skip and Register"
+               variant="subtle"
+               color="neutral"
+               size="xl"
+               block
+               class="cursor-pointer"
+               :loading="isSubmitting"
+               @click="handleAddCustomer"
+             />
+
              <UButton
                label="Back to Info"
                variant="ghost"
                color="neutral"
                size="sm"
                class="cursor-pointer self-center"
-               @click="addStep = 1; stopCamera()"
+               @click="addStep = 1"
              />
           </div>
-
-          <!-- Hidden canvas for processing -->
-          <canvas ref="canvasRef" class="hidden"></canvas>
         </div>
       </template>
     </UModal>
@@ -849,37 +762,16 @@ const filteredCustomers = computed(() => {
              <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-slate-900 dark:text-white">Passport Photo</span>
                 <UButton
-                  v-if="!isCapturing"
                   :label="capturedPhoto ? 'Change Photo' : 'Update Photo'"
                   icon="i-lucide-camera"
                   variant="subtle"
                   size="xs"
                   class="cursor-pointer"
-                  @click="isCapturing = true; startCamera()"
+                  @click="isCameraOpen = true"
                 />
              </div>
 
-             <!-- Photo Review / Capture Area -->
-             <div v-if="isCapturing" class="space-y-3">
-                <div class="relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center">
-                  <video v-if="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
-                  <img v-else :src="capturedPhoto" class="w-full h-full object-cover" />
-                  <div v-if="isCameraLoading" class="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-                    <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-white" />
-                  </div>
-                </div>
-                <div class="flex gap-2">
-                   <template v-if="!capturedPhoto">
-                     <UButton label="Capture" icon="i-lucide-camera" block class="flex-1 cursor-pointer" @click="takePhoto" />
-                     <UButton label="Cancel" variant="ghost" class="cursor-pointer" @click="isCapturing = false; stopCamera()" />
-                   </template>
-                   <template v-else>
-                     <UButton label="Retake" variant="outline" block class="flex-1 cursor-pointer" @click="resetPhoto" />
-                     <UButton label="Done" variant="subtle" color="primary" class="cursor-pointer" @click="isCapturing = false; stopCamera()" />
-                   </template>
-                </div>
-             </div>
-             <div v-else-if="capturedPhoto" class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 rounded-lg">
+             <div v-if="capturedPhoto" class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 rounded-lg">
                 <div class="size-12 rounded bg-white dark:bg-slate-800 overflow-hidden border border-green-200 dark:border-green-800 shrink-0">
                   <img :src="capturedPhoto" class="w-full h-full object-cover" />
                 </div>
@@ -904,12 +796,17 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false; stopCamera()" />
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
             <UButton label="Update Customer" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>
     </UModal>
-    <canvas ref="canvasRef" class="hidden"></canvas>
+
+    <CameraCapture
+      v-if="isCameraOpen"
+      @capture="onCapture"
+      @close="isCameraOpen = false"
+    />
   </div>
 </template>

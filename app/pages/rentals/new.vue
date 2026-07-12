@@ -4,6 +4,7 @@ const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 const { formatPrice } = useCurrency()
+const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
 
 const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Price Input, 5: Confirmation
 const isLoading = ref(false)
@@ -15,13 +16,14 @@ const customerSearch = ref('')
 
 async function fetchActiveCustomers() {
   isLoading.value = true
-  const { data: statusData } = await (supabase.from('customer_statuses').select('id').eq('name', 'Active').single() as any)
-  if (!statusData) return
-  
+  await ensureLoaded()
+  const statusId = customerStatusId('Active')
+  if (!statusId) return
+
   const { data, error } = await (supabase
     .from('customers')
     .select('*')
-    .eq('status_id', statusData.id)
+    .eq('status_id', statusId)
     .order('full_name') as any)
   
   if (!error) customers.value = data || []
@@ -55,13 +57,14 @@ const vehicleSearch = ref('')
 async function fetchAvailableVehicles() {
   isLoadingVehicles.value = true
   try {
-    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
-    if (!statusData) return
+    await ensureLoaded()
+    const statusId = vehicleStatusId('Available')
+    if (!statusId) return
 
     const { data, error } = await (supabase
       .from('vehicles')
       .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
-      .eq('status_id', statusData.id)
+      .eq('status_id', statusId)
       .order('name') as any)
 
     if (!error) availableVehicles.value = data || []
@@ -89,13 +92,14 @@ function selectVehicleFromList(vehicle: any) {
 async function identifyVehicleByCode(code: string) {
   isIdentifying.value = true
   try {
-    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
-    
+    await ensureLoaded()
+    const statusId = vehicleStatusId('Available')
+
     const { data, error } = await (supabase
       .from('vehicles')
       .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
       .eq('code', code)
-      .eq('status_id', statusData?.id)
+      .eq('status_id', statusId)
       .single() as any)
 
     if (data) {
@@ -116,11 +120,12 @@ async function simulateScan() {
   await new Promise(resolve => setTimeout(resolve, 1500))
   
   // For simulation, we'll try to get ANY available vehicle
-  const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
+  await ensureLoaded()
+  const statusId = vehicleStatusId('Available')
   const { data } = await (supabase
     .from('vehicles')
     .select('code')
-    .eq('status_id', statusData?.id)
+    .eq('status_id', statusId)
     .limit(1)
     .single() as any)
 
@@ -148,9 +153,7 @@ const durationText = computed(() => {
   const diffMs = end.getTime() - start.getTime()
   if (diffMs < 0) return 'Invalid (Past date)'
 
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const days = Math.floor(diffHours / 24)
-  const hours = diffHours % 24
+  const { days, hours } = diffToDaysHours(diffMs)
 
   if (days === 0) return `${hours} hours`
   return `${days} days ${hours} hours`
@@ -176,8 +179,9 @@ async function handleCompleteLending() {
   
   try {
     // 1. Get Status IDs
-    const { data: vStatus } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Lent').single() as any)
-    const { data: cStatus } = await (supabase.from('customer_statuses').select('id').eq('name', 'Renting').single() as any)
+    await ensureLoaded()
+    const lentStatusId = vehicleStatusId('Lent')
+    const rentingStatusId = customerStatusId('Renting')
     
     // 1.5 Validate Staff and Store Info
     if (!currentStaff.value?.id || !currentStaff.value?.store_id) {
@@ -202,13 +206,17 @@ async function handleCompleteLending() {
     if (rentalError) throw rentalError
 
     // 3. Update Vehicle Status
-    await ((supabase.from('vehicles') as any).update({ status_id: vStatus?.id }).eq('id', scannedVehicle.value.id) as any)
-    
+    const { error: vehicleError } = await (supabase.from('vehicles') as any)
+      .update({ status_id: lentStatusId }).eq('id', scannedVehicle.value.id)
+    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
+
     // 4. Update Customer Status
-    await ((supabase.from('customers') as any).update({ status_id: cStatus?.id }).eq('id', selectedCustomer.value.id) as any)
+    const { error: customerError } = await (supabase.from('customers') as any)
+      .update({ status_id: rentingStatusId }).eq('id', selectedCustomer.value.id)
+    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
-    router.push('/')
+    router.push('/dashboard')
   } catch (e: any) {
     toast.add({ title: 'Lending Failed', description: e.message, color: 'error' })
   } finally {
