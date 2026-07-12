@@ -174,7 +174,7 @@ async function handleCompleteReturn() {
     if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
-    router.push('/')
+    router.push('/dashboard')
   } catch (e: any) {
     toast.add({ title: 'Return Failed', description: e.message, color: 'error' })
   } finally {

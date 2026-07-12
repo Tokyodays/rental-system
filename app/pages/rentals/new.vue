@@ -216,7 +216,7 @@ async function handleCompleteLending() {
     if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
-    router.push('/')
+    router.push('/dashboard')
   } catch (e: any) {
     toast.add({ title: 'Lending Failed', description: e.message, color: 'error' })
   } finally {
