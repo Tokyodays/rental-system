@@ -48,7 +48,7 @@ async function fetchStoreAndStaff() {
   try {
     // Store 情報
     const { data: storeData } = await supabase
-      .from('stores' as any)
+      .from('stores')
       .select('id, name, address, currency_id')
       .eq('id', staff.value.store_id)
       .single() as any
@@ -65,7 +65,7 @@ async function fetchStoreAndStaff() {
 
     // Staff 一覧
     const { data: staffData } = await supabase
-      .from('staff' as any)
+      .from('staff')
       .select('id, username, role_id, staff_roles(name)')
       .eq('store_id', staff.value.store_id)
       .order('username') as any
@@ -86,8 +86,8 @@ async function saveStore() {
   isSavingStore.value = true
   try {
     const { error } = await supabase
-      .from('stores' as any)
-      .update({ 
+      .from('stores')
+      .update({
         name: storeName.value, 
         address: storeAddress.value,
         currency_id: storeCurrency.value,
@@ -201,7 +201,7 @@ async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
   isUpdatingRole.value[member.id] = true
   try {
     const { error } = await supabase
-      .from('staff' as any)
+      .from('staff')
       .update({ role_id: newRoleId } as any)
       .eq('id', member.id)
 
