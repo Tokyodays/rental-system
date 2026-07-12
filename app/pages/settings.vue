@@ -401,7 +401,7 @@ watch(() => staff.value?.store_id, (newId) => {
                 <UButton
                   v-if="member.id !== staff?.id"
                   icon="i-lucide-trash-2"
-                  color="red"
+                  color="error"
                   variant="ghost"
                   size="xs"
                   :loading="isDeletingStaff[member.id]"

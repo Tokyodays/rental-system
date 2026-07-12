@@ -123,7 +123,7 @@ onMounted(() => {
       />
     </div>
 
-    <UCard class="overflow-hidden" :ui="{ body: { padding: 'p-0' } }">
+    <UCard class="overflow-hidden" :ui="{ body: 'p-0' }">
       <table class="w-full text-left border-collapse">
         <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm uppercase tracking-wider">
           <tr>
