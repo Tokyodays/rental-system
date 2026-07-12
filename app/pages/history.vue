@@ -2,10 +2,8 @@
 const supabase = useSupabaseClient()
 const { formatPrice } = useCurrency()
 const search = ref('')
-const rentals = ref<any[]>([])
-const isLoading = ref(true)
 
-const { data, refresh } = await useAsyncData('transactions-history', async () => {
+const { data, pending } = await useAsyncData('transactions-history', async () => {
   const { data } = await (supabase
     .from('transactions')
     .select('*, vehicles(name, code), customers(full_name)')
@@ -13,8 +11,7 @@ const { data, refresh } = await useAsyncData('transactions-history', async () =>
   return data || []
 })
 
-rentals.value = data.value || []
-isLoading.value = false
+const rentals = computed(() => data.value || [])
 
 function calculateDurationText(startStr: string, endStr: string) {
   if (!startStr || !endStr) return ''
@@ -158,7 +155,7 @@ function downloadExport() {
   const csvContent = [
     // Include BOM for Excel to properly read UTF-8
     '\uFEFF' + headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -224,8 +221,8 @@ function formatDate(date: string | null) {
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-          <tr v-if="isLoading" v-for="i in 5" :key="i">
-             <td v-for="j in 6" :key="j" class="px-6 py-4"><div class="h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded w-24"></div></td>
+          <tr v-if="pending" v-for="i in 5" :key="i">
+             <td v-for="j in 7" :key="j" class="px-6 py-4"><div class="h-4 bg-slate-100 dark:bg-slate-800 animate-pulse rounded w-24"></div></td>
           </tr>
           <tr v-else v-for="t in filteredTransactions" :key="t.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
             <td class="px-6 py-4 text-[10px] font-mono text-slate-400">#{{ t.transactionId.split('-')[0] }}</td>
@@ -256,8 +253,8 @@ function formatDate(date: string | null) {
               {{ t.price ? formatPrice(t.price) : '-' }}
             </td>
           </tr>
-          <tr v-if="!isLoading && filteredTransactions.length === 0">
-            <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+          <tr v-if="!pending && filteredTransactions.length === 0">
+            <td colspan="7" class="px-6 py-12 text-center text-slate-500">
               No transactions found.
             </td>
           </tr>
