@@ -8,7 +8,7 @@ definePageMeta({
 
 const supabase = useSupabaseClient<Database>()
 const toast = useToast()
-const { staff } = useStaff()
+const { staff, fetchStaff } = useStaff()
 
 // ---- 型定義 ----
 interface Store {
@@ -103,7 +103,6 @@ async function saveStore() {
     }
     
     // キャッシュを更新
-    const { fetchStaff } = useStaff()
     await fetchStaff()
     toast.add({ title: 'Saved', description: 'Store information updated.', color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
