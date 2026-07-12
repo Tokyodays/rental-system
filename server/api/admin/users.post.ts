@@ -1,4 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
+import { ROLE_IDS, toInternalEmail } from '#shared/constants/auth'
 
 export default defineEventHandler(async (event) => {
   // 1. リクエスト送信者の認証チェック
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 内部的なメールアドレス形式に変換
-  const internalEmail = `${username.toLowerCase()}@rental.local`
+  const internalEmail = toInternalEmail(username)
 
   // 4. Supabase Admin API を使用してユーザーを作成
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -59,7 +60,7 @@ export default defineEventHandler(async (event) => {
       .from('staff')
       .upsert({
         id: authData.user.id,
-        role_id: role_id || '00000000-0000-0000-0001-000000000002',
+        role_id: role_id || ROLE_IDS.STAFF,
         store_id: store_id || adminStaff.store_id,
         username: username.toLowerCase()
       }, { onConflict: 'id' })

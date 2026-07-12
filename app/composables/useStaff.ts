@@ -1,3 +1,5 @@
+import { ROLE_IDS } from '#shared/constants/auth'
+
 /**
  * ログイン中のスタッフ情報（role含む）を取得・キャッシュするcomposable
  * Nuxt Supabase の useSupabaseUser() が不安定なケースに備え、
@@ -31,23 +33,20 @@ export const useStaff = () => {
     stores: StoreRecord | null
   }
 
-  const SUPER_ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000000'
-  const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-
   const staff = useState<StaffRecord | null>('current-staff', () => null)
   const isLoading = useState<boolean>('current-staff-loading', () => false)
 
   // super_admin: オーナー（店舗管理専用）
   const isSuperAdmin = computed(() => {
     if (!staff.value) return false
-    return staff.value.role_id === SUPER_ADMIN_ROLE_ID ||
+    return staff.value.role_id === ROLE_IDS.SUPER_ADMIN ||
       staff.value.staff_roles?.name === 'super_admin'
   })
 
   // isAdmin: ブランチ管理者（super_admin は含まない）
   const isAdmin = computed(() => {
     if (!staff.value) return false
-    return staff.value.role_id === ADMIN_ROLE_ID ||
+    return staff.value.role_id === ROLE_IDS.ADMIN ||
       staff.value.staff_roles?.name === 'admin'
   })
 

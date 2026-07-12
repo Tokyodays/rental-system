@@ -1,4 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
+import { ROLE_IDS } from '#shared/constants/auth'
 
 export default defineEventHandler(async (event) => {
   // 1. 認証チェック
@@ -17,8 +18,7 @@ export default defineEventHandler(async (event) => {
     .eq('id', userId)
     .single()
 
-  const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-  if (staffError || adminStaff?.role_id !== ADMIN_ROLE_ID) {
+  if (staffError || adminStaff?.role_id !== ROLE_IDS.ADMIN) {
     throw createError({ statusCode: 403, message: 'Forbidden' })
   }
 

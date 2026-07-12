@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Database } from '../types/database.types'
+import { ROLE_IDS } from '#shared/constants/auth'
 
 definePageMeta({
   middleware: ['settings-only-admin']
@@ -113,9 +114,6 @@ async function saveStore() {
   }
 }
 
-// ---- スタッフのロール更新 ----
-const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-const USER_ROLE_ID = '00000000-0000-0000-0001-000000000002'
 // ---- スタッフの追加・削除 ----
 const isAddingStaff = ref(false)
 const isDeletingStaff = ref<Record<string, boolean>>({})
@@ -123,7 +121,7 @@ const showAddModal = ref(false)
 const newStaff = reactive({
   username: '',
   password: '',
-  role_id: '00000000-0000-0000-0001-000000000002' // user role as default
+  role_id: ROLE_IDS.STAFF as string // user role as default
 })
 
 async function addStaff() {
@@ -181,7 +179,7 @@ async function deleteStaff(member: StaffMember) {
 const isUpdatingRole = ref<Record<string, boolean>>({})
 
 async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
-  const newRoleId = isAdmin ? ADMIN_ROLE_ID : USER_ROLE_ID
+  const newRoleId = isAdmin ? ROLE_IDS.ADMIN : ROLE_IDS.STAFF
   if (member.role_id === newRoleId) return
 
   // 管理者1名維持の制約チェック
@@ -448,8 +446,8 @@ watch(() => staff.value?.store_id, (newId) => {
                 <URadioGroup
                   v-model="newStaff.role_id"
                   :items="[
-                    { label: 'User', value: USER_ROLE_ID },
-                    { label: 'Admin', value: ADMIN_ROLE_ID }
+                    { label: 'User', value: ROLE_IDS.STAFF },
+                    { label: 'Admin', value: ROLE_IDS.ADMIN }
                   ]"
                   orientation="horizontal"
                 />

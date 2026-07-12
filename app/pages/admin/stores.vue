@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ROLE_IDS } from '#shared/constants/auth'
+
 definePageMeta({
   layout: 'admin',
   middleware: 'super-admin-only'
@@ -60,7 +62,7 @@ async function handleAddAdmin() {
       method: 'POST',
       body: {
         ...newAdmin,
-        role_id: '00000000-0000-0000-0001-000000000001', // Admin role
+        role_id: ROLE_IDS.ADMIN,
         store_id: selectedStore.value.id
       }
     })
