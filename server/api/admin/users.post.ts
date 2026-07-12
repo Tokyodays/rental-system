@@ -50,6 +50,8 @@ export default defineEventHandler(async (event) => {
 
     if (upsertError) {
       console.error('[AdminAPI] Failed to upsert staff record:', upsertError)
+      await adminClient.auth.admin.deleteUser(authData.user.id)
+      throw createError({ statusCode: 500, message: `Failed to create staff record: ${upsertError.message}` })
     }
   }
 
