@@ -126,7 +126,7 @@ async function handleAddVehicle() {
     await fetchVehicles()
   } catch (e) {
     console.error('Add failed:', e)
-    alert('Failed to add vehicle. Check console for details.')
+    toast.add({ title: 'Add Failed', description: (e as any)?.message || 'Failed to add vehicle.', color: 'error' })
   } finally {
     isSubmitting.value = false
   }
