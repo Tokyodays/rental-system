@@ -1,27 +1,10 @@
-import { serverSupabaseUser } from '#supabase/server'
 import { ROLE_IDS, toInternalEmail } from '#shared/constants/auth'
 
 export default defineEventHandler(async (event) => {
-  // 1. リクエスト送信者の認証チェック
-  const user = await serverSupabaseUser(event)
-  if (!user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  // 2. リクエスト送信者の権限と所属店舗のチェック（stores.post.ts と同様に adminClient + user.sub || user.id を使用）
+  // 1-2. 認証・権限チェック（スタッフ作成は admin, super_admin のみ許可）
   const adminClient = useSupabaseAdmin()
-  const userId = user.sub || user.id
-  const { data: adminStaff, error: staffError } = await adminClient
-    .from('staff')
-    .select('store_id, staff_roles(name)')
-    .eq('id', userId)
-    .single()
-
-  const roleName = (adminStaff?.staff_roles as any)?.name?.toLowerCase()
-  const ALLOWED_ROLES = ['admin', 'super_admin']
-  if (staffError || !ALLOWED_ROLES.includes(roleName)) {
-    throw createError({ statusCode: 403, message: 'Forbidden: Admin access required' })
-  }
+  const { staff: adminStaff } = await requireStaffRole(event, ['admin', 'super_admin'])
+  const roleName = ((adminStaff?.staff_roles as any)?.name || '').toLowerCase()
 
   // super_admin は store_id を body から受け取る（自身の store_id を持たない）
   if (roleName === 'admin' && !adminStaff!.store_id) {

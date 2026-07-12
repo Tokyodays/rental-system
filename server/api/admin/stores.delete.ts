@@ -1,24 +1,6 @@
-import { serverSupabaseUser } from '#supabase/server'
-
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
   const adminClient = useSupabaseAdmin()
-  const userId = user.sub || user.id
-
-  const { data: callerStaff, error: staffError } = await adminClient
-    .from('staff')
-    .select('role_id, staff_roles(name)')
-    .eq('id', userId)
-    .single()
-
-  const roleName = (callerStaff?.staff_roles as any)?.name
-  if (staffError || roleName?.toLowerCase() !== 'super_admin') {
-    throw createError({ statusCode: 403, message: 'Forbidden: Super admin access required' })
-  }
+  await requireStaffRole(event, ['super_admin'])
 
   const body = await readBody(event)
   const { id: storeId } = body

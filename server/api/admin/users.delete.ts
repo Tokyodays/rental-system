@@ -1,26 +1,7 @@
-import { serverSupabaseUser } from '#supabase/server'
-import { ROLE_IDS } from '#shared/constants/auth'
-
 export default defineEventHandler(async (event) => {
-  // 1. 認証チェック
-  const user = await serverSupabaseUser(event)
-  if (!user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
+  // 1-2. 認証・権限チェック（スタッフ削除は admin のみ許可。super_admin 不可は現行仕様）
   const adminClient = useSupabaseAdmin()
-  const userId = user.sub || user.id
-
-  // 2. 権限チェック（adminClient で RLS をバイパスして確実に取得）
-  const { data: adminStaff, error: staffError } = await adminClient
-    .from('staff')
-    .select('role_id, store_id')
-    .eq('id', userId)
-    .single()
-
-  if (staffError || adminStaff?.role_id !== ROLE_IDS.ADMIN) {
-    throw createError({ statusCode: 403, message: 'Forbidden' })
-  }
+  const { userId } = await requireStaffRole(event, ['admin'])
 
   // 3. IDの取得
   const body = await readBody(event)
