@@ -59,7 +59,7 @@ export const useSupabaseConnection = () => {
   }
 
   // アプリ起動時に一度チェック（クライアントサイドのみ）
-  if (process.client) {
+  if (import.meta.client) {
     onMounted(() => {
       checkConnection()
     })

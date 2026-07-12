@@ -103,7 +103,7 @@ export const useStaff = () => {
   }
 
   // 初期化およびイベント監視（コンポーネントの setup 内のみ登録）
-  if (process.client) {
+  if (import.meta.client) {
     const instance = getCurrentInstance()
     if (instance) {
       onMounted(() => {

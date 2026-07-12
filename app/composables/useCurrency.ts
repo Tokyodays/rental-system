@@ -24,7 +24,7 @@ export const useCurrency = () => {
   }
 
   // 初期化時に非同期で取得
-  if (process.client) {
+  if (import.meta.client) {
     onMounted(() => {
       fetchCurrencies()
     })
