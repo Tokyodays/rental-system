@@ -3,6 +3,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
+const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 const isLoading = ref(false)
@@ -21,13 +22,14 @@ const lentVehicleSearch = ref('')
 async function fetchLentVehicles() {
   isLoadingLentVehicles.value = true
   try {
-    const { data: statusData } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Lent').single() as any)
-    if (!statusData) return
+    await ensureLoaded()
+    const statusId = vehicleStatusId('Lent')
+    if (!statusId) return
 
     const { data, error } = await (supabase
       .from('vehicles')
       .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
-      .eq('status_id', statusData.id)
+      .eq('status_id', statusId)
       .order('name') as any)
 
     if (!error) lentVehicles.value = data || []
@@ -128,11 +130,9 @@ const timeDiffText = computed(() => {
   const scheduled = new Date(activeRental.value.end_at)
   const actual = actualReturnAt.value
   const diffMs = actual.getTime() - scheduled.getTime()
-  
-  const diffHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60))
-  const days = Math.floor(diffHours / 24)
-  const hours = diffHours % 24
-  
+
+  const { days, hours } = diffToDaysHours(diffMs)
+
   const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`
   
   if (diffMs > 0) return `Delayed by ${timeStr}`
@@ -153,9 +153,10 @@ async function handleCompleteReturn() {
   
   try {
     // 1. Get Status IDs
-    const { data: vStatus } = await (supabase.from('vehicle_statuses').select('id').eq('name', 'Available').single() as any)
-    const { data: cStatus } = await (supabase.from('customer_statuses').select('id').eq('name', 'Active').single() as any)
-    
+    await ensureLoaded()
+    const availableStatusId = vehicleStatusId('Available')
+    const activeStatusId = customerStatusId('Active')
+
     // 2. Update Transaction Status
     const { error: rError } = await ((supabase.from('transactions') as any)
       .update({ status: 'Completed', end_at: actualReturnAt.value.toISOString() })
@@ -163,13 +164,17 @@ async function handleCompleteReturn() {
     if (rError) throw rError
 
     // 3. Update Vehicle Status
-    await ((supabase.from('vehicles') as any).update({ status_id: vStatus?.id }).eq('id', activeRental.value.vehicle_id) as any)
-    
+    const { error: vehicleError } = await (supabase.from('vehicles') as any)
+      .update({ status_id: availableStatusId }).eq('id', activeRental.value.vehicle_id)
+    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
+
     // 4. Update Customer Status
-    await ((supabase.from('customers') as any).update({ status_id: cStatus?.id }).eq('id', activeRental.value.customer_id) as any)
+    const { error: customerError } = await (supabase.from('customers') as any)
+      .update({ status_id: activeStatusId }).eq('id', activeRental.value.customer_id)
+    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
-    router.push('/')
+    router.push('/dashboard')
   } catch (e: any) {
     toast.add({ title: 'Return Failed', description: e.message, color: 'error' })
   } finally {

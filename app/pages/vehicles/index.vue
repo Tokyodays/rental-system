@@ -9,7 +9,7 @@ const categoryOptions = [
   { label: 'Bicycle', value: 'Bicycle' }
 ]
 
-const vehicleStatuses = ref<{id: string, name: string, color: string}[]>([])
+const { ensureLoaded, vehicleStatuses, vehicleStatusId } = useStatusIds()
 const statusOptions = computed(() => [
   { label: 'All', value: 'All' },
   ...vehicleStatuses.value.map(s => ({ label: s.name, value: s.name }))
@@ -49,8 +49,7 @@ async function fetchVehicles() {
   isLoadingVehicles.value = true
   try {
     // 1. Fetch Statuses
-    const { data: statusData } = await client.from('vehicle_statuses').select('*')
-    vehicleStatuses.value = statusData || []
+    await ensureLoaded()
 
     // 2. Fetch Vehicles with Relations
     const { data, error } = await client
@@ -61,8 +60,6 @@ async function fetchVehicles() {
       console.error('Supabase Error:', error)
       throw error
     }
-    
-    console.log('Fetched vehicles:', data)
     
     vehicles.value = data?.map((v: any) => ({
       id: v.code,
@@ -101,13 +98,9 @@ async function handleAddVehicle() {
     const storeId = staff.value.store_id
 
     // 3. Get Status ID (Default to Available)
-    const { data: statusData } = await client
-      .from('vehicle_statuses')
-      .select('id')
-      .eq('name', 'Available')
-      .single()
-    if (!statusData) throw new Error('Default status not found')
-    const statusId = (statusData as any).id
+    await ensureLoaded()
+    const statusId = vehicleStatusId('Available')
+    if (!statusId) throw new Error('Default status not found')
 
     // 4. Insert Vehicle
     const { error } = await client
@@ -133,7 +126,7 @@ async function handleAddVehicle() {
     await fetchVehicles()
   } catch (e) {
     console.error('Add failed:', e)
-    alert('Failed to add vehicle. Check console for details.')
+    toast.add({ title: 'Add Failed', description: (e as any)?.message || 'Failed to add vehicle.', color: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -169,13 +162,13 @@ async function toggleVehicleStatus() {
   const isCurrentlyAvailable = selectedVehicle.value.status === 'Available'
   const targetStatusName = isCurrentlyAvailable ? 'Unavailable' : 'Available'
   
-  const targetStatus = vehicleStatuses.value.find(s => s.name === targetStatusName)
-  if (!targetStatus) return
+  const targetStatusId = vehicleStatusId(targetStatusName)
+  if (!targetStatusId) return
 
   try {
     const { error } = await client
       .from('vehicles')
-      .update({ status_id: targetStatus.id } as any)
+      .update({ status_id: targetStatusId } as any)
       .eq('code', selectedVehicle.value.id)
 
     if (error) throw error

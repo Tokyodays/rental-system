@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Database } from '../types/database.types'
+import { ROLE_IDS } from '#shared/constants/auth'
 
 definePageMeta({
   middleware: ['settings-only-admin']
@@ -7,7 +8,7 @@ definePageMeta({
 
 const supabase = useSupabaseClient<Database>()
 const toast = useToast()
-const { staff } = useStaff()
+const { staff, fetchStaff } = useStaff()
 
 // ---- 型定義 ----
 interface Store {
@@ -47,7 +48,7 @@ async function fetchStoreAndStaff() {
   try {
     // Store 情報
     const { data: storeData } = await supabase
-      .from('stores' as any)
+      .from('stores')
       .select('id, name, address, currency_id')
       .eq('id', staff.value.store_id)
       .single() as any
@@ -64,7 +65,7 @@ async function fetchStoreAndStaff() {
 
     // Staff 一覧
     const { data: staffData } = await supabase
-      .from('staff' as any)
+      .from('staff')
       .select('id, username, role_id, staff_roles(name)')
       .eq('store_id', staff.value.store_id)
       .order('username') as any
@@ -85,8 +86,8 @@ async function saveStore() {
   isSavingStore.value = true
   try {
     const { error } = await supabase
-      .from('stores' as any)
-      .update({ 
+      .from('stores')
+      .update({
         name: storeName.value, 
         address: storeAddress.value,
         currency_id: storeCurrency.value,
@@ -102,7 +103,6 @@ async function saveStore() {
     }
     
     // キャッシュを更新
-    const { fetchStaff } = useStaff()
     await fetchStaff()
     toast.add({ title: 'Saved', description: 'Store information updated.', color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
@@ -113,9 +113,6 @@ async function saveStore() {
   }
 }
 
-// ---- スタッフのロール更新 ----
-const ADMIN_ROLE_ID = '00000000-0000-0000-0001-000000000001'
-const USER_ROLE_ID = '00000000-0000-0000-0001-000000000002'
 // ---- スタッフの追加・削除 ----
 const isAddingStaff = ref(false)
 const isDeletingStaff = ref<Record<string, boolean>>({})
@@ -123,7 +120,7 @@ const showAddModal = ref(false)
 const newStaff = reactive({
   username: '',
   password: '',
-  role_id: '00000000-0000-0000-0001-000000000002' // user role as default
+  role_id: ROLE_IDS.STAFF as string // user role as default
 })
 
 async function addStaff() {
@@ -181,7 +178,7 @@ async function deleteStaff(member: StaffMember) {
 const isUpdatingRole = ref<Record<string, boolean>>({})
 
 async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
-  const newRoleId = isAdmin ? ADMIN_ROLE_ID : USER_ROLE_ID
+  const newRoleId = isAdmin ? ROLE_IDS.ADMIN : ROLE_IDS.STAFF
   if (member.role_id === newRoleId) return
 
   // 管理者1名維持の制約チェック
@@ -203,7 +200,7 @@ async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
   isUpdatingRole.value[member.id] = true
   try {
     const { error } = await supabase
-      .from('staff' as any)
+      .from('staff')
       .update({ role_id: newRoleId } as any)
       .eq('id', member.id)
 
@@ -403,7 +400,7 @@ watch(() => staff.value?.store_id, (newId) => {
                 <UButton
                   v-if="member.id !== staff?.id"
                   icon="i-lucide-trash-2"
-                  color="red"
+                  color="error"
                   variant="ghost"
                   size="xs"
                   :loading="isDeletingStaff[member.id]"
@@ -448,8 +445,8 @@ watch(() => staff.value?.store_id, (newId) => {
                 <URadioGroup
                   v-model="newStaff.role_id"
                   :items="[
-                    { label: 'User', value: USER_ROLE_ID },
-                    { label: 'Admin', value: ADMIN_ROLE_ID }
+                    { label: 'User', value: ROLE_IDS.STAFF },
+                    { label: 'Admin', value: ROLE_IDS.ADMIN }
                   ]"
                   orientation="horizontal"
                 />

@@ -81,7 +81,7 @@ onUnmounted(() => {
       <UButton
         type="button"
         icon="i-lucide-x"
-        color="white"
+        color="neutral"
         variant="ghost"
         class="rounded-full bg-white/10"
         @click="$emit('close')"
@@ -109,7 +109,7 @@ onUnmounted(() => {
             type="button"
             label="閉じる"
             variant="soft"
-            color="white"
+            color="neutral"
             class="mt-4"
             @click="$emit('close')"
           />

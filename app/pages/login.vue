@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { toInternalEmail } from '#shared/constants/auth'
+
 definePageMeta({
   layout: false
 })
@@ -26,7 +28,7 @@ async function handleLogin() {
   
   try {
     // ユーザー名を内部的なメールアドレス形式に変換
-    const internalEmail = `${state.username.toLowerCase()}@rental.local`
+    const internalEmail = toInternalEmail(state.username)
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: internalEmail,

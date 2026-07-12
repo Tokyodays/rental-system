@@ -159,6 +159,83 @@ export interface Database {
           created_at?: string
         }
       }
+      vehicle_categories: {
+        Row: {
+          id: string
+          name: string
+          icon: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          icon?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          icon?: string | null
+          created_at?: string
+        }
+      }
+      vehicle_statuses: {
+        Row: {
+          id: string
+          name: string
+          color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          color?: string | null
+          created_at?: string
+        }
+      }
+      customer_statuses: {
+        Row: {
+          id: string
+          name: string
+          color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          color?: string | null
+          created_at?: string
+        }
+      }
+      currency: {
+        Row: {
+          id: number
+          currency_text: string
+          currency_symbol: string
+        }
+        Insert: {
+          id?: number
+          currency_text: string
+          currency_symbol: string
+        }
+        Update: {
+          id?: number
+          currency_text?: string
+          currency_symbol?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
