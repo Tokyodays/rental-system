@@ -49,8 +49,7 @@ const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-sett
     </nav>
 
     <!-- Footer Section (Settings) -->
-    <!-- 救済措置: isAdmin判定がNGでも、ユーザー名がadminなら表示する -->
-    <div v-if="isAdmin || staff?.username === 'admin' || staff?.staff_roles?.name === 'admin'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div v-if="isAdmin" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <NuxtLink
         :to="settingItem.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer group"
