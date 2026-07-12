@@ -210,7 +210,7 @@ async function handleAddCustomer() {
         .from('customer-passports')
         .upload(filePath, capturedBlob.value, {
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: 'image/webp'
         })
       
       if (uploadError) throw uploadError
@@ -331,7 +331,7 @@ async function handleUpdateCustomer() {
         .from('customer-passports')
         .upload(filePath, capturedBlob.value, {
           upsert: true,
-          contentType: 'image/jpeg'
+          contentType: 'image/webp'
         })
       
       if (uploadError) throw uploadError
