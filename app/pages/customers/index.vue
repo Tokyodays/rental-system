@@ -23,12 +23,12 @@ interface Customer {
 const customers = ref<Customer[]>([])
 const isLoading = ref(true)
 const fetchError = ref<string | null>(null)
-const statuses = ref<{ id: string, name: string }[]>([])
+const { ensureLoaded, customerStatuses, customerStatusId } = useStatusIds()
 const statusFilter = ref('all')
 
-const activeStatusId = computed(() => statuses.value.find(s => s.name === 'Active')?.id)
-const unactiveStatusId = computed(() => statuses.value.find(s => s.name === 'Unactive')?.id)
-const rentingStatusId = computed(() => statuses.value.find(s => s.name === 'Renting')?.id)
+const activeStatusId = computed(() => customerStatusId('Active'))
+const unactiveStatusId = computed(() => customerStatusId('Unactive'))
+const rentingStatusId = computed(() => customerStatusId('Renting'))
 
 const statusOptions = computed(() => [
   { label: 'Active', value: activeStatusId.value || '' },
@@ -37,7 +37,7 @@ const statusOptions = computed(() => [
 
 const filterStatuses = computed(() => [
   { name: 'All Statuses', id: 'all' },
-  ...statuses.value
+  ...customerStatuses.value
 ])
 
 // Add Customer Modal State
@@ -190,15 +190,6 @@ async function fetchCustomers() {
   }
 }
 
-async function fetchStatuses() {
-  const { data, error } = await client
-    .from('customer_statuses')
-    .select('id, name')
-  if (!error && data) {
-    statuses.value = data
-  }
-}
-
 async function handleAddCustomer() {
   isSubmitting.value = true
   try {
@@ -227,12 +218,8 @@ async function handleAddCustomer() {
     }
 
     // 3. Get Status ID (Active)
-    const { data: activeStatus } = await client
-      .from('customer_statuses')
-      .select('id')
-      .eq('name', 'Active')
-      .single() as any
-    const statusId = activeStatus?.id || null
+    await ensureLoaded()
+    const statusId = customerStatusId('Active') || null
 
     // 4. Perform SINGLE INSERT with all information including passport_url
     const { error: insertError } = await client
@@ -394,7 +381,7 @@ async function handleUpdateCustomer() {
 
 onMounted(() => {
   fetchCustomers()
-  fetchStatuses()
+  ensureLoaded()
 })
 
 const filteredCustomers = computed(() => {
