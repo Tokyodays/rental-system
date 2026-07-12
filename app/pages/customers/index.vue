@@ -106,9 +106,6 @@ function getPassportPublicUrl(path: string | null | undefined) {
   return data.publicUrl
 }
 
-const selectedFile = ref<File | null>(0 as any) // Dummy cast to avoid selection error
-const fileInput = ref<HTMLInputElement | null>(null)
-
 // Camera related
 const videoRef = ref<HTMLVideoElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -164,21 +161,6 @@ function takePhoto() {
 function resetPhoto() {
   capturedPhoto.value = null
   capturedBlob.value = null
-}
-
-function handleFileChange(event: any) {
-  const file = event.target.files?.[0]
-  if (file) {
-    // If user uploaded a file manually, we don't force webp conversion here 
-    // unless you want to re-process it through canvas.
-    // For now, just keep the original blob for manual uploads.
-    capturedBlob.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      capturedPhoto.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
 }
 
 async function fetchCustomers() {
@@ -910,6 +892,5 @@ const filteredCustomers = computed(() => {
         </UForm>
       </template>
     </UModal>
-    <canvas ref="canvasRef" class="hidden"></canvas>
   </div>
 </template>
