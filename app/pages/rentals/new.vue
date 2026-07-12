@@ -206,10 +206,14 @@ async function handleCompleteLending() {
     if (rentalError) throw rentalError
 
     // 3. Update Vehicle Status
-    await ((supabase.from('vehicles') as any).update({ status_id: lentStatusId }).eq('id', scannedVehicle.value.id) as any)
+    const { error: vehicleError } = await (supabase.from('vehicles') as any)
+      .update({ status_id: lentStatusId }).eq('id', scannedVehicle.value.id)
+    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
 
     // 4. Update Customer Status
-    await ((supabase.from('customers') as any).update({ status_id: rentingStatusId }).eq('id', selectedCustomer.value.id) as any)
+    const { error: customerError } = await (supabase.from('customers') as any)
+      .update({ status_id: rentingStatusId }).eq('id', selectedCustomer.value.id)
+    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
     router.push('/')

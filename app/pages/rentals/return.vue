@@ -164,10 +164,14 @@ async function handleCompleteReturn() {
     if (rError) throw rError
 
     // 3. Update Vehicle Status
-    await ((supabase.from('vehicles') as any).update({ status_id: availableStatusId }).eq('id', activeRental.value.vehicle_id) as any)
+    const { error: vehicleError } = await (supabase.from('vehicles') as any)
+      .update({ status_id: availableStatusId }).eq('id', activeRental.value.vehicle_id)
+    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
 
     // 4. Update Customer Status
-    await ((supabase.from('customers') as any).update({ status_id: activeStatusId }).eq('id', activeRental.value.customer_id) as any)
+    const { error: customerError } = await (supabase.from('customers') as any)
+      .update({ status_id: activeStatusId }).eq('id', activeRental.value.customer_id)
+    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
 
     toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
     router.push('/')
