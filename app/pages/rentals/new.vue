@@ -153,9 +153,7 @@ const durationText = computed(() => {
   const diffMs = end.getTime() - start.getTime()
   if (diffMs < 0) return 'Invalid (Past date)'
 
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const days = Math.floor(diffHours / 24)
-  const hours = diffHours % 24
+  const { days, hours } = diffToDaysHours(diffMs)
 
   if (days === 0) return `${hours} hours`
   return `${days} days ${hours} hours`

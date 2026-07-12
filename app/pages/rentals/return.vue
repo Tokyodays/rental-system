@@ -130,11 +130,9 @@ const timeDiffText = computed(() => {
   const scheduled = new Date(activeRental.value.end_at)
   const actual = actualReturnAt.value
   const diffMs = actual.getTime() - scheduled.getTime()
-  
-  const diffHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60))
-  const days = Math.floor(diffHours / 24)
-  const hours = diffHours % 24
-  
+
+  const { days, hours } = diffToDaysHours(diffMs)
+
   const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`
   
   if (diffMs > 0) return `Delayed by ${timeStr}`

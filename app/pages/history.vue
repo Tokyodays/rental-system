@@ -22,11 +22,9 @@ function calculateDurationText(startStr: string, endStr: string) {
   const end = new Date(endStr)
   const diffMs = end.getTime() - start.getTime()
   if (diffMs < 0) return ''
-  
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const days = Math.floor(diffHours / 24)
-  const hours = diffHours % 24
-  
+
+  const { days, hours } = diffToDaysHours(diffMs)
+
   if (days > 0 && hours > 0) return `${days}d ${hours}h`
   if (days > 0) return `${days}d`
   return `${hours}h`
