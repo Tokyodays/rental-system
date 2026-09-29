@@ -1,13 +1,22 @@
 <script setup lang="ts">
+import type { RentalVehicle } from '~/utils/rentalVehicles'
+import type { LendingTransactionInsert } from '~/composables/useRentalTransactions'
+
 const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 const { formatPrice } = useCurrency()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
+const { createLendingTransaction, updateVehicleStatus, updateCustomerStatus } = useRentalTransactions()
 
 const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Price Input, 5: Confirmation
 const isLoading = ref(false)
+
+function handleBack() {
+  if (currentStep.value > 1) currentStep.value--
+  else router.back()
+}
 
 // Step 1: Customer Selection
 const customers = ref<any[]>([])
@@ -31,61 +40,33 @@ async function fetchActiveCustomers() {
 }
 
 const filteredCustomers = computed(() => {
-  const s = customerSearch.value.toLowerCase()
-  return customers.value.filter(c => 
-    c.full_name.toLowerCase().includes(s) || (c.email && c.email.toLowerCase().includes(s))
-  )
+  const keyword = customerSearch.value.toLowerCase()
+  return customers.value.filter(c => matchesCustomerSearch(c, keyword))
 })
 
-function selectCustomer(customer: any) {
+function handleSelectCustomer(customer: any) {
   selectedCustomer.value = customer
   currentStep.value = 2
   fetchAvailableVehicles()
 }
 
 // Step 2: Vehicle Scan & Identification
-const scannedVehicle = ref<any>(null)
+const selectedVehicle = ref<any>(null)
 const isScanning = ref(false)
 const manualVehicleCode = ref('')
 const isIdentifying = ref(false)
 
 // Vehicle list selection
-const availableVehicles = ref<any[]>([])
-const isLoadingVehicles = ref(false)
-const vehicleSearch = ref('')
+const {
+  vehicles: availableVehicles,
+  isLoadingVehicles,
+  vehicleSearch,
+  filteredVehicles,
+  fetchVehicles: fetchAvailableVehicles
+} = useRentalVehicles('Available', 'Could not load available vehicles.')
 
-async function fetchAvailableVehicles() {
-  isLoadingVehicles.value = true
-  try {
-    await ensureLoaded()
-    const statusId = vehicleStatusId('Available')
-    if (!statusId) return
-
-    const { data, error } = await (supabase
-      .from('vehicles')
-      .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
-      .eq('status_id', statusId)
-      .order('name') as any)
-
-    if (!error) availableVehicles.value = data || []
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: 'Could not load available vehicles.', color: 'error' })
-  } finally {
-    isLoadingVehicles.value = false
-  }
-}
-
-const filteredVehicles = computed(() => {
-  const s = vehicleSearch.value.toLowerCase()
-  return availableVehicles.value.filter(v =>
-    v.name.toLowerCase().includes(s) ||
-    v.code.toLowerCase().includes(s) ||
-    (v.vehicle_categories?.name && v.vehicle_categories.name.toLowerCase().includes(s))
-  )
-})
-
-function selectVehicleFromList(vehicle: any) {
-  scannedVehicle.value = vehicle
+function handleSelectVehicle(vehicle: RentalVehicle) {
+  selectedVehicle.value = vehicle
   currentStep.value = 3
 }
 
@@ -103,7 +84,7 @@ async function identifyVehicleByCode(code: string) {
       .single() as any)
 
     if (data) {
-      scannedVehicle.value = data
+      selectedVehicle.value = data
       currentStep.value = 3
     } else {
       toast.add({ title: 'Identification Failed', description: 'Vehicle not found or not available.', color: 'error' })
@@ -115,11 +96,8 @@ async function identifyVehicleByCode(code: string) {
   }
 }
 
-async function simulateScan() {
-  isScanning.value = true
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  // For simulation, we'll try to get ANY available vehicle
+/** シミュレーション用に Available な車両を1台取得する */
+async function fetchAnyAvailableVehicle(): Promise<{ code: string } | null> {
   await ensureLoaded()
   const statusId = vehicleStatusId('Available')
   const { data } = await (supabase
@@ -128,9 +106,18 @@ async function simulateScan() {
     .eq('status_id', statusId)
     .limit(1)
     .single() as any)
+  return data
+}
 
-  if (data) {
-    await identifyVehicleByCode(data.code)
+async function handleSimulateScan() {
+  isScanning.value = true
+  await waitForSimulatedScan()
+  
+  // For simulation, we'll try to get ANY available vehicle
+  const vehicle = await fetchAnyAvailableVehicle()
+
+  if (vehicle) {
+    await identifyVehicleByCode(vehicle.code)
   } else {
     toast.add({ title: 'Scan Failed', description: 'No available vehicle found.', color: 'error' })
   }
@@ -146,25 +133,9 @@ const formattedReturnAt = computed(() => {
   return `${returnDate.value} ${returnTime.value}`
 })
 
-const durationText = computed(() => {
-  if (!formattedReturnAt.value) return ''
-  const start = new Date()
-  const end = new Date(formattedReturnAt.value)
-  const diffMs = end.getTime() - start.getTime()
-  if (diffMs < 0) return 'Invalid (Past date)'
+const durationText = computed(() => toLendingDurationText(formattedReturnAt.value, new Date()))
 
-  const { days, hours } = diffToDaysHours(diffMs)
-
-  if (days === 0) return `${hours} hours`
-  return `${days} days ${hours} hours`
-})
-
-const isPastDate = computed(() => {
-  if (!formattedReturnAt.value) return true
-  const start = new Date()
-  const end = new Date(formattedReturnAt.value)
-  return end.getTime() <= start.getTime()
-})
+const isPastDate = computed(() => isReturnAtNotInFuture(formattedReturnAt.value, new Date()))
 
 // Step 4: Price Input
 const price = ref(0)
@@ -173,8 +144,23 @@ const isPriceValid = computed(() => price.value >= 0)
 // Step 5: Confirmation & Process
 const isSubmitting = ref(false)
 
+/** 入力内容から transactions への insert ペイロードを組み立てる */
+function buildLendingTransactionPayload(staffId: string, storeId: string): LendingTransactionInsert {
+  return {
+    vehicle_id: selectedVehicle.value.id,
+    customer_id: selectedCustomer.value.id,
+    staff_id: staffId,
+    store_id: storeId,
+    start_at: new Date().toISOString(),
+    end_at: new Date(formattedReturnAt.value).toISOString(),
+    start_mileage: selectedVehicle.value.last_mileage || 0,
+    price: price.value,
+    status: 'Active'
+  }
+}
+
 async function handleCompleteLending() {
-  if (!selectedCustomer.value || !scannedVehicle.value) return
+  if (!selectedCustomer.value || !selectedVehicle.value) return
   isSubmitting.value = true
   
   try {
@@ -188,32 +174,11 @@ async function handleCompleteLending() {
       toast.add({ title: 'Authentication Error', description: 'Could not identify your store. Please try logging in again.', color: 'error' })
       return
     }
-    const staffId = currentStaff.value.id
-    const storeId = currentStaff.value.store_id
 
-    // 2. Insert Transaction
-    const { error: rentalError } = await (supabase.from('transactions').insert({
-      vehicle_id: scannedVehicle.value.id,
-      customer_id: selectedCustomer.value.id,
-      staff_id: staffId,
-      store_id: storeId,
-      start_at: new Date().toISOString(),
-      end_at: new Date(formattedReturnAt.value).toISOString(),
-      start_mileage: scannedVehicle.value.last_mileage || 0,
-      price: price.value,
-      status: 'Active'
-    } as any) as any)
-    if (rentalError) throw rentalError
-
-    // 3. Update Vehicle Status
-    const { error: vehicleError } = await (supabase.from('vehicles') as any)
-      .update({ status_id: lentStatusId }).eq('id', scannedVehicle.value.id)
-    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
-
-    // 4. Update Customer Status
-    const { error: customerError } = await (supabase.from('customers') as any)
-      .update({ status_id: rentingStatusId }).eq('id', selectedCustomer.value.id)
-    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
+    // 2. Insert Transaction → 3. Update Vehicle Status → 4. Update Customer Status
+    await createLendingTransaction(buildLendingTransactionPayload(currentStaff.value.id, currentStaff.value.store_id))
+    await updateVehicleStatus(selectedVehicle.value.id, lentStatusId)
+    await updateCustomerStatus(selectedCustomer.value.id, rentingStatusId)
 
     toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
     router.push('/dashboard')
@@ -222,6 +187,12 @@ async function handleCompleteLending() {
   } finally {
     isSubmitting.value = false
   }
+}
+
+function handleRestart() {
+  currentStep.value = 1
+  selectedCustomer.value = null
+  selectedVehicle.value = null
 }
 
 onMounted(() => {
@@ -234,7 +205,7 @@ onMounted(() => {
     <!-- Header with Breadcrumbs/Progress -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="currentStep > 1 ? currentStep-- : router.back()" />
+        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="handleBack" />
         <h1 class="text-2xl font-bold">New Lending</h1>
       </div>
       
@@ -270,7 +241,7 @@ onMounted(() => {
           v-for="customer in filteredCustomers"
           :key="customer.id"
           class="cursor-pointer hover:border-blue-500 transition-all border-slate-200 dark:border-slate-800 shadow-sm"
-          @click="selectCustomer(customer)"
+          @click="handleSelectCustomer(customer)"
         >
           <div class="flex items-center gap-4">
             <UAvatar :alt="customer.full_name" size="md" />
@@ -319,7 +290,7 @@ onMounted(() => {
             v-for="vehicle in filteredVehicles"
             :key="vehicle.id"
             class="cursor-pointer hover:border-blue-500 transition-all border-slate-200 dark:border-slate-800 shadow-sm"
-            @click="selectVehicleFromList(vehicle)"
+            @click="handleSelectVehicle(vehicle)"
           >
             <div class="flex items-center gap-4">
               <div class="size-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500 shrink-0">
@@ -364,7 +335,7 @@ onMounted(() => {
              block
              :loading="isScanning"
              class="cursor-pointer font-bold"
-             @click="simulateScan"
+             @click="handleSimulateScan"
            />
         </div>
 
@@ -494,7 +465,7 @@ onMounted(() => {
     </div>
 
     <!-- Step 5: Confirmation -->
-    <div v-if="currentStep === 5 && selectedCustomer && scannedVehicle" class="space-y-6">
+    <div v-if="currentStep === 5 && selectedCustomer && selectedVehicle" class="space-y-6">
       <div class="text-center space-y-2">
         <h2 class="text-2xl font-bold">Step 5: Confirm Transaction</h2>
         <p class="text-slate-500">Please review the lending details below.</p>
@@ -518,11 +489,11 @@ onMounted(() => {
           <template #header><p class="font-bold">Vehicle</p></template>
           <div class="flex items-center gap-4">
             <div class="size-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500">
-               <UIcon :name="scannedVehicle.vehicle_categories?.icon || 'i-lucide-package'" class="size-8" />
+               <UIcon :name="selectedVehicle.vehicle_categories?.icon || 'i-lucide-package'" class="size-8" />
             </div>
             <div>
-              <p class="text-lg font-bold text-slate-900 dark:text-white">{{ scannedVehicle.name }}</p>
-              <p class="text-sm text-slate-500">{{ scannedVehicle.code }} • {{ scannedVehicle.last_mileage }} km</p>
+              <p class="text-lg font-bold text-slate-900 dark:text-white">{{ selectedVehicle.name }}</p>
+              <p class="text-sm text-slate-500">{{ selectedVehicle.code }} • {{ selectedVehicle.last_mileage }} km</p>
             </div>
           </div>
         </UCard>
@@ -580,7 +551,7 @@ onMounted(() => {
           variant="ghost"
           color="neutral"
           class="cursor-pointer"
-          @click="currentStep = 1; selectedCustomer = null; scannedVehicle = null"
+          @click="handleRestart"
         />
       </div>
     </div>
