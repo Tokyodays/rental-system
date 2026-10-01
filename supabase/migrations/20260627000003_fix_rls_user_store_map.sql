@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.user_store_map (
 ALTER TABLE public.user_store_map ENABLE ROW LEVEL SECURITY;
 
 -- Non-recursive policy: only uses auth.uid(), not get_auth_store_id()
+DROP POLICY IF EXISTS "user can read own store mapping" ON public.user_store_map;
 CREATE POLICY "user can read own store mapping"
   ON public.user_store_map FOR SELECT
   USING (user_id = auth.uid());
