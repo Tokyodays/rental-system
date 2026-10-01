@@ -1,32 +1,25 @@
 <script setup lang="ts">
+import {
+  VEHICLE_CATEGORY_FILTERS,
+  VEHICLE_CATEGORY_OPTIONS,
+  matchesVehicleFilter,
+  toStatusAccessLabel,
+  toToggledVehicleStatus,
+  toVehicle,
+  toVehicleQrUrl,
+  type Vehicle,
+  type VehicleRow
+} from '~/utils/vehicle'
+
 const search = ref('')
 const selectedCategory = ref('All')
 const selectedStatus = ref('All')
-const categories = ['All', 'Bike', 'Car', 'Bicycle']
-const categoryOptions = [
-  { label: 'Bike', value: 'Bike' },
-  { label: 'Car', value: 'Car' },
-  { label: 'Bicycle', value: 'Bicycle' }
-]
 
 const { ensureLoaded, vehicleStatuses, vehicleStatusId } = useStatusIds()
 const statusOptions = computed(() => [
   { label: 'All', value: 'All' },
   ...vehicleStatuses.value.map(s => ({ label: s.name, value: s.name }))
 ])
-
-interface Vehicle {
-  id: string
-  name: string
-  category: string
-  status: string
-  statusColor: string
-  lastUpdated: string
-  icon: string
-  lastMileage: number
-  imageUrl: string | null
-  imageUrls: string[]
-}
 
 const client = useSupabaseClient()
 const toast = useToast()
@@ -61,18 +54,7 @@ async function fetchVehicles() {
       throw error
     }
     
-    vehicles.value = data?.map((v: any) => ({
-      id: v.code,
-      name: v.name,
-      category: v.vehicle_categories?.name || 'Unknown',
-      status: v.vehicle_statuses?.name || 'Unknown',
-      statusColor: v.vehicle_statuses?.color || 'neutral',
-      lastUpdated: new Date(v.updated_at).toLocaleDateString(),
-      icon: v.vehicle_categories?.icon || 'i-lucide-package',
-      lastMileage: v.last_mileage || 0,
-      imageUrl: v.image_url || null,
-      imageUrls: v.image_urls || []
-    })) || []
+    vehicles.value = (data as unknown as VehicleRow[] | null)?.map(toVehicle) || []
   } catch (e) {
     console.error('Error fetching vehicles:', e)
   } finally {
@@ -80,48 +62,77 @@ async function fetchVehicles() {
   }
 }
 
+async function fetchCategoryId(categoryName: string): Promise<string> {
+  const { data: catData } = await client
+    .from('vehicle_categories')
+    .select('id')
+    .eq('name', categoryName)
+    .single()
+  
+  if (!catData) throw new Error('Category not found')
+  return (catData as any).id
+}
+
+async function fetchDefaultStatusId(): Promise<string> {
+  await ensureLoaded()
+  const statusId = vehicleStatusId('Available')
+  if (!statusId) throw new Error('Default status not found')
+  return statusId
+}
+
+async function createVehicle(categoryId: string, storeId: string, statusId: string) {
+  const { error } = await client
+    .from('vehicles')
+    .insert({
+      name: newVehicle.name,
+      category_id: categoryId,
+      store_id: storeId,
+      status_id: statusId,
+      last_mileage: newVehicle.lastMileage,
+      image_urls: newVehicle.imageUrls
+    } as any)
+  
+  if (error) throw error
+}
+
+/** vehicles を code で更新し、失敗時は throw する */
+type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; image_urls: string[] }>
+
+async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
+  const { error } = await client
+    .from('vehicles')
+    .update(values as any)
+    .eq('code', code)
+
+  if (error) throw error
+}
+
+// カテゴリ・ステータス（Bike / Available）は保持したまま、入力値のみ初期化する
+function resetNewVehicleForm() {
+  newVehicle.name = ''
+  newVehicle.lastMileage = 0
+  newVehicle.imageUrls = []
+}
+
 async function handleAddVehicle() {
   isSubmitting.value = true
   try {
     // 1. Get Category ID
-    const { data: catData } = await client
-      .from('vehicle_categories')
-      .select('id')
-      .eq('name', newVehicle.categoryName)
-      .single()
-    
-    if (!catData) throw new Error('Category not found')
-    const categoryId = (catData as any).id
+    const categoryId = await fetchCategoryId(newVehicle.categoryName)
 
     // 2. Get Store ID associated with the logged-in staff
     if (!staff.value?.store_id) throw new Error('Store not found for this user')
     const storeId = staff.value.store_id
 
     // 3. Get Status ID (Default to Available)
-    await ensureLoaded()
-    const statusId = vehicleStatusId('Available')
-    if (!statusId) throw new Error('Default status not found')
+    const statusId = await fetchDefaultStatusId()
 
     // 4. Insert Vehicle
-    const { error } = await client
-      .from('vehicles')
-      .insert({
-        name: newVehicle.name,
-        category_id: categoryId,
-        store_id: storeId,
-        status_id: statusId,
-        last_mileage: newVehicle.lastMileage,
-        image_urls: newVehicle.imageUrls
-      } as any)
-    
-    if (error) throw error
+    await createVehicle(categoryId, storeId, statusId)
 
     // Success
     isAddModalOpen.value = false
-    // Reset form
-    newVehicle.name = ''
-    newVehicle.lastMileage = 0
-    newVehicle.imageUrls = []
+    resetNewVehicleForm()
     
     await fetchVehicles()
   } catch (e) {
@@ -139,46 +150,43 @@ onMounted(() => {
 const selectedVehicle = ref<Vehicle | null>(null)
 
 const filteredVehicles = computed<Vehicle[]>(() => {
-  return (vehicles.value || []).filter((v: Vehicle) => {
-    const matchesSearch = (v.name || '').toLowerCase().includes(search.value.toLowerCase()) || 
-                         (v.id || '').toLowerCase().includes(search.value.toLowerCase())
-    const matchesCategory = selectedCategory.value === 'All' || v.category === selectedCategory.value
-    const matchesStatus = selectedStatus.value === 'All' || v.status === selectedStatus.value
-    return !!(matchesSearch && matchesCategory && matchesStatus)
-  })
+  const filter = { search: search.value, category: selectedCategory.value, status: selectedStatus.value }
+  return (vehicles.value || []).filter((v: Vehicle) => matchesVehicleFilter(v, filter))
 })
 
-function selectVehicle(v: Vehicle) {
+/** 一覧を再取得し、サイドバーの selectedVehicle を最新データに差し替える */
+async function refreshVehiclesKeepingSelection() {
+  await fetchVehicles()
+
+  const updated = vehicles.value.find(v => v.code === selectedVehicle.value?.code)
+  if (updated) selectedVehicle.value = updated
+}
+
+function handleSelectVehicle(v: Vehicle) {
   selectedVehicle.value = v
 }
 
-async function toggleVehicleStatus() {
+async function handleToggleVehicleStatus() {
   if (!selectedVehicle.value) return
   if (selectedVehicle.value.status === 'Lent') {
     toast.add({ title: 'Operation not allowed', description: 'Cannot change status while the vehicle is lent.', color: 'error' })
     return
   }
 
-  const isCurrentlyAvailable = selectedVehicle.value.status === 'Available'
-  const targetStatusName = isCurrentlyAvailable ? 'Unavailable' : 'Available'
+  const targetStatusName = toToggledVehicleStatus(selectedVehicle.value.status)
   
   const targetStatusId = vehicleStatusId(targetStatusName)
   if (!targetStatusId) return
 
   try {
-    const { error } = await client
-      .from('vehicles')
-      .update({ status_id: targetStatusId } as any)
-      .eq('code', selectedVehicle.value.id)
-
-    if (error) throw error
+    await updateVehicleByCode(selectedVehicle.value.code, { status_id: targetStatusId })
 
     toast.add({ title: 'Status Updated', description: `Vehicle is now ${targetStatusName}.`, color: 'success' })
     
     // Refresh data
     await fetchVehicles()
     
-    // Close sidebar
+    // Close sidebar（差し替えではなく閉じる）
     selectedVehicle.value = null
   } catch (e: any) {
     console.error('Update failed:', e)
@@ -186,39 +194,29 @@ async function toggleVehicleStatus() {
   }
 }
 
-function openQR(id: string) {
-  window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${id}`, '_blank')
+function openQR(code: string) {
+  window.open(toVehicleQrUrl(code, 500), '_blank')
 }
 
 const isEditingMileage = ref(false)
 const editMileageValue = ref(0)
 const isUpdatingMileage = ref(false)
 
-function startEditMileage() {
+function handleStartEditMileage() {
   if (!selectedVehicle.value) return
   editMileageValue.value = selectedVehicle.value.lastMileage
   isEditingMileage.value = true
 }
 
-async function saveMileage() {
+async function handleSaveMileage() {
   if (!selectedVehicle.value) return
   isUpdatingMileage.value = true
   try {
-    const { error } = await client
-      .from('vehicles')
-      .update({ last_mileage: editMileageValue.value } as any)
-      .eq('code', selectedVehicle.value.id)
-
-    if (error) throw error
+    await updateVehicleByCode(selectedVehicle.value.code, { last_mileage: editMileageValue.value })
     
     selectedVehicle.value.lastMileage = editMileageValue.value
     toast.add({ title: 'Mileage Updated', description: 'Vehicle mileage has been updated.', color: 'success' })
-    await fetchVehicles()
-    
-    // Refresh selectedVehicle with updated data
-    const updatedVehicle = vehicles.value.find(v => v.id === selectedVehicle.value?.id)
-    if (updatedVehicle) selectedVehicle.value = updatedVehicle
-    
+    await refreshVehiclesKeepingSelection()
   } catch (e: any) {
     console.error('Update mileage failed:', e)
     toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
@@ -228,7 +226,7 @@ async function saveMileage() {
   }
 }
 
-function cancelEditMileage() {
+function handleCancelEditMileage() {
   isEditingMileage.value = false
 }
 
@@ -236,24 +234,15 @@ function cancelEditMileage() {
 const isEditingPhotos = ref(false)
 const isUpdatingPhotos = ref(false)
 
-async function savePhotos(newUrls: string[]) {
+async function handleSavePhotos(newUrls: string[]) {
   if (!selectedVehicle.value) return
   isUpdatingPhotos.value = true
   try {
-    const { error } = await client
-      .from('vehicles')
-      .update({ image_urls: newUrls } as any)
-      .eq('code', selectedVehicle.value.id)
-
-    if (error) throw error
+    await updateVehicleByCode(selectedVehicle.value.code, { image_urls: newUrls })
     
     selectedVehicle.value.imageUrls = newUrls
     toast.add({ title: 'Photos Updated', description: 'Vehicle photos have been updated.', color: 'success' })
-    await fetchVehicles()
-    
-    // サイドバーの表示を最新のデータに同期
-    const updated = vehicles.value.find(v => v.id === selectedVehicle.value?.id)
-    if (updated) selectedVehicle.value = updated
+    await refreshVehiclesKeepingSelection()
   } catch (e: any) {
     console.error('Update photos failed:', e)
     toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
@@ -289,7 +278,7 @@ watch(selectedVehicle, () => {
               <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">Category</span>
               <div class="flex items-center gap-1">
                 <button
-                  v-for="cat in categories"
+                  v-for="cat in VEHICLE_CATEGORY_FILTERS"
                   :key="cat"
                   @click="selectedCategory = cat"
                   :class="[
@@ -354,11 +343,11 @@ watch(selectedVehicle, () => {
             <tbody class="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
               <tr
                 v-for="v in filteredVehicles"
-                :key="v.id"
-                @click="selectVehicle(v)"
+                :key="v.code"
+                @click="handleSelectVehicle(v)"
                 :class="[
                   'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
-                  selectedVehicle?.id === v.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
+                  selectedVehicle?.code === v.code ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                 ]"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -372,7 +361,7 @@ watch(selectedVehicle, () => {
                     </div>
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600 dark:text-slate-400">{{ v.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600 dark:text-slate-400">{{ v.code }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <UBadge
                     :label="v.status"
@@ -448,8 +437,8 @@ watch(selectedVehicle, () => {
           <div v-else class="space-y-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
             <VehiclePhotoManager
               :model-value="selectedVehicle.imageUrls"
-              :vehicle-id="selectedVehicle.id"
-              @update:model-value="savePhotos"
+              :vehicle-id="selectedVehicle.code"
+              @update:model-value="handleSavePhotos"
             />
             <UButton
               label="Done"
@@ -464,7 +453,7 @@ watch(selectedVehicle, () => {
           
           <div class="mt-6 flex flex-col items-center">
             <h2 class="text-xl font-bold text-slate-900 dark:text-white text-center">{{ selectedVehicle.name }}</h2>
-            <p class="text-slate-500 dark:text-slate-400 font-mono text-sm mt-1">{{ selectedVehicle.id }}</p>
+            <p class="text-slate-500 dark:text-slate-400 font-mono text-sm mt-1">{{ selectedVehicle.code }}</p>
             <div class="mt-4">
               <UBadge
                 :label="selectedVehicle.status"
@@ -480,9 +469,9 @@ watch(selectedVehicle, () => {
         <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex flex-col items-center border border-slate-200 dark:border-slate-800">
            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Unique Vehicle QR</p>
            <div class="bg-white p-3 rounded-xl shadow-inner border border-slate-100 mb-3">
-             <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${selectedVehicle.id}`" class="size-32" alt="Vehicle QR" />
+             <img :src="toVehicleQrUrl(selectedVehicle.code, 150)" class="size-32" alt="Vehicle QR" />
            </div>
-           <p class="text-xs font-mono font-bold text-slate-500">{{ selectedVehicle.id }}</p>
+           <p class="text-xs font-mono font-bold text-slate-500">{{ selectedVehicle.code }}</p>
         </div>
 
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 flex flex-col gap-4">
@@ -494,7 +483,7 @@ watch(selectedVehicle, () => {
             <div>
               <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Status Access</p>
               <span class="text-sm text-slate-900 dark:text-white font-medium">
-                {{ selectedVehicle.status === 'Available' ? 'Ready for Use' : selectedVehicle.status === 'Lent' ? 'Currently Lent' : 'Under Maintenance' }}
+                {{ toStatusAccessLabel(selectedVehicle.status) }}
               </span>
             </div>
             <UButton
@@ -504,7 +493,7 @@ watch(selectedVehicle, () => {
               :color="selectedVehicle.status === 'Available' ? 'error' : 'success'"
               size="xs"
               class="cursor-pointer"
-              @click="toggleVehicleStatus"
+              @click="handleToggleVehicleStatus"
             />
           </div>
           <div>
@@ -517,7 +506,7 @@ watch(selectedVehicle, () => {
                 variant="ghost"
                 color="neutral"
                 class="cursor-pointer"
-                @click="startEditMileage"
+                @click="handleStartEditMileage"
               />
             </div>
             <div v-if="isEditingMileage" class="flex items-center gap-2 mt-1">
@@ -534,7 +523,7 @@ watch(selectedVehicle, () => {
                 variant="subtle"
                 class="cursor-pointer shrink-0"
                 :loading="isUpdatingMileage"
-                @click="saveMileage"
+                @click="handleSaveMileage"
               />
               <UButton
                 icon="i-lucide-x"
@@ -543,7 +532,7 @@ watch(selectedVehicle, () => {
                 variant="ghost"
                 class="cursor-pointer shrink-0"
                 :disabled="isUpdatingMileage"
-                @click="cancelEditMileage"
+                @click="handleCancelEditMileage"
               />
             </div>
             <span v-else class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.lastMileage.toLocaleString() }} km</span>
@@ -560,7 +549,7 @@ watch(selectedVehicle, () => {
               color="primary"
               variant="solid"
               class="cursor-pointer"
-              @click="navigateTo(`/rentals/return?code=${selectedVehicle.id}`)"
+              @click="navigateTo(`/rentals/return?code=${selectedVehicle.code}`)"
             />
             <UButton
               label="Print QR Code"
@@ -569,7 +558,7 @@ watch(selectedVehicle, () => {
               color="neutral"
               variant="outline"
               class="cursor-pointer"
-              @click="openQR(selectedVehicle.id)"
+              @click="openQR(selectedVehicle.code)"
             />
           </div>
         </div>
@@ -585,7 +574,7 @@ watch(selectedVehicle, () => {
           </UFormField>
 
           <UFormField label="Category" name="categoryName" required>
-            <URadioGroup v-model="newVehicle.categoryName" :items="categoryOptions" orientation="horizontal" />
+            <URadioGroup v-model="newVehicle.categoryName" :items="VEHICLE_CATEGORY_OPTIONS" orientation="horizontal" />
           </UFormField>
 
           <UFormField label="Initial Mileage (km)" name="lastMileage">

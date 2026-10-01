@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import type { RentalVehicle } from '~/utils/rentalVehicles'
+
 const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
+const { updateTransactionToCompleted, updateVehicleStatus, updateCustomerStatus } = useRentalTransactions()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
-const isLoading = ref(false)
+
+function handleBack() {
+  if (currentStep.value > 1) currentStep.value--
+  else router.back()
+}
 
 // Step 1: Vehicle Identification
 const manualVehicleCode = ref('')
@@ -15,41 +22,15 @@ const isScanning = ref(false)
 const activeRental = ref<any>(null)
 
 // Lent vehicle list
-const lentVehicles = ref<any[]>([])
-const isLoadingLentVehicles = ref(false)
-const lentVehicleSearch = ref('')
+const {
+  vehicles: lentVehicles,
+  isLoadingVehicles: isLoadingLentVehicles,
+  vehicleSearch: lentVehicleSearch,
+  filteredVehicles: filteredLentVehicles,
+  fetchVehicles: fetchLentVehicles
+} = useRentalVehicles('Lent', 'Could not load lent vehicles.')
 
-async function fetchLentVehicles() {
-  isLoadingLentVehicles.value = true
-  try {
-    await ensureLoaded()
-    const statusId = vehicleStatusId('Lent')
-    if (!statusId) return
-
-    const { data, error } = await (supabase
-      .from('vehicles')
-      .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
-      .eq('status_id', statusId)
-      .order('name') as any)
-
-    if (!error) lentVehicles.value = data || []
-  } catch (e: any) {
-    toast.add({ title: 'Error', description: 'Could not load lent vehicles.', color: 'error' })
-  } finally {
-    isLoadingLentVehicles.value = false
-  }
-}
-
-const filteredLentVehicles = computed(() => {
-  const s = lentVehicleSearch.value.toLowerCase()
-  return lentVehicles.value.filter(v =>
-    v.name.toLowerCase().includes(s) ||
-    v.code.toLowerCase().includes(s) ||
-    (v.vehicle_categories?.name && v.vehicle_categories.name.toLowerCase().includes(s))
-  )
-})
-
-function selectLentVehicle(vehicle: any) {
+function handleSelectLentVehicle(vehicle: RentalVehicle) {
   identifyVehicleForReturn(vehicle.code)
 }
 
@@ -62,15 +43,32 @@ onMounted(() => {
   }
 })
 
+/** コードから車両を1件取得する */
+async function fetchVehicleByCode(code: string) {
+  return await (supabase
+    .from('vehicles')
+    .select('id, name, code, vehicle_categories(name, icon)')
+    .eq('code', code)
+    .single() as any)
+}
+
+/** 車両の最新の Active な貸出取引を1件取得する */
+async function fetchActiveRentalByVehicleId(vehicleId: string) {
+  return await (supabase
+    .from('transactions')
+    .select('*, customers(full_name, email, phone)')
+    .eq('vehicle_id', vehicleId)
+    .eq('status', 'Active')
+    .order('start_at', { ascending: false })
+    .limit(1)
+    .single() as any)
+}
+
 async function identifyVehicleForReturn(code: string) {
   isIdentifying.value = true
   try {
     // 1. Get vehicle by code
-    const { data: vehicle, error: vError } = await (supabase
-      .from('vehicles')
-      .select('id, name, code, vehicle_categories(name, icon)')
-      .eq('code', code)
-      .single() as any)
+    const { data: vehicle, error: vError } = await fetchVehicleByCode(code)
 
     if (vError || !vehicle) {
       toast.add({ title: 'Vehicle Not Found', description: 'Could not find a vehicle with this ID.', color: 'error' })
@@ -78,14 +76,7 @@ async function identifyVehicleForReturn(code: string) {
     }
 
     // 2. Find active rental for this vehicle
-    const { data: rental, error: rError } = await (supabase
-      .from('transactions')
-      .select('*, customers(full_name, email, phone)')
-      .eq('vehicle_id', vehicle.id)
-      .eq('status', 'Active')
-      .order('start_at', { ascending: false })
-      .limit(1)
-      .single() as any)
+    const { data: rental, error: rError } = await fetchActiveRentalByVehicleId(vehicle.id)
 
     if (rError || !rental) {
       toast.add({ title: 'No Active Transaction', description: 'This vehicle is not currently lent out.', color: 'error' })
@@ -101,20 +92,26 @@ async function identifyVehicleForReturn(code: string) {
   }
 }
 
-async function simulateScan() {
-  isScanning.value = true
-  await new Promise(resolve => setTimeout(resolve, 1500))
-  
-  // For simulation, find ANY active rental vehicle code
+/** シミュレーション用に Active な貸出取引の車両コードを1件取得する */
+async function fetchAnyActiveRentalVehicleCode(): Promise<string | undefined> {
   const { data } = await (supabase
     .from('transactions')
     .select('vehicles(code)')
     .eq('status', 'Active')
     .limit(1)
     .single() as any)
+  return data?.vehicles?.code
+}
 
-  if (data?.vehicles?.code) {
-    await identifyVehicleForReturn(data.vehicles.code)
+async function handleSimulateScan() {
+  isScanning.value = true
+  await waitForSimulatedScan()
+  
+  // For simulation, find ANY active rental vehicle code
+  const vehicleCode = await fetchAnyActiveRentalVehicleCode()
+
+  if (vehicleCode) {
+    await identifyVehicleForReturn(vehicleCode)
   } else {
     toast.add({ title: 'Scan Failed', description: 'No active rentals found to simulate return.', color: 'error' })
   }
@@ -127,24 +124,12 @@ const isSubmitting = ref(false)
 
 const timeDiffText = computed(() => {
   if (!activeRental.value?.end_at) return ''
-  const scheduled = new Date(activeRental.value.end_at)
-  const actual = actualReturnAt.value
-  const diffMs = actual.getTime() - scheduled.getTime()
-
-  const { days, hours } = diffToDaysHours(diffMs)
-
-  const timeStr = days > 0 ? `${days}d ${hours}h` : `${hours}h`
-  
-  if (diffMs > 0) return `Delayed by ${timeStr}`
-  if (diffMs < 0) return `Early by ${timeStr}`
-  return 'Exactly on time'
+  return toReturnTimeDiffText(activeRental.value.end_at, actualReturnAt.value)
 })
 
 const timeDiffColorClass = computed(() => {
   if (!activeRental.value?.end_at) return ''
-  const scheduled = new Date(activeRental.value.end_at)
-  const actual = actualReturnAt.value
-  return actual.getTime() > scheduled.getTime() ? 'text-red-600' : 'text-green-600'
+  return toReturnTimeDiffColorClass(activeRental.value.end_at, actualReturnAt.value)
 })
 
 async function handleCompleteReturn() {
@@ -157,21 +142,10 @@ async function handleCompleteReturn() {
     const availableStatusId = vehicleStatusId('Available')
     const activeStatusId = customerStatusId('Active')
 
-    // 2. Update Transaction Status
-    const { error: rError } = await ((supabase.from('transactions') as any)
-      .update({ status: 'Completed', end_at: actualReturnAt.value.toISOString() })
-      .eq('id', activeRental.value.id) as any)
-    if (rError) throw rError
-
-    // 3. Update Vehicle Status
-    const { error: vehicleError } = await (supabase.from('vehicles') as any)
-      .update({ status_id: availableStatusId }).eq('id', activeRental.value.vehicle_id)
-    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
-
-    // 4. Update Customer Status
-    const { error: customerError } = await (supabase.from('customers') as any)
-      .update({ status_id: activeStatusId }).eq('id', activeRental.value.customer_id)
-    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
+    // 2. Update Transaction Status → 3. Update Vehicle Status → 4. Update Customer Status
+    await updateTransactionToCompleted(activeRental.value.id, actualReturnAt.value.toISOString())
+    await updateVehicleStatus(activeRental.value.vehicle_id, availableStatusId)
+    await updateCustomerStatus(activeRental.value.customer_id, activeStatusId)
 
     toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
     router.push('/dashboard')
@@ -181,6 +155,11 @@ async function handleCompleteReturn() {
     isSubmitting.value = false
   }
 }
+
+function handleRestart() {
+  currentStep.value = 1
+  activeRental.value = null
+}
 </script>
 
 <template>
@@ -188,7 +167,7 @@ async function handleCompleteReturn() {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="currentStep > 1 ? currentStep-- : router.back()" />
+        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="handleBack" />
         <h1 class="text-2xl font-bold">Return Vehicle</h1>
       </div>
       
@@ -232,7 +211,7 @@ async function handleCompleteReturn() {
             v-for="vehicle in filteredLentVehicles"
             :key="vehicle.id"
             class="cursor-pointer hover:border-orange-500 transition-all border-slate-200 dark:border-slate-800 shadow-sm"
-            @click="selectLentVehicle(vehicle)"
+            @click="handleSelectLentVehicle(vehicle)"
           >
             <div class="flex items-center gap-4">
               <div class="size-10 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center text-orange-600 shrink-0">
@@ -278,7 +257,7 @@ async function handleCompleteReturn() {
              block
              :loading="isScanning"
              class="cursor-pointer"
-             @click="simulateScan"
+             @click="handleSimulateScan"
            />
         </div>
 
@@ -390,7 +369,7 @@ async function handleCompleteReturn() {
           variant="ghost"
           color="neutral"
           class="cursor-pointer"
-          @click="currentStep = 1; activeRental = null"
+          @click="handleRestart"
         />
       </div>
     </div>

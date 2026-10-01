@@ -41,38 +41,46 @@ const isLoadingStaff = ref(true)
 const { locale, t, availableLocales } = useI18n()
 
 // ---- データ取得 ----
+// Store 情報を取得してフォームに反映
+async function fetchStore(storeId: string) {
+  const { data: storeData } = await supabase
+    .from('stores')
+    .select('id, name, address, currency_id')
+    .eq('id', storeId)
+    .single() as any
+
+  if (storeData) {
+    store.value = storeData as Store
+    storeName.value = storeData.name ?? ''
+    storeAddress.value = storeData.address ?? ''
+    storeCurrency.value = storeData.currency_id ?? null
+    if (storeData.default_locale) {
+      locale.value = storeData.default_locale as any
+    }
+  }
+}
+
+// Staff 一覧を取得
+async function fetchStaffList(storeId: string) {
+  const { data: staffData } = await supabase
+    .from('staff')
+    .select('id, username, role_id, staff_roles(name)')
+    .eq('store_id', storeId)
+    .order('username') as any
+
+  if (staffData) {
+    staffList.value = staffData as StaffMember[]
+  }
+}
+
+// Store 情報 → Staff 一覧の順に取得（Store 取得で例外が出たら Staff 取得はしない）
 async function fetchStoreAndStaff() {
   if (!staff.value?.store_id) return
 
   isLoadingStaff.value = true
   try {
-    // Store 情報
-    const { data: storeData } = await supabase
-      .from('stores')
-      .select('id, name, address, currency_id')
-      .eq('id', staff.value.store_id)
-      .single() as any
-
-    if (storeData) {
-      store.value = storeData as Store
-      storeName.value = storeData.name ?? ''
-      storeAddress.value = storeData.address ?? ''
-      storeCurrency.value = storeData.currency_id ?? null
-      if (storeData.default_locale) {
-        locale.value = storeData.default_locale as any
-      }
-    }
-
-    // Staff 一覧
-    const { data: staffData } = await supabase
-      .from('staff')
-      .select('id, username, role_id, staff_roles(name)')
-      .eq('store_id', staff.value.store_id)
-      .order('username') as any
-
-    if (staffData) {
-      staffList.value = staffData as StaffMember[]
-    }
+    await fetchStore(staff.value.store_id)
+    await fetchStaffList(staff.value.store_id)
   } catch (err) {
     console.error('[Settings] fetch error:', err)
   } finally {
@@ -80,8 +88,18 @@ async function fetchStoreAndStaff() {
   }
 }
 
+// $fetch のエラーからメッセージを取り出す（サーバーのメッセージを優先）
+interface FetchErrorLike {
+  data?: { message?: string }
+  message?: string
+}
+
+function toFetchErrorMessage(err: FetchErrorLike) {
+  return err.data?.message || err.message
+}
+
 // ---- ストア情報の保存 ----
-async function saveStore() {
+async function handleSaveStore() {
   if (!store.value) return
   isSavingStore.value = true
   try {
@@ -116,14 +134,28 @@ async function saveStore() {
 // ---- スタッフの追加・削除 ----
 const isAddingStaff = ref(false)
 const isDeletingStaff = ref<Record<string, boolean>>({})
-const showAddModal = ref(false)
+const isAddModalOpen = ref(false)
 const newStaff = reactive({
   username: '',
   password: '',
   role_id: ROLE_IDS.STAFF as string // user role as default
 })
 
-async function addStaff() {
+function openAddModal() {
+  isAddModalOpen.value = true
+}
+
+function closeAddModal() {
+  isAddModalOpen.value = false
+}
+
+// 追加フォームをリセット（role_id は前回の選択を保持）
+function resetNewStaffForm() {
+  newStaff.username = ''
+  newStaff.password = ''
+}
+
+async function handleAddStaff() {
   if (!newStaff.username || !newStaff.password) return
 
   // バリデーション: 英数字のみ
@@ -134,7 +166,7 @@ async function addStaff() {
 
   isAddingStaff.value = true
   try {
-    const response = await $fetch('/api/admin/users', {
+    await $fetch('/api/admin/users', {
       method: 'POST',
       body: {
         ...newStaff,
@@ -143,20 +175,18 @@ async function addStaff() {
     })
     
     toast.add({ title: 'Staff Added', description: 'New staff member has been created.', color: 'success' })
-    showAddModal.value = false
-    // Reset form
-    newStaff.username = ''
-    newStaff.password = ''
+    closeAddModal()
+    resetNewStaffForm()
     
     await fetchStoreAndStaff()
   } catch (err: any) {
-    toast.add({ title: 'Failed to add staff', description: err.data?.message || err.message, color: 'error' })
+    toast.add({ title: 'Failed to add staff', description: toFetchErrorMessage(err), color: 'error' })
   } finally {
     isAddingStaff.value = false
   }
 }
 
-async function deleteStaff(member: StaffMember) {
+async function handleDeleteStaff(member: StaffMember) {
   if (!confirm(`Are you sure you want to delete ${member.username}? This action cannot be undone.`)) return
 
   isDeletingStaff.value[member.id] = true
@@ -169,7 +199,7 @@ async function deleteStaff(member: StaffMember) {
     toast.add({ title: 'Staff Deleted', description: 'User account has been removed.', color: 'success' })
     await fetchStoreAndStaff()
   } catch (err: any) {
-    toast.add({ title: 'Delete Failed', description: err.data?.message || err.message, color: 'error' })
+    toast.add({ title: 'Delete Failed', description: toFetchErrorMessage(err), color: 'error' })
   } finally {
     isDeletingStaff.value[member.id] = false
   }
@@ -177,7 +207,7 @@ async function deleteStaff(member: StaffMember) {
 
 const isUpdatingRole = ref<Record<string, boolean>>({})
 
-async function updateStaffRole(member: StaffMember, isAdmin: boolean) {
+async function handleStaffRoleChange(member: StaffMember, isAdmin: boolean) {
   const newRoleId = isAdmin ? ROLE_IDS.ADMIN : ROLE_IDS.STAFF
   if (member.role_id === newRoleId) return
 
@@ -315,7 +345,7 @@ watch(() => staff.value?.store_id, (newId) => {
             color="primary"
             :loading="isSavingStore"
             class="cursor-pointer font-bold"
-            @click="saveStore"
+            @click="handleSaveStore"
           />
         </div>
       </template>
@@ -335,7 +365,7 @@ watch(() => staff.value?.store_id, (newId) => {
             size="sm"
             color="primary"
             class="ml-auto font-bold"
-            @click="showAddModal = true"
+            @click="openAddModal"
           />
         </div>
       </template>
@@ -386,7 +416,7 @@ watch(() => staff.value?.store_id, (newId) => {
                   <USwitch
                     :model-value="member.staff_roles?.name === 'admin'"
                     :loading="isUpdatingRole[member.id]"
-                    @update:model-value="(val: boolean) => updateStaffRole(member, val)"
+                    @update:model-value="(val: boolean) => handleStaffRoleChange(member, val)"
                   />
                   <span
                     class="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
@@ -404,7 +434,7 @@ watch(() => staff.value?.store_id, (newId) => {
                   variant="ghost"
                   size="xs"
                   :loading="isDeletingStaff[member.id]"
-                  @click="deleteStaff(member)"
+                  @click="handleDeleteStaff(member)"
                 />
               </td>
             </tr>
@@ -421,12 +451,12 @@ watch(() => staff.value?.store_id, (newId) => {
     </UCard>
 
     <!-- スタッフ追加モーダル -->
-    <UModal v-model:open="showAddModal">
+    <UModal v-model:open="isAddModalOpen">
       <template #content>
         <div class="p-6 space-y-4">
           <div class="flex items-center justify-between">
             <h3 class="text-lg font-bold">Add New Staff</h3>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="showAddModal = false" />
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="closeAddModal" />
           </div>
 
           <div class="space-y-4">
@@ -455,13 +485,13 @@ watch(() => staff.value?.store_id, (newId) => {
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" @click="showAddModal = false" />
+            <UButton label="Cancel" variant="ghost" color="neutral" @click="closeAddModal" />
             <UButton
               label="Create Account"
               color="primary"
               icon="i-lucide-user-plus"
               :loading="isAddingStaff"
-              @click="addStaff"
+              @click="handleAddStaff"
             />
           </div>
         </div>
