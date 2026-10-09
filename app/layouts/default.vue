@@ -13,6 +13,7 @@ const pageTitle = computed(() => {
   if (path.startsWith('/customers')) return 'Customer Management'
   if (path.startsWith('/history')) return 'Transaction History'
   if (path.startsWith('/settings')) return 'Settings'
+  if (path.startsWith('/howtouse')) return 'How to use'
   return 'Rental System'
 })
 </script>
