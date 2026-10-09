@@ -5,8 +5,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
-const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
-const { updateTransactionToCompleted, updateVehicleStatus, updateCustomerStatus } = useRentalTransactions()
+const { completeReturn } = useRentalTransactions()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 
@@ -137,15 +136,12 @@ async function handleCompleteReturn() {
   isSubmitting.value = true
   
   try {
-    // 1. Get Status IDs
-    await ensureLoaded()
-    const availableStatusId = vehicleStatusId('Available')
-    const activeStatusId = customerStatusId('Active')
-
-    // 2. Update Transaction Status → 3. Update Vehicle Status → 4. Update Customer Status
-    await updateTransactionToCompleted(activeRental.value.id, actualReturnAt.value.toISOString())
-    await updateVehicleStatus(activeRental.value.vehicle_id, availableStatusId)
-    await updateCustomerStatus(activeRental.value.customer_id, activeStatusId)
+    await completeReturn(
+      activeRental.value.id,
+      actualReturnAt.value.toISOString(),
+      activeRental.value.vehicle_id,
+      activeRental.value.customer_id,
+    )
 
     toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
     router.push('/dashboard')
