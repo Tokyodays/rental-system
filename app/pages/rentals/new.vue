@@ -111,17 +111,17 @@ async function fetchAnyAvailableVehicle(): Promise<{ code: string } | null> {
 
 async function handleSimulateScan() {
   isScanning.value = true
-  await waitForSimulatedScan()
-  
-  // For simulation, we'll try to get ANY available vehicle
-  const vehicle = await fetchAnyAvailableVehicle()
-
-  if (vehicle) {
-    await identifyVehicleByCode(vehicle.code)
-  } else {
-    toast.add({ title: 'Scan Failed', description: 'No available vehicle found.', color: 'error' })
+  try {
+    await waitForSimulatedScan()
+    const vehicle = await fetchAnyAvailableVehicle()
+    if (vehicle) {
+      await identifyVehicleByCode(vehicle.code)
+    } else {
+      toast.add({ title: 'Scan Failed', description: 'No available vehicle found.', color: 'error' })
+    }
+  } finally {
+    isScanning.value = false
   }
-  isScanning.value = false
 }
 
 // Step 3: Return Date & Time

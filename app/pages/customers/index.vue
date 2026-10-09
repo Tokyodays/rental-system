@@ -102,13 +102,15 @@ const capturedBlob = ref<Blob | null>(null) // Blob for upload
 const isCameraOpen = ref(false)
 
 function resetPhoto() {
+  if (capturedPhoto.value) URL.revokeObjectURL(capturedPhoto.value)
   capturedPhoto.value = null
   capturedBlob.value = null
 }
 
 function handleCapture(blob: Blob) {
+  if (capturedPhoto.value) URL.revokeObjectURL(capturedPhoto.value)
   capturedBlob.value = blob
-  capturedPhoto.value = URL.createObjectURL(blob) // プレビュー用
+  capturedPhoto.value = URL.createObjectURL(blob)
   isCameraOpen.value = false
 }
 
