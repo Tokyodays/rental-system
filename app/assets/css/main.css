@@ -38,7 +38,7 @@
   --color-ink-soft: #3d4f63;
   --color-ink-mute: #5f6d7e;
 
-  --font-display: "Bricolage Grotesque", "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Plus Jakarta Sans", "Noto Sans Thai", "Noto Sans Lao", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Noto Sans Thai", "Noto Sans Lao", system-ui, sans-serif;
 }
 

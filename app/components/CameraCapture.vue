@@ -4,6 +4,7 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const { t } = useI18n()
 const video = ref<HTMLVideoElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
 const stream = ref<MediaStream | null>(null)
@@ -29,7 +30,7 @@ const startCamera = async () => {
     }
   } catch (err: any) {
     console.error('Camera access error:', err)
-    error.value = 'カメラへのアクセスが拒否されたか、利用できません。'
+    error.value = t('camera.denied')
   }
 }
 
@@ -77,7 +78,7 @@ onUnmounted(() => {
   <div class="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center">
     <!-- ヘッダー -->
     <div class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/50 to-transparent">
-      <h3 class="text-white font-medium">写真を撮影</h3>
+      <h3 class="text-white font-medium">{{ t('camera.title') }}</h3>
       <UButton
         type="button"
         icon="i-lucide-x"
@@ -107,7 +108,7 @@ onUnmounted(() => {
           <p class="text-white text-sm">{{ error }}</p>
           <UButton
             type="button"
-            label="閉じる"
+            :label="t('close')"
             variant="soft"
             color="neutral"
             class="mt-4"

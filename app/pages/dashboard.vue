@@ -1,11 +1,13 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
 const { ensureLoaded, vehicleStatusId } = useStatusIds()
+const { t, tName, dateLocale } = useI18n()
 
-const stats = ref([
-  { label: 'Lending', value: '0', icon: 'i-lucide-log-out', color: 'blue' },
-  { label: 'Available', value: '0', icon: 'i-lucide-check-circle', color: 'green' },
-  { label: "Today's Transactions", value: '0', icon: 'i-lucide-repeat', color: 'orange' }
+const statValues = ref(['0', '0', '0'])
+const stats = computed(() => [
+  { label: t('dash.stat.lending'), value: statValues.value[0], icon: 'i-lucide-log-out', color: 'blue' },
+  { label: t('dash.stat.available'), value: statValues.value[1], icon: 'i-lucide-check-circle', color: 'green' },
+  { label: t('dash.stat.today'), value: statValues.value[2], icon: 'i-lucide-repeat', color: 'orange' }
 ])
 
 interface Transaction {
@@ -13,7 +15,7 @@ interface Transaction {
   item: string
   user: string
   action: string
-  time: string
+  timeObj: Date
   status: string
   statusColor: string
 }
@@ -40,8 +42,8 @@ async function fetchDashboardData() {
       availableCount = vehicles.filter((v: any) => v.status_id === availStatusId).length
     }
     
-    stats.value[0].value = lentCount.toString()
-    stats.value[1].value = availableCount.toString()
+    statValues.value[0] = lentCount.toString()
+    statValues.value[1] = availableCount.toString()
     
     // Fetch Transactions to compute today's tx & recent tx
     const { data: transactionsData } = await (supabase
@@ -65,8 +67,8 @@ async function fetchDashboardData() {
         
         events.push({
           id: `${r.id}-L`,
-          item: r.vehicles?.name || 'Unknown',
-          user: r.customers?.full_name || 'Unknown',
+          item: r.vehicles?.name || '',
+          user: r.customers?.full_name || '',
           action: 'Lend',
           timeObj: startAt,
           status: r.status === 'Completed' ? 'Completed' : 'Processing',
@@ -81,8 +83,8 @@ async function fetchDashboardData() {
         
         events.push({
           id: `${r.id}-R`,
-          item: r.vehicles?.name || 'Unknown',
-          user: r.customers?.full_name || 'Unknown',
+          item: r.vehicles?.name || '',
+          user: r.customers?.full_name || '',
           action: 'Return',
           timeObj: endAt,
           status: 'Completed',
@@ -91,27 +93,13 @@ async function fetchDashboardData() {
       }
     })
     
-    stats.value[2].value = transactionCountToday.toString()
+    statValues.value[2] = transactionCountToday.toString()
     
     // Sort events by date descending and take top 5
     events.sort((a, b) => b.timeObj.getTime() - a.timeObj.getTime())
     const topEvents = events.slice(0, 5)
     
-    // Format times
-    recentTransactions.value = topEvents.map(e => {
-      const timeStr = e.timeObj.toLocaleString('en-US', {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      })
-      return {
-        id: e.id,
-        item: e.item,
-        user: e.user,
-        action: e.action,
-        time: timeStr,
-        status: e.status,
-        statusColor: e.statusColor
-      }
-    })
+    recentTransactions.value = topEvents
     
   } catch (err) {
     console.error('Failed to fetch dashboard data:', err)
@@ -119,6 +107,11 @@ async function fetchDashboardData() {
     isLoading.value = false
   }
 }
+
+// 時刻は表示言語に合わせて描画時に整形する（言語切替で再取得しない）
+const formatTime = (d: Date) => d.toLocaleString(dateLocale.value, {
+  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+})
 
 onMounted(() => {
   fetchDashboardData()
@@ -130,12 +123,12 @@ onMounted(() => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold">Overview</h1>
-        <p class="text-slate-500 mt-1">Check today's rental and return status.</p>
+        <h1 class="text-2xl font-bold">{{ t('dash.overview') }}</h1>
+        <p class="text-slate-500 mt-1">{{ t('dash.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <UButton
-          label="Lending"
+          :label="t('lending')"
           icon="i-lucide-log-out"
           color="primary"
           size="lg"
@@ -179,8 +172,8 @@ onMounted(() => {
     >
       <template #header>
         <div class="flex justify-between items-center px-4 py-2">
-          <h3 class="text-lg font-bold">Recent Transactions</h3>
-          <UButton label="View All" variant="link" color="primary" to="/history" class="cursor-pointer" />
+          <h3 class="text-lg font-bold">{{ t('dash.recent') }}</h3>
+          <UButton :label="t('dash.view_all')" variant="link" color="primary" to="/history" class="cursor-pointer" />
         </div>
       </template>
 
@@ -188,38 +181,38 @@ onMounted(() => {
         <table class="w-full text-left whitespace-nowrap border-collapse">
           <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm uppercase tracking-wider">
             <tr>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Item</th>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">User</th>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Action</th>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Time</th>
-              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Status</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.item') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.user') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.action') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.time') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('status') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
             <tr v-if="isLoading">
               <td colspan="5" class="px-6 py-12 text-center text-slate-500">
                 <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2 mx-auto" />
-                <p>Loading transactions...</p>
+                <p>{{ t('dash.loading_tx') }}</p>
               </td>
             </tr>
             <tr v-else v-for="tx in recentTransactions" :key="tx.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-              <td class="px-6 py-4 font-medium">{{ tx.item }}</td>
+              <td class="px-6 py-4 font-medium">{{ tx.item || t('unknown') }}</td>
               <td class="px-6 py-4 flex items-center gap-2">
-                <UAvatar size="xs" :alt="tx.user" class="font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" />
-                <span class="font-bold text-slate-900 dark:text-white">{{ tx.user }}</span>
+                <UAvatar size="xs" :alt="tx.user || t('unknown')" class="font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400" />
+                <span class="font-bold text-slate-900 dark:text-white">{{ tx.user || t('unknown') }}</span>
               </td>
               <td class="px-6 py-4">
                 <UBadge 
-                  :label="tx.action" 
+                  :label="tx.action === 'Lend' ? t('dash.action.lend') : t('dash.action.return')" 
                   :color="tx.action === 'Lend' ? 'info' : 'success'" 
                   variant="subtle"
                   class="font-bold cursor-pointer"
                 />
               </td>
-              <td class="px-6 py-4 text-slate-500 font-medium">{{ tx.time }}</td>
+              <td class="px-6 py-4 text-slate-500 font-medium">{{ formatTime(tx.timeObj) }}</td>
               <td class="px-6 py-4">
                 <UBadge
-                  :label="tx.status"
+                  :label="tName('status', tx.status)"
                   :color="tx.statusColor === 'orange' ? 'warning' : 'success'"
                   variant="subtle"
                 />
@@ -227,7 +220,7 @@ onMounted(() => {
             </tr>
             <tr v-if="!isLoading && recentTransactions.length === 0">
               <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                No recent transactions found.
+                {{ t('dash.empty') }}
               </td>
             </tr>
           </tbody>

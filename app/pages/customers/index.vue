@@ -17,6 +17,7 @@ const client = useSupabaseClient()
 const toast = useToast()
 const { staff } = useStaff()
 const { uploadPassportImage } = useCustomerPassport()
+const { t, tName } = useI18n()
 
 const customers = ref<Customer[]>([])
 const isLoading = ref(true)
@@ -27,13 +28,13 @@ const statusFilter = ref('all')
 const rentingStatusId = computed(() => customerStatusId('Renting'))
 
 const statusOptions = computed(() => [
-  { label: 'Active', value: customerStatusId('Active') || '' },
-  { label: 'Unactive', value: customerStatusId('Unactive') || '' }
+  { label: tName('status', 'Active'), value: customerStatusId('Active') || '' },
+  { label: tName('status', 'Unactive'), value: customerStatusId('Unactive') || '' }
 ])
 
 const filterStatuses = computed(() => [
-  { name: 'All Statuses', id: 'all' },
-  ...customerStatuses.value
+  { name: t('cust.all_statuses'), id: 'all' },
+  ...customerStatuses.value.map(s => ({ ...s, name: tName('status', s.name) }))
 ])
 
 // Add Customer Modal State
@@ -184,7 +185,7 @@ async function handleAddCustomer() {
   isSubmitting.value = true
   try {
     const storeId = staff.value?.store_id
-    if (!storeId) throw new Error('Store ID not found.')
+    if (!storeId) throw new Error(t('cust.err.no_store'))
 
     await createCustomer(storeId)
 
@@ -194,15 +195,15 @@ async function handleAddCustomer() {
 
     await fetchCustomers()
     toast.add({
-      title: 'Success',
-      description: 'Customer registered with passport successfully.',
+      title: t('success'),
+      description: t('cust.toast.registered'),
       color: 'success'
     })
   } catch (e: any) {
     console.error('Integration failed:', e)
     toast.add({
-      title: 'Registration Failed',
-      description: e.message || 'Check your input or network connection.',
+      title: t('cust.toast.register_failed'),
+      description: e.message || t('cust.toast.register_failed_desc'),
       color: 'error'
     })
   } finally {
@@ -236,15 +237,15 @@ async function handleDeleteCustomer() {
     
     await fetchCustomers()
     toast.add({
-      title: 'Customer Deleted',
-      description: 'The customer has been removed successfully.',
+      title: t('cust.toast.deleted'),
+      description: t('cust.toast.deleted_desc'),
       color: 'success'
     })
   } catch (e: any) {
     console.error('Delete failed:', e)
     toast.add({
-      title: 'Delete Failed',
-      description: e.message || 'Failed to delete customer.',
+      title: t('cust.toast.delete_failed'),
+      description: e.message || t('cust.toast.delete_failed_desc'),
       color: 'error'
     })
   } finally {
@@ -290,15 +291,15 @@ async function handleUpdateCustomer() {
     resetPhoto()
     await fetchCustomers()
     toast.add({
-      title: 'Customer Updated',
-      description: 'The customer information has been updated successfully.',
+      title: t('cust.toast.updated'),
+      description: t('cust.toast.updated_desc'),
       color: 'success'
     })
   } catch (e: any) {
     console.error('Update failed:', e)
     toast.add({
-      title: 'Update Failed',
-      description: e.message || 'Failed to update customer.',
+      title: t('update_failed'),
+      description: e.message || t('cust.toast.update_failed_desc'),
       color: 'error'
     })
   } finally {
@@ -332,13 +333,13 @@ const filteredCustomers = computed(() => {
             <UInput
               v-model="search"
               icon="i-lucide-search"
-              placeholder="Search customers..."
+              :placeholder="t('cust.search')"
               size="md"
               class="w-full"
             />
           </div>
           <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800 shrink-0">
-            <span class="text-[10px] font-bold text-slate-400 px-2 uppercase hidden sm:inline">Status</span>
+            <span class="text-[10px] font-bold text-slate-400 px-2 uppercase hidden sm:inline">{{ t('status') }}</span>
             <div class="flex items-center gap-1">
               <button
                 v-for="s in filterStatuses"
@@ -357,7 +358,7 @@ const filteredCustomers = computed(() => {
             </div>
           </div>
           <UButton
-            label="Add New Customer"
+            :label="t('cust.add')"
             icon="i-lucide-user-plus"
             color="primary"
             size="md"
@@ -372,21 +373,21 @@ const filteredCustomers = computed(() => {
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
           <div v-if="isLoading" class="p-12 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2 mx-auto" />
-            <p>Loading customers...</p>
+            <p>{{ t('cust.loading') }}</p>
           </div>
           <div v-else-if="fetchError" class="p-12 text-center text-red-500">
             <UIcon name="i-lucide-alert-circle" class="size-8 mb-2 mx-auto" />
-            <p>Error: {{ fetchError }}</p>
-            <UButton label="Retry" variant="ghost" color="error" class="mt-4 cursor-pointer" @click="fetchCustomers" />
+            <p>{{ t('cust.error', { message: fetchError }) }}</p>
+            <UButton :label="t('retry')" variant="ghost" color="error" class="mt-4 cursor-pointer" @click="fetchCustomers" />
           </div>
           <table v-else class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead class="bg-slate-50 dark:bg-slate-800/50">
               <tr>
-                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
-                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Contact</th>
-                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Docs</th>
-                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{{ t('cust.col.name') }}</th>
+                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{{ t('cust.col.contact') }}</th>
+                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{{ t('cust.col.docs') }}</th>
+                <th class="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{{ t('status') }}</th>
+                <th class="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">{{ t('actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -422,7 +423,7 @@ const filteredCustomers = computed(() => {
                 <td class="px-6 py-4 whitespace-nowrap">
                   <UBadge
                     v-if="c.customer_statuses"
-                    :label="c.customer_statuses.name"
+                    :label="tName('status', c.customer_statuses.name)"
                     :color="c.customer_statuses.color as any"
                     variant="subtle"
                     class="rounded-full"
@@ -455,7 +456,7 @@ const filteredCustomers = computed(() => {
           <!-- Pagination Mock -->
           <div class="bg-white dark:bg-slate-900 px-4 py-3 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 sm:px-6 font-medium">
             <p class="text-sm text-slate-700 dark:text-slate-300">
-              Showing <span class="font-bold">1</span> to <span class="font-bold">{{ filteredCustomers.length }}</span> of <span class="font-bold">{{ filteredCustomers.length }}</span> results
+              {{ t('showing_results', { n: filteredCustomers.length }) }}
             </p>
             <div class="flex gap-2">
               <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
@@ -478,30 +479,30 @@ const filteredCustomers = computed(() => {
     />
 
     <!-- Modals (Add, Delete, Update) -->
-    <UModal v-model:open="isAddModalOpen" :title="addStep === 1 ? 'Add New Customer' : 'Take Passport Photo'" :description="addStep === 1 ? 'Register a new customer to the system.' : 'Scan or take a photo of the passport identification page.'">
+    <UModal v-model:open="isAddModalOpen" :title="addStep === 1 ? t('cust.add.title') : t('cust.add.photo_title')" :description="addStep === 1 ? t('cust.add.desc') : t('cust.add.photo_desc')">
       <template #body>
         <!-- Step 1: Basic Info -->
         <div v-if="addStep === 1" class="space-y-4">
-          <UFormField label="Full Name" name="full_name" required>
-            <UInput v-model="newCustomer.full_name" placeholder="e.g. John Doe" />
+          <UFormField :label="t('cust.field.full_name')" name="full_name" required>
+            <UInput v-model="newCustomer.full_name" :placeholder="t('cust.field.full_name_ph')" />
           </UFormField>
 
-          <UFormField label="Email Address" name="email">
+          <UFormField :label="t('cust.field.email')" name="email">
             <UInput v-model="newCustomer.email" type="email" placeholder="john@example.com" />
           </UFormField>
 
-          <UFormField label="Phone Number" name="phone" required>
+          <UFormField :label="t('cust.field.phone')" name="phone" required>
             <UInput v-model="newCustomer.phone" placeholder="+81-XXX-XXXX-XXXX" />
           </UFormField>
 
-          <UFormField label="Passport Number" name="passport_number">
-            <UInput v-model="newCustomer.passport_number" placeholder="e.g. TK1234567" />
+          <UFormField :label="t('cust.field.passport')" name="passport_number">
+            <UInput v-model="newCustomer.passport_number" :placeholder="t('cust.field.passport_ph')" />
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6 flex-wrap">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
-            <UButton label="Register Customer" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton :label="t('cust.add.next')" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
+            <UButton :label="t('cust.add.register')" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
 
@@ -513,9 +514,9 @@ const filteredCustomers = computed(() => {
           </div>
           <div v-else class="flex flex-col items-center gap-4 py-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
             <UIcon name="i-lucide-camera" class="size-12 text-slate-300" />
-            <p class="text-sm text-slate-500 text-center px-6">Take a photo of the passport identification page.</p>
+            <p class="text-sm text-slate-500 text-center px-6">{{ t('cust.add.take_hint') }}</p>
             <UButton
-              label="Open Camera"
+              :label="t('cust.add.open_camera')"
               icon="i-lucide-camera"
               color="primary"
               size="xl"
@@ -527,7 +528,7 @@ const filteredCustomers = computed(() => {
           <div class="flex flex-col gap-3">
              <div v-if="capturedPhoto" class="grid grid-cols-2 gap-3">
                <UButton
-                 label="Retake"
+                 :label="t('cust.add.retake')"
                  variant="outline"
                  color="neutral"
                  icon="i-lucide-refresh-cw"
@@ -537,7 +538,7 @@ const filteredCustomers = computed(() => {
                  @click="resetPhoto"
                />
                <UButton
-                 label="Register Customer"
+                 :label="t('cust.add.register')"
                  color="primary"
                  size="xl"
                  block
@@ -548,7 +549,7 @@ const filteredCustomers = computed(() => {
              </div>
              <UButton
                v-else
-               label="Skip and Register"
+               :label="t('cust.add.skip')"
                variant="subtle"
                color="neutral"
                size="xl"
@@ -559,7 +560,7 @@ const filteredCustomers = computed(() => {
              />
 
              <UButton
-               label="Back to Info"
+               :label="t('cust.add.back')"
                variant="ghost"
                color="neutral"
                size="sm"
@@ -571,48 +572,48 @@ const filteredCustomers = computed(() => {
       </template>
     </UModal>
     <!-- Delete Confirmation Modal -->
-    <UModal v-model:open="isDeleteModalOpen" title="Delete Customer" description="Are you sure you want to delete this customer? This action cannot be undone.">
+    <UModal v-model:open="isDeleteModalOpen" :title="t('cust.del.title')" :description="t('cust.del.desc')">
       <template #body>
         <div v-if="customerToDelete" class="space-y-4">
           <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800">
-            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Customer to be deleted</p>
+            <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">{{ t('cust.del.target') }}</p>
             <p class="text-lg font-bold text-slate-900 dark:text-white mt-1">{{ customerToDelete.full_name }}</p>
             <p class="text-sm text-slate-500">{{ customerToDelete.email }}</p>
           </div>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isDeleteModalOpen = false" />
-            <UButton label="Delete" color="error" class="cursor-pointer" :loading="isDeleting" @click="handleDeleteCustomer" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isDeleteModalOpen = false" />
+            <UButton :label="t('delete')" color="error" class="cursor-pointer" :loading="isDeleting" @click="handleDeleteCustomer" />
           </div>
         </div>
       </template>
     </UModal>
 
     <!-- Update Customer Modal -->
-    <UModal v-model:open="isUpdateModalOpen" title="Update Customer" description="Update the information for this customer.">
+    <UModal v-model:open="isUpdateModalOpen" :title="t('cust.upd.title')" :description="t('cust.upd.desc')">
       <template #body>
         <UForm :state="customerToUpdate" class="space-y-4" @submit="handleUpdateCustomer">
-          <UFormField label="Full Name" name="full_name" required>
-            <UInput v-model="customerToUpdate.full_name" placeholder="e.g. John Doe" />
+          <UFormField :label="t('cust.field.full_name')" name="full_name" required>
+            <UInput v-model="customerToUpdate.full_name" :placeholder="t('cust.field.full_name_ph')" />
           </UFormField>
 
-          <UFormField label="Email Address" name="email">
+          <UFormField :label="t('cust.field.email')" name="email">
             <UInput v-model="customerToUpdate.email" type="email" placeholder="john@example.com" />
           </UFormField>
 
-          <UFormField label="Phone Number" name="phone" required>
+          <UFormField :label="t('cust.field.phone')" name="phone" required>
             <UInput v-model="customerToUpdate.phone" placeholder="+81-XXX-XXXX-XXXX" />
           </UFormField>
 
-          <UFormField label="Passport Number" name="passport_number">
-            <UInput v-model="customerToUpdate.passport_number" placeholder="e.g. TK1234567" />
+          <UFormField :label="t('cust.field.passport')" name="passport_number">
+            <UInput v-model="customerToUpdate.passport_number" :placeholder="t('cust.field.passport_ph')" />
           </UFormField>
 
           <!-- Passport Image Management (Update) -->
           <div class="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
              <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-900 dark:text-white">Passport Photo</span>
+                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ t('cust.upd.photo') }}</span>
                 <UButton
-                  :label="capturedPhoto ? 'Change Photo' : 'Update Photo'"
+                  :label="capturedPhoto ? t('cust.upd.change_photo') : t('cust.upd.update_photo')"
                   icon="i-lucide-camera"
                   variant="subtle"
                   size="xs"
@@ -626,8 +627,8 @@ const filteredCustomers = computed(() => {
                   <img :src="capturedPhoto" class="w-full h-full object-cover" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-tight">New photo selected</p>
-                  <p class="text-[10px] text-green-600/70 truncate">Will be saved upon update</p>
+                  <p class="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-tight">{{ t('cust.upd.new_photo') }}</p>
+                  <p class="text-[10px] text-green-600/70 truncate">{{ t('cust.upd.new_photo_hint') }}</p>
                 </div>
                 <UButton icon="i-lucide-x" variant="ghost" color="error" size="xs" class="cursor-pointer" @click="resetPhoto" />
              </div>
@@ -635,9 +636,9 @@ const filteredCustomers = computed(() => {
 
           <div v-if="customerToUpdate.status_id === rentingStatusId" class="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 text-sm border border-blue-100 dark:border-blue-900/50">
             <UIcon name="i-lucide-info" class="size-5" />
-            <span class="font-medium">Status cannot be changed while renting.</span>
+            <span class="font-medium">{{ t('cust.upd.renting') }}</span>
           </div>
-          <UFormField v-else label="Status" name="status" description="Select the customer status.">
+          <UFormField v-else :label="t('status')" name="status" :description="t('cust.upd.status_desc')">
             <URadioGroup
               v-model="customerToUpdate.status_id"
               :items="statusOptions"
@@ -646,8 +647,8 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
-            <UButton label="Update Customer" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
+            <UButton :label="t('cust.upd.submit')" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>

@@ -12,7 +12,10 @@ export default defineNuxtConfig({
   fonts: {
     families: [
       { name: 'Bricolage Grotesque', provider: 'google', weights: [600, 700, 800] },
-      { name: 'Plus Jakarta Sans', provider: 'google', weights: [400, 500, 600, 700, 800] }
+      { name: 'Plus Jakarta Sans', provider: 'google', weights: [400, 500, 600, 700, 800] },
+      // Thai / Lao scripts are not covered by the Latin fonts above
+      { name: 'Noto Sans Thai', provider: 'google', weights: [400, 500, 600, 700, 800] },
+      { name: 'Noto Sans Lao', provider: 'google', weights: [400, 500, 600, 700, 800] }
     ]
   },
   devtools: { enabled: true },

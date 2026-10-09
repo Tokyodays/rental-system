@@ -6,24 +6,19 @@ import imgLending from '~/assets/images/03_lending_flow.png'
 import imgCustomers from '~/assets/images/04_customers.png'
 import imgHistory from '~/assets/images/05_history.png'
 
+import type { Locale } from '~/locales'
+
 definePageMeta({ layout: false })
+
+const { t, locale, setLocale, availableLocales } = useI18n()
 
 const langOpen = ref(false)
 const menuOpen = ref(false)
-const currentLang = ref('EN')
 
-const langs = [
-  { code: 'EN', label: 'English' },
-  { code: 'TH', label: 'ภาษาไทย' },
-  { code: 'LA', label: 'ພາສາລາວ' },
-  { code: 'VI', label: 'Tiếng Việt' },
-  { code: 'MY', label: 'Bahasa Melayu' }
-]
+const currentOption = computed(() => availableLocales.find(l => l.value === locale.value) ?? availableLocales[0]!)
 
-const currentLabel = computed(() => langs.find(l => l.code === currentLang.value)?.label ?? 'English')
-
-const selectLang = (code: string) => {
-  currentLang.value = code
+const selectLang = (code: Locale) => {
+  setLocale(code)
   langOpen.value = false
 }
 
@@ -35,52 +30,53 @@ const brands = [
   { name: 'HarborRentals', initials: 'HR' }
 ]
 
-const splitFeatures = [
+const splitFeatures = computed(() => [
   {
     icon: 'i-lucide-package', img: imgVehicles, reverse: false,
-    title: 'Vehicle fleet management',
-    body: 'Every bike, car and bicycle in one searchable list. Filter by category and status, then act in a single click.',
-    points: ['Filter by Bike, Car or Bicycle', 'Live Available / Lent / Reserved status', 'Quick-action menu on every vehicle']
+    title: t('landing.fleet.title'),
+    body: t('landing.fleet.body'),
+    points: [t('landing.fleet.p1'), t('landing.fleet.p2'), t('landing.fleet.p3')]
   },
   {
     icon: 'i-lucide-arrow-right-left', img: imgLending, reverse: true,
-    title: 'Step-by-step lending flow',
-    body: 'A guided wizard takes staff from customer to vehicle to confirmation. Fast to learn, hard to get wrong.',
-    points: ['Select customer, vehicle, then confirm', 'Only active customers surfaced', 'Clear progress at every step']
+    title: t('landing.flow.title'),
+    body: t('landing.flow.body'),
+    points: [t('landing.flow.p1'), t('landing.flow.p2'), t('landing.flow.p3')]
   }
-]
+])
 
-const cardFeatures = [
+const cardFeatures = computed(() => [
   {
     icon: 'i-lucide-users', img: imgCustomers, tone: 'peach',
-    title: 'Customer management',
-    body: 'A clean database of everyone who rents from you, with contact details, document tracking and live rental status.',
-    points: ['Active / Renting / Inactive tracking', 'Contact info and documents on file']
+    title: t('landing.customers.title'),
+    body: t('landing.customers.body'),
+    points: [t('landing.customers.p1'), t('landing.customers.p2')]
   },
   {
     icon: 'i-lucide-chart-line', img: imgHistory, tone: 'azure',
-    title: 'Transaction history & export',
-    body: 'Browse every transaction by month with duration and revenue per rental, then export the whole period to CSV in one click.',
-    points: ['Month-by-month history view', 'One-click CSV export']
+    title: t('landing.history.title'),
+    body: t('landing.history.body'),
+    points: [t('landing.history.p1'), t('landing.history.p2')]
   }
-]
+])
 
-const capabilities = [
-  { icon: 'i-lucide-qr-code', title: 'QR code scanner', body: 'Scan a vehicle to pull up its record instantly. No typing, no lookup.' },
-  { icon: 'i-lucide-building-2', title: 'Multi-store management', body: 'Run every branch from a single admin console with one source of truth.' },
-  { icon: 'i-lucide-shield-check', title: 'Role-based access', body: 'Owner, Branch Admin and Staff each see exactly what they should.' },
-  { icon: 'i-lucide-coins', title: 'Multi-currency support', body: 'Price and report in the currency each branch operates in.' }
-]
+const capabilities = computed(() => [
+  { icon: 'i-lucide-qr-code', title: t('landing.cap.qr.title'), body: t('landing.cap.qr.body') },
+  { icon: 'i-lucide-building-2', title: t('landing.cap.store.title'), body: t('landing.cap.store.body') },
+  { icon: 'i-lucide-shield-check', title: t('landing.cap.role.title'), body: t('landing.cap.role.body') },
+  { icon: 'i-lucide-coins', title: t('landing.cap.currency.title'), body: t('landing.cap.currency.body') }
+])
 
-const featuredQuote = {
-  quote: 'We replaced three spreadsheets and a notebook with Rent Flow. Lending a scooter now takes under a minute and nothing falls through the cracks.',
-  name: 'Maya Okonkwo', role: 'Owner · CityRide Scooters', initials: 'MO'
-}
+// 利用者の名前は固有名詞なので翻訳しない（肩書きと本文のみ翻訳）
+const featuredQuote = computed(() => ({
+  quote: t('landing.quote1.text'),
+  name: 'Maya Okonkwo', role: t('landing.quote1.role'), initials: 'MO'
+}))
 
-const sideQuotes = [
-  { quote: "The fleet view alone paid for itself. I can see what's available across both branches without calling anyone.", name: 'Daniel Reyes', role: 'Branch Admin · Coastline Bikes', initials: 'DR' },
-  { quote: "Month-end used to take a full afternoon. Now I export to CSV and I'm done before lunch.", name: 'Priya Anand', role: 'Owner · GreenWheel Rentals', initials: 'PA' }
-]
+const sideQuotes = computed(() => [
+  { quote: t('landing.quote2.text'), name: 'Daniel Reyes', role: t('landing.quote2.role'), initials: 'DR' },
+  { quote: t('landing.quote3.text'), name: 'Priya Anand', role: t('landing.quote3.role'), initials: 'PA' }
+])
 
 onMounted(() => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -142,8 +138,8 @@ onMounted(() => {
 
         <!-- Desktop nav -->
         <div class="hidden lg:flex items-center gap-2">
-          <a href="#features" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">Features</a>
-          <a href="#capabilities" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">Capabilities</a>
+          <a href="#features" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">{{ t('landing.nav.features') }}</a>
+          <a href="#capabilities" class="px-3 py-2 rounded-lg text-azure-700 font-medium text-[15px] no-underline hover:bg-sand-300/60 transition-colors">{{ t('landing.nav.capabilities') }}</a>
         </div>
 
         <div class="flex items-center gap-2 lg:gap-3">
@@ -151,22 +147,30 @@ onMounted(() => {
           <div class="relative">
             <button
               type="button"
+              data-testid="landing-lang-toggle"
               class="flex items-center gap-2 bg-sand-50 border border-sand-400/70 rounded-xl px-3 py-2 cursor-pointer text-sm font-semibold text-ink-soft hover:border-azure-500/50 transition-colors"
+              :aria-label="t('landing.nav.language')"
+              aria-haspopup="listbox"
+              :aria-expanded="langOpen"
               @click="langOpen = !langOpen"
             >
               <UIcon name="i-lucide-globe" class="w-4 h-4 text-azure-700" />
-              <span class="hidden sm:inline">{{ currentLabel }}</span>
+              <span class="sm:hidden">{{ currentOption.short }}</span>
+              <span class="hidden sm:inline">{{ currentOption.label }}</span>
               <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 text-ink-mute" />
             </button>
             <template v-if="langOpen">
               <div class="fixed inset-0 z-[55]" @click="langOpen = false" />
               <div class="absolute top-[calc(100%+8px)] right-0 min-w-46 bg-sand-50 border border-sand-400/70 rounded-xl shadow-xl shadow-ink/10 p-1.5 z-[60]">
                 <button
-                  v-for="lang in langs" :key="lang.code" type="button"
+                  v-for="lang in availableLocales" :key="lang.value" type="button" role="option"
+                  :data-testid="`landing-lang-${lang.value}`"
+                  :aria-selected="lang.value === locale"
                   class="flex items-center gap-3 w-full text-left bg-transparent border-none rounded-lg px-3 py-2.5 cursor-pointer text-sm font-medium text-ink-soft hover:bg-sand-200 transition-colors"
-                  @click="selectLang(lang.code)"
+                  :class="lang.value === locale ? 'bg-sand-200 !text-ink font-semibold' : ''"
+                  @click="selectLang(lang.value)"
                 >
-                  <span class="text-xs font-semibold text-azure-500 w-6 shrink-0">{{ lang.code }}</span>{{ lang.label }}
+                  <span class="text-xs font-semibold text-azure-500 w-6 shrink-0">{{ lang.short }}</span>{{ lang.label }}
                 </button>
               </div>
             </template>
@@ -174,12 +178,12 @@ onMounted(() => {
 
           <NuxtLink to="/login" class="hidden lg:inline-flex items-center gap-1.5 no-underline text-azure-700 font-semibold text-[15px] px-3.5 py-2.5 rounded-xl hover:bg-sand-300/60 transition-colors">
             <UIcon name="i-lucide-log-in" class="w-4 h-4" />
-            Log in
+            {{ t('landing.nav.login') }}
           </NuxtLink>
-          <a href="#cta" class="hidden lg:inline-block no-underline whitespace-nowrap bg-tangerine-500 text-ink font-bold text-[15px] px-5 py-2.5 rounded-xl hover:bg-tangerine-600 hover:-translate-y-px active:translate-y-0 transition-all">Request Demo</a>
+          <a href="#cta" class="hidden lg:inline-block no-underline whitespace-nowrap bg-tangerine-500 text-ink font-bold text-[15px] px-5 py-2.5 rounded-xl hover:bg-tangerine-600 hover:-translate-y-px active:translate-y-0 transition-all">{{ t('landing.nav.demo') }}</a>
 
           <!-- Mobile menu button -->
-          <button type="button" class="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl border border-sand-400/70 bg-sand-50 cursor-pointer" aria-label="Menu" @click="menuOpen = !menuOpen">
+          <button type="button" class="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl border border-sand-400/70 bg-sand-50 cursor-pointer" :aria-label="t('landing.nav.menu')" @click="menuOpen = !menuOpen">
             <UIcon :name="menuOpen ? 'i-lucide-x' : 'i-lucide-menu'" class="w-5 h-5 text-ink" />
           </button>
         </div>
@@ -187,10 +191,10 @@ onMounted(() => {
 
       <!-- Mobile menu panel -->
       <div v-if="menuOpen" class="lg:hidden border-t border-sand-400/50 bg-sand-100 px-5 py-4 flex flex-col gap-1">
-        <a href="#features" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Features</a>
-        <a href="#capabilities" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Capabilities</a>
-        <NuxtLink to="/login" class="no-underline text-azure-700 font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">Log in</NuxtLink>
-        <a href="#cta" class="no-underline text-center bg-tangerine-500 text-ink font-bold text-base px-5 py-3.5 rounded-xl mt-2" @click="menuOpen = false">Request Demo</a>
+        <a href="#features" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">{{ t('landing.nav.features') }}</a>
+        <a href="#capabilities" class="no-underline text-ink font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">{{ t('landing.nav.capabilities') }}</a>
+        <NuxtLink to="/login" class="no-underline text-azure-700 font-semibold text-base px-3 py-3 rounded-lg hover:bg-sand-200" @click="menuOpen = false">{{ t('landing.nav.login') }}</NuxtLink>
+        <a href="#cta" class="no-underline text-center bg-tangerine-500 text-ink font-bold text-base px-5 py-3.5 rounded-xl mt-2" @click="menuOpen = false">{{ t('landing.nav.demo') }}</a>
       </div>
     </header>
 
@@ -199,14 +203,14 @@ onMounted(() => {
       <div class="relative max-w-6xl mx-auto px-5 lg:px-8 pt-14 lg:pt-24 pb-16 lg:pb-24 grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
         <div class="lg:col-span-6">
           <h1 data-hero class="m-0 font-display font-extrabold text-[clamp(38px,5vw,62px)] leading-[1.05] tracking-tight text-sand-50 text-balance">
-            The smarter way to run your <span class="text-peach-300">rental business</span>
+            {{ t('landing.hero.pre') }}<span class="text-peach-300">{{ t('landing.hero.highlight') }}</span>
           </h1>
           <p data-hero class="mt-6 mb-0 max-w-lg text-[clamp(16px,1.5vw,19px)] leading-relaxed text-azure-100/90 text-pretty">
-            Fleet, lending, customers and revenue in one clean console, built for bike, scooter and car rental shops.
+            {{ t('landing.hero.body') }}
           </p>
           <div data-hero class="mt-9">
             <a href="#cta" class="inline-flex items-center gap-2.5 no-underline bg-tangerine-500 text-ink font-bold text-[17px] px-8 py-4 rounded-xl hover:bg-tangerine-600 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-              Request Demo
+              {{ t('landing.hero.cta') }}
               <UIcon name="i-lucide-arrow-right" class="w-4.5 h-4.5" />
             </a>
           </div>
@@ -214,7 +218,7 @@ onMounted(() => {
         <div data-hero class="lg:col-span-6 relative">
           <div class="absolute -inset-3 lg:-inset-4 rounded-3xl bg-peach-300/20 rotate-2" aria-hidden="true" />
           <div class="relative rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-2xl shadow-azure-900/60 bg-sand-50">
-            <img :src="imgDashboard" alt="Rent Flow dashboard" class="block w-full h-auto" >
+            <img :src="imgDashboard" :alt="t('landing.hero.dashboard_alt')" class="block w-full h-auto" >
           </div>
           <div class="hidden lg:flex absolute -left-8 -bottom-6 items-center gap-3 bg-sand-50 border border-sand-400/60 rounded-2xl px-4.5 py-3.5 shadow-xl shadow-azure-900/30">
             <span class="w-9 h-9 rounded-xl bg-peach-200 flex items-center justify-center">
@@ -222,7 +226,7 @@ onMounted(() => {
             </span>
             <div>
               <div class="text-xl font-extrabold leading-none text-ink">19</div>
-              <div class="text-xs text-ink-mute mt-1">Available now</div>
+              <div class="text-xs text-ink-mute mt-1">{{ t('landing.hero.available_now') }}</div>
             </div>
           </div>
         </div>
@@ -231,7 +235,7 @@ onMounted(() => {
 
     <!-- TRUST BAR -->
     <section class="max-w-6xl mx-auto px-5 lg:px-8 pt-12 pb-2">
-      <p class="text-center text-sm text-ink-mute m-0 mb-7">Trusted by rental businesses</p>
+      <p class="text-center text-sm text-ink-mute m-0 mb-7">{{ t('landing.trust') }}</p>
       <div class="flex flex-wrap justify-center items-center gap-x-10 gap-y-5">
         <span v-for="brand in brands" :key="brand.name" class="inline-flex items-center gap-2.5 text-azure-700/70">
           <span class="w-8 h-8 rounded-lg bg-azure-700/10 flex items-center justify-center text-[11px] font-extrabold tracking-wide text-azure-700">{{ brand.initials }}</span>
@@ -243,8 +247,8 @@ onMounted(() => {
     <!-- FEATURES -->
     <section id="features" class="max-w-6xl mx-auto px-5 lg:px-8 pt-20 lg:pt-28 pb-8">
       <div data-reveal class="max-w-2xl">
-        <h2 class="m-0 font-display font-extrabold text-[clamp(30px,3.4vw,44px)] leading-[1.08] tracking-tight text-ink text-balance">Everything your shop runs on, in one place</h2>
-        <p class="mt-4 mb-0 text-[17px] leading-relaxed text-ink-soft">From the first vehicle you add to the monthly revenue report, Rent Flow handles the whole operation.</p>
+        <h2 class="m-0 font-display font-extrabold text-[clamp(30px,3.4vw,44px)] leading-[1.08] tracking-tight text-ink text-balance">{{ t('landing.features.title') }}</h2>
+        <p class="mt-4 mb-0 text-[17px] leading-relaxed text-ink-soft">{{ t('landing.features.body') }}</p>
       </div>
 
       <!-- Split rows (x2) -->
@@ -302,7 +306,7 @@ onMounted(() => {
     <section id="capabilities" class="mt-20 lg:mt-28 bg-peach-100 border-y border-sand-400/40">
       <div class="max-w-6xl mx-auto px-5 lg:px-8 py-20 lg:py-24">
         <div data-reveal class="max-w-2xl">
-          <h2 class="m-0 font-display font-extrabold text-[clamp(28px,3.2vw,40px)] leading-[1.1] tracking-tight text-ink text-balance">More power as you grow</h2>
+          <h2 class="m-0 font-display font-extrabold text-[clamp(28px,3.2vw,40px)] leading-[1.1] tracking-tight text-ink text-balance">{{ t('landing.cap.title') }}</h2>
         </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-10 mt-12">
           <div v-for="cap in capabilities" :key="cap.title" data-reveal class="border-l-2 border-tangerine-500/70 pl-5">
@@ -330,13 +334,13 @@ onMounted(() => {
           </figcaption>
         </figure>
         <div class="lg:col-span-2 flex flex-col gap-8">
-          <figure v-for="t in sideQuotes" :key="t.name" data-reveal class="m-0 border-t-2 border-sand-400/60 pt-6">
-            <blockquote class="m-0 text-[15.5px] leading-relaxed text-ink-soft font-medium text-pretty">&ldquo;{{ t.quote }}&rdquo;</blockquote>
+          <figure v-for="q in sideQuotes" :key="q.name" data-reveal class="m-0 border-t-2 border-sand-400/60 pt-6">
+            <blockquote class="m-0 text-[15.5px] leading-relaxed text-ink-soft font-medium text-pretty">&ldquo;{{ q.quote }}&rdquo;</blockquote>
             <figcaption class="flex items-center gap-3 mt-5">
-              <span class="w-9 h-9 rounded-full bg-azure-700/10 text-azure-700 flex items-center justify-center font-bold text-[13px]">{{ t.initials }}</span>
+              <span class="w-9 h-9 rounded-full bg-azure-700/10 text-azure-700 flex items-center justify-center font-bold text-[13px]">{{ q.initials }}</span>
               <div>
-                <div class="font-bold text-sm text-ink">{{ t.name }}</div>
-                <div class="text-xs text-ink-mute">{{ t.role }}</div>
+                <div class="font-bold text-sm text-ink">{{ q.name }}</div>
+                <div class="text-xs text-ink-mute">{{ q.role }}</div>
               </div>
             </figcaption>
           </figure>
@@ -350,14 +354,14 @@ onMounted(() => {
         <img :src="imgTop" alt="" class="absolute inset-0 w-full h-full object-cover" >
         <div class="absolute inset-0 bg-azure-900/85" />
         <div class="relative px-6 py-16 lg:px-16 lg:py-20 text-center">
-          <h2 class="m-0 mx-auto max-w-2xl font-display font-extrabold text-[clamp(28px,3.6vw,46px)] leading-[1.08] tracking-tight text-sand-50 text-balance">Ready to streamline your rental operations?</h2>
-          <p class="mt-4 mb-0 mx-auto max-w-md text-[17px] leading-relaxed text-azure-100/90">See Rent Flow on your own fleet. We'll walk you through it.</p>
+          <h2 class="m-0 mx-auto max-w-2xl font-display font-extrabold text-[clamp(28px,3.6vw,46px)] leading-[1.08] tracking-tight text-sand-50 text-balance">{{ t('landing.cta.title') }}</h2>
+          <p class="mt-4 mb-0 mx-auto max-w-md text-[17px] leading-relaxed text-azure-100/90">{{ t('landing.cta.body') }}</p>
           <div class="flex flex-col items-center gap-3.5 mt-9">
             <a href="#top" class="inline-flex items-center gap-2.5 no-underline bg-tangerine-500 text-ink font-bold text-[17px] px-9 py-4 rounded-xl hover:bg-tangerine-600 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-              Request Demo
+              {{ t('landing.hero.cta') }}
               <UIcon name="i-lucide-arrow-right" class="w-4.5 h-4.5" />
             </a>
-            <span class="text-[13.5px] text-azure-100/70">No credit card required</span>
+            <span class="text-[13.5px] text-azure-100/70">{{ t('landing.cta.note') }}</span>
           </div>
         </div>
       </div>
@@ -373,30 +377,30 @@ onMounted(() => {
             </span>
             <span class="font-display font-bold text-[17px] text-ink">Rent Flow</span>
           </div>
-          <p class="m-0 text-sm leading-relaxed text-ink-mute">The smarter way to run your rental business.</p>
+          <p class="m-0 text-sm leading-relaxed text-ink-mute">{{ t('landing.footer.tagline') }}</p>
         </div>
         <div class="flex gap-16 flex-wrap">
           <div>
-            <div class="text-sm font-bold text-ink mb-4">Product</div>
+            <div class="text-sm font-bold text-ink mb-4">{{ t('landing.footer.product') }}</div>
             <div class="flex flex-col gap-2.5">
-              <a href="#features" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Features</a>
-              <a href="#capabilities" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Capabilities</a>
-              <span class="text-ink-mute text-sm font-medium">Pricing <span class="text-xs text-ink-mute/70">(coming soon)</span></span>
+              <a href="#features" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">{{ t('landing.nav.features') }}</a>
+              <a href="#capabilities" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">{{ t('landing.nav.capabilities') }}</a>
+              <span class="text-ink-mute text-sm font-medium">{{ t('landing.footer.pricing') }} <span class="text-xs text-ink-mute/70">{{ t('landing.footer.coming_soon') }}</span></span>
             </div>
           </div>
           <div>
-            <div class="text-sm font-bold text-ink mb-4">Company</div>
+            <div class="text-sm font-bold text-ink mb-4">{{ t('landing.footer.company') }}</div>
             <div class="flex flex-col gap-2.5">
-              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Contact</a>
-              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">Request Demo</a>
+              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">{{ t('landing.footer.contact') }}</a>
+              <a href="#cta" class="no-underline text-ink-soft text-sm font-medium hover:text-azure-700 transition-colors">{{ t('landing.nav.demo') }}</a>
             </div>
           </div>
         </div>
       </div>
       <div class="border-t border-sand-300">
         <div class="max-w-6xl mx-auto px-5 lg:px-8 py-5 flex flex-wrap gap-3 justify-between items-center">
-          <span class="text-[13px] text-ink-mute">© 2026 Rent Flow. All rights reserved.</span>
-          <span class="text-[13px] text-ink-mute">Built for rental shops worldwide</span>
+          <span class="text-[13px] text-ink-mute">{{ t('landing.footer.rights') }}</span>
+          <span class="text-[13px] text-ink-mute">{{ t('landing.footer.built_for') }}</span>
         </div>
       </div>
     </footer>

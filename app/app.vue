@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const { connectionError, checkConnection } = useSupabaseConnection()
+const { locale, t } = useI18n()
+
+// 表示言語に合わせて <html lang> を切り替える（スクリーンリーダー・フォント選択のため）
+useHead({ htmlAttrs: { lang: locale } })
 </script>
 
 <template>
@@ -20,7 +24,7 @@ const { connectionError, checkConnection } = useSupabaseConnection()
           color="error"
           variant="soft"
           icon="i-lucide-refresh-cw"
-          label="再試行"
+          :label="t('retry')"
           @click="checkConnection"
         />
       </div>

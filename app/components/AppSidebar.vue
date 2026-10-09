@@ -17,7 +17,7 @@ const items = computed(() => [
   { label: t('history'), icon: 'i-lucide-history', to: '/history' },
 ])
 
-const howToUseItem = { label: 'How to use', icon: 'i-lucide-book-open', to: '/howtouse' }
+const howToUseItem = computed(() => ({ label: t('howtouse'), icon: 'i-lucide-book-open', to: '/howtouse' }))
 const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-settings', to: '/settings' }))
 </script>
 

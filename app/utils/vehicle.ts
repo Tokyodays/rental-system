@@ -1,14 +1,11 @@
 // 車両一覧画面（pages/vehicles）で使う表示モデルと純粋関数
+import type { TranslateFn } from '~/composables/useI18n'
 
 /** 一覧のカテゴリフィルタ（'All' を含む）。DB の vehicle_categories とは別に固定で持つ仕様 */
 export const VEHICLE_CATEGORY_FILTERS = ['All', 'Bike', 'Car', 'Bicycle']
 
 /** 新規登録フォームのカテゴリ選択肢 */
-export const VEHICLE_CATEGORY_OPTIONS = [
-  { label: 'Bike', value: 'Bike' },
-  { label: 'Car', value: 'Car' },
-  { label: 'Bicycle', value: 'Bicycle' }
-]
+export const VEHICLE_CATEGORY_NAMES = ['Bike', 'Car', 'Bicycle'] as const
 
 /** 一覧・詳細サイドバーの表示モデル */
 export interface Vehicle {
@@ -18,6 +15,7 @@ export interface Vehicle {
   category: string
   status: string
   statusColor: string
+  /** vehicles.updated_at（ISO 文字列）。表示言語に合わせて描画側で整形する */
   lastUpdated: string
   icon: string
   lastMileage: number
@@ -50,7 +48,7 @@ export function toVehicle(v: VehicleRow): Vehicle {
     category: v.vehicle_categories?.name || 'Unknown',
     status: v.vehicle_statuses?.name || 'Unknown',
     statusColor: v.vehicle_statuses?.color || 'neutral',
-    lastUpdated: new Date(v.updated_at).toLocaleDateString(),
+    lastUpdated: v.updated_at,
     icon: v.vehicle_categories?.icon || 'i-lucide-package',
     lastMileage: v.last_mileage || 0,
     imageUrl: v.image_url || null,
@@ -72,8 +70,8 @@ export function toToggledVehicleStatus(status: string): 'Available' | 'Unavailab
 }
 
 /** 詳細サイドバー "Status Access" の表示文言 */
-export function toStatusAccessLabel(status: string): string {
-  return status === 'Available' ? 'Ready for Use' : status === 'Lent' ? 'Currently Lent' : 'Under Maintenance'
+export function toStatusAccessLabel(status: string, t: TranslateFn): string {
+  return status === 'Available' ? t('veh.access.ready') : status === 'Lent' ? t('veh.access.lent') : t('veh.access.maintenance')
 }
 
 export function toVehicleQrUrl(code: string, size: number): string {
