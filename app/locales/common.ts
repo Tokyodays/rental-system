@@ -1,0 +1,85 @@
+import type { MessageCatalog } from './types'
+
+export default {
+  // ---- navigation ----
+  'dashboard': { en: 'Dashboard', th: 'แดชบอร์ด', lo: 'ແດຊບອດ', vi: 'Bảng điều khiển', ms: 'Papan Pemuka' },
+  'vehicles': { en: 'Vehicles', th: 'ยานพาหนะ', lo: 'ພາຫະນະ', vi: 'Phương tiện', ms: 'Kenderaan' },
+  'lending': { en: 'Lending', th: 'ให้เช่า', lo: 'ໃຫ້ເຊົ່າ', vi: 'Cho thuê', ms: 'Penyewaan' },
+  'return': { en: 'Return', th: 'รับคืน', lo: 'ຮັບຄືນ', vi: 'Trả xe', ms: 'Pemulangan' },
+  'customers': { en: 'Customers', th: 'ลูกค้า', lo: 'ລູກຄ້າ', vi: 'Khách hàng', ms: 'Pelanggan' },
+  'history': { en: 'History', th: 'ประวัติ', lo: 'ປະຫວັດ', vi: 'Lịch sử', ms: 'Sejarah' },
+  'settings': { en: 'Settings', th: 'ตั้งค่า', lo: 'ຕັ້ງຄ່າ', vi: 'Cài đặt', ms: 'Tetapan' },
+  'howtouse': { en: 'How to use', th: 'วิธีใช้งาน', lo: 'ວິທີນຳໃຊ້', vi: 'Hướng dẫn sử dụng', ms: 'Cara menggunakan' },
+  'store_management': { en: 'Store Management', th: 'จัดการร้านค้า', lo: 'ຈັດການຮ້ານ', vi: 'Quản lý cửa hàng', ms: 'Pengurusan Kedai' },
+  'logout': { en: 'Logout', th: 'ออกจากระบบ', lo: 'ອອກຈາກລະບົບ', vi: 'Đăng xuất', ms: 'Log Keluar' },
+  'profile': { en: 'Profile', th: 'โปรไฟล์', lo: 'ໂປຣໄຟລ໌', vi: 'Hồ sơ', ms: 'Profil' },
+
+  // ---- page titles (top bar) ----
+  'title.dashboard': { en: 'Dashboard Overview', th: 'ภาพรวมแดชบอร์ด', lo: 'ພາບລວມແດຊບອດ', vi: 'Tổng quan bảng điều khiển', ms: 'Gambaran Keseluruhan Papan Pemuka' },
+  'title.vehicles': { en: 'Vehicle List', th: 'รายการยานพาหนะ', lo: 'ລາຍການພາຫະນະ', vi: 'Danh sách phương tiện', ms: 'Senarai Kenderaan' },
+  'title.lending': { en: 'Lending Transaction', th: 'ธุรกรรมการให้เช่า', lo: 'ທຸລະກຳການໃຫ້ເຊົ່າ', vi: 'Giao dịch cho thuê', ms: 'Transaksi Penyewaan' },
+  'title.return': { en: 'Return Transaction', th: 'ธุรกรรมการรับคืน', lo: 'ທຸລະກຳການຮັບຄືນ', vi: 'Giao dịch trả xe', ms: 'Transaksi Pemulangan' },
+  'title.customers': { en: 'Customer Management', th: 'จัดการลูกค้า', lo: 'ຈັດການລູກຄ້າ', vi: 'Quản lý khách hàng', ms: 'Pengurusan Pelanggan' },
+  'title.history': { en: 'Transaction History', th: 'ประวัติธุรกรรม', lo: 'ປະຫວັດທຸລະກຳ', vi: 'Lịch sử giao dịch', ms: 'Sejarah Transaksi' },
+  'title.app': { en: 'Rental System', th: 'ระบบเช่า', lo: 'ລະບົບເຊົ່າ', vi: 'Hệ thống cho thuê', ms: 'Sistem Penyewaan' },
+
+  // ---- generic words ----
+  'username': { en: 'Username', th: 'ชื่อผู้ใช้', lo: 'ຊື່ຜູ້ໃຊ້', vi: 'Tên đăng nhập', ms: 'Nama Pengguna' },
+  'password': { en: 'Password', th: 'รหัสผ่าน', lo: 'ລະຫັດຜ່ານ', vi: 'Mật khẩu', ms: 'Kata Laluan' },
+  'login': { en: 'Login', th: 'เข้าสู่ระบบ', lo: 'ເຂົ້າສູ່ລະບົບ', vi: 'Đăng nhập', ms: 'Log Masuk' },
+  'language': { en: 'Language', th: 'ภาษา', lo: 'ພາສາ', vi: 'Ngôn ngữ', ms: 'Bahasa' },
+  'save': { en: 'Save', th: 'บันทึก', lo: 'ບັນທຶກ', vi: 'Lưu', ms: 'Simpan' },
+  'add': { en: 'Add', th: 'เพิ่ม', lo: 'ເພີ່ມ', vi: 'Thêm', ms: 'Tambah' },
+  'edit': { en: 'Edit', th: 'แก้ไข', lo: 'ແກ້ໄຂ', vi: 'Sửa', ms: 'Sunting' },
+  'delete': { en: 'Delete', th: 'ลบ', lo: 'ລຶບ', vi: 'Xóa', ms: 'Padam' },
+  'cancel': { en: 'Cancel', th: 'ยกเลิก', lo: 'ຍົກເລີກ', vi: 'Hủy', ms: 'Batal' },
+  'confirm': { en: 'Confirm', th: 'ยืนยัน', lo: 'ຢືນຢັນ', vi: 'Xác nhận', ms: 'Sahkan' },
+  'back': { en: 'Back', th: 'กลับ', lo: 'ກັບຄືນ', vi: 'Quay lại', ms: 'Kembali' },
+  'search': { en: 'Search', th: 'ค้นหา', lo: 'ຄົ້ນຫາ', vi: 'Tìm kiếm', ms: 'Cari' },
+  'status': { en: 'Status', th: 'สถานะ', lo: 'ສະຖານະ', vi: 'Trạng thái', ms: 'Status' },
+  'loading': { en: 'Loading...', th: 'กำลังโหลด...', lo: 'ກຳລັງໂຫລດ...', vi: 'Đang tải...', ms: 'Memuatkan...' },
+  'none': { en: 'None', th: 'ไม่มี', lo: 'ບໍ່ມີ', vi: 'Không có', ms: 'Tiada' },
+  'all': { en: 'All', th: 'ทั้งหมด', lo: 'ທັງໝົດ', vi: 'Tất cả', ms: 'Semua' },
+  'actions': { en: 'Actions', th: 'การดำเนินการ', lo: 'ການດຳເນີນການ', vi: 'Thao tác', ms: 'Tindakan' },
+  'role': { en: 'Role', th: 'บทบาท', lo: 'ບົດບາດ', vi: 'Vai trò', ms: 'Peranan' },
+  'retry': { en: 'Retry', th: 'ลองอีกครั้ง', lo: 'ລອງອີກຄັ້ງ', vi: 'Thử lại', ms: 'Cuba lagi' },
+  'close': { en: 'Close', th: 'ปิด', lo: 'ປິດ', vi: 'Đóng', ms: 'Tutup' },
+  'or': { en: 'OR', th: 'หรือ', lo: 'ຫຼື', vi: 'HOẶC', ms: 'ATAU' },
+  'unknown': { en: 'Unknown', th: 'ไม่ทราบ', lo: 'ບໍ່ຮູ້', vi: 'Không rõ', ms: 'Tidak diketahui' },
+  'n_a': { en: 'N/A', th: 'ไม่มีข้อมูล', lo: 'ບໍ່ມີຂໍ້ມູນ', vi: 'Không có', ms: 'Tiada' },
+  'error': { en: 'Error', th: 'ข้อผิดพลาด', lo: 'ຂໍ້ຜິດພາດ', vi: 'Lỗi', ms: 'Ralat' },
+  'success': { en: 'Success', th: 'สำเร็จ', lo: 'ສຳເລັດ', vi: 'Thành công', ms: 'Berjaya' },
+  'update_failed': { en: 'Update Failed', th: 'อัปเดตไม่สำเร็จ', lo: 'ອັບເດດບໍ່ສຳເລັດ', vi: 'Cập nhật thất bại', ms: 'Kemas kini gagal' },
+  'logout_failed': { en: 'Logout Failed', th: 'ออกจากระบบไม่สำเร็จ', lo: 'ອອກຈາກລະບົບບໍ່ສຳເລັດ', vi: 'Đăng xuất thất bại', ms: 'Log keluar gagal' },
+  'logged_out': { en: 'Logged Out', th: 'ออกจากระบบแล้ว', lo: 'ອອກຈາກລະບົບແລ້ວ', vi: 'Đã đăng xuất', ms: 'Telah log keluar' },
+  'logged_out_desc': { en: 'You have been successfully logged out.', th: 'คุณออกจากระบบเรียบร้อยแล้ว', lo: 'ທ່ານອອກຈາກລະບົບຮຽບຮ້ອຍແລ້ວ', vi: 'Bạn đã đăng xuất thành công.', ms: 'Anda telah berjaya log keluar.' },
+  'dev_banner': { en: '🔧 DEVELOPMENT ENVIRONMENT', th: '🔧 สภาพแวดล้อมสำหรับพัฒนา', lo: '🔧 ສະພາບແວດລ້ອມສຳລັບພັດທະນາ', vi: '🔧 MÔI TRƯỜNG PHÁT TRIỂN', ms: '🔧 PERSEKITARAN PEMBANGUNAN' },
+  'showing_results': { en: 'Showing 1 to {n} of {n} results', th: 'แสดง 1 ถึง {n} จาก {n} รายการ', lo: 'ສະແດງ 1 ຫາ {n} ຈາກ {n} ລາຍການ', vi: 'Hiển thị 1 đến {n} trong {n} kết quả', ms: 'Menunjukkan 1 hingga {n} daripada {n} hasil' },
+
+  // ---- vehicle / customer / transaction status names (DB values are English keys) ----
+  'status.Available': { en: 'Available', th: 'ว่าง', lo: 'ຫວ່າງ', vi: 'Sẵn sàng', ms: 'Tersedia' },
+  'status.Lent': { en: 'Lent', th: 'ถูกเช่า', lo: 'ຖືກເຊົ່າ', vi: 'Đang cho thuê', ms: 'Disewa' },
+  'status.Unavailable': { en: 'Unavailable', th: 'ไม่พร้อมใช้งาน', lo: 'ບໍ່ພ້ອມໃຊ້ງານ', vi: 'Không khả dụng', ms: 'Tidak tersedia' },
+  'status.Reserved': { en: 'Reserved', th: 'จองแล้ว', lo: 'ຈອງແລ້ວ', vi: 'Đã đặt trước', ms: 'Ditempah' },
+  'status.Active': { en: 'Active', th: 'ใช้งานอยู่', lo: 'ໃຊ້ງານຢູ່', vi: 'Đang hoạt động', ms: 'Aktif' },
+  'status.Unactive': { en: 'Unactive', th: 'ไม่ใช้งาน', lo: 'ບໍ່ໃຊ້ງານ', vi: 'Không hoạt động', ms: 'Tidak aktif' },
+  'status.Renting': { en: 'Renting', th: 'กำลังเช่า', lo: 'ກຳລັງເຊົ່າ', vi: 'Đang thuê', ms: 'Sedang menyewa' },
+  'status.Completed': { en: 'Completed', th: 'เสร็จสิ้น', lo: 'ສຳເລັດ', vi: 'Hoàn tất', ms: 'Selesai' },
+  'status.Processing': { en: 'Processing', th: 'กำลังดำเนินการ', lo: 'ກຳລັງດຳເນີນການ', vi: 'Đang xử lý', ms: 'Sedang diproses' },
+
+  // ---- vehicle categories (DB values are English keys) ----
+  'category.Bike': { en: 'Bike', th: 'มอเตอร์ไซค์', lo: 'ລົດຈັກ', vi: 'Xe máy', ms: 'Motosikal' },
+  'category.Car': { en: 'Car', th: 'รถยนต์', lo: 'ລົດ', vi: 'Ô tô', ms: 'Kereta' },
+  'category.Bicycle': { en: 'Bicycle', th: 'จักรยาน', lo: 'ລົດຖີບ', vi: 'Xe đạp', ms: 'Basikal' },
+
+  // ---- durations ----
+  'duration.hours': { en: '{h} hours', th: '{h} ชั่วโมง', lo: '{h} ຊົ່ວໂມງ', vi: '{h} giờ', ms: '{h} jam' },
+  'duration.days_hours': { en: '{d} days {h} hours', th: '{d} วัน {h} ชั่วโมง', lo: '{d} ວັນ {h} ຊົ່ວໂມງ', vi: '{d} ngày {h} giờ', ms: '{d} hari {h} jam' },
+  'duration.short_dh': { en: '{d}d {h}h', th: '{d} วัน {h} ชม.', lo: '{d} ວັນ {h} ຊມ.', vi: '{d} ngày {h} giờ', ms: '{d}h {h}j' },
+  'duration.short_d': { en: '{d}d', th: '{d} วัน', lo: '{d} ວັນ', vi: '{d} ngày', ms: '{d}h' },
+  'duration.short_h': { en: '{h}h', th: '{h} ชม.', lo: '{h} ຊມ.', vi: '{h} giờ', ms: '{h}j' },
+  'duration.invalid_past': { en: 'Invalid (Past date)', th: 'ไม่ถูกต้อง (วันที่ผ่านมาแล้ว)', lo: 'ບໍ່ຖືກຕ້ອງ (ວັນທີຜ່ານມາແລ້ວ)', vi: 'Không hợp lệ (ngày đã qua)', ms: 'Tidak sah (tarikh lepas)' },
+  'return.delayed_by': { en: 'Delayed by {time}', th: 'ล่าช้า {time}', lo: 'ຊ້າ {time}', vi: 'Trễ {time}', ms: 'Lewat {time}' },
+  'return.early_by': { en: 'Early by {time}', th: 'คืนก่อนกำหนด {time}', lo: 'ຄືນກ່ອນກຳນົດ {time}', vi: 'Sớm {time}', ms: 'Awal {time}' },
+  'return.on_time': { en: 'Exactly on time', th: 'ตรงเวลาพอดี', lo: 'ຕົງເວລາພໍດີ', vi: 'Đúng giờ', ms: 'Tepat pada masanya' }
+} satisfies MessageCatalog

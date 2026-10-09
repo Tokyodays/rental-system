@@ -6,6 +6,7 @@ const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const { completeReturn } = useRentalTransactions()
+const { t, tName, dateLocale } = useI18n()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 
@@ -27,7 +28,7 @@ const {
   vehicleSearch: lentVehicleSearch,
   filteredVehicles: filteredLentVehicles,
   fetchVehicles: fetchLentVehicles
-} = useRentalVehicles('Lent', 'Could not load lent vehicles.')
+} = useRentalVehicles('Lent', t('rent.load_lent_failed'))
 
 function handleSelectLentVehicle(vehicle: RentalVehicle) {
   identifyVehicleForReturn(vehicle.code)
@@ -70,7 +71,7 @@ async function identifyVehicleForReturn(code: string) {
     const { data: vehicle, error: vError } = await fetchVehicleByCode(code)
 
     if (vError || !vehicle) {
-      toast.add({ title: 'Vehicle Not Found', description: 'Could not find a vehicle with this ID.', color: 'error' })
+      toast.add({ title: t('ret.s1.not_found'), description: t('ret.s1.not_found_desc'), color: 'error' })
       return
     }
 
@@ -78,14 +79,14 @@ async function identifyVehicleForReturn(code: string) {
     const { data: rental, error: rError } = await fetchActiveRentalByVehicleId(vehicle.id)
 
     if (rError || !rental) {
-      toast.add({ title: 'No Active Transaction', description: 'This vehicle is not currently lent out.', color: 'error' })
+      toast.add({ title: t('ret.s1.no_tx'), description: t('ret.s1.no_tx_desc'), color: 'error' })
       return
     }
 
     activeRental.value = { ...rental, vehicle }
     currentStep.value = 2
   } catch (e: any) {
-    toast.add({ title: 'Error', description: 'Failed to identify rental.', color: 'error' })
+    toast.add({ title: t('error'), description: t('ret.s1.identify_error'), color: 'error' })
   } finally {
     isIdentifying.value = false
   }
@@ -110,7 +111,7 @@ async function handleSimulateScan() {
     if (vehicleCode) {
       await identifyVehicleForReturn(vehicleCode)
     } else {
-      toast.add({ title: 'Scan Failed', description: 'No active rentals found to simulate return.', color: 'error' })
+      toast.add({ title: t('lend.s2.scan_failed'), description: t('ret.s1.scan_failed_desc'), color: 'error' })
     }
   } finally {
     isScanning.value = false
@@ -123,7 +124,7 @@ const isSubmitting = ref(false)
 
 const timeDiffText = computed(() => {
   if (!activeRental.value?.end_at) return ''
-  return toReturnTimeDiffText(activeRental.value.end_at, actualReturnAt.value)
+  return toReturnTimeDiffText(activeRental.value.end_at, actualReturnAt.value, t)
 })
 
 const timeDiffColorClass = computed(() => {
@@ -143,10 +144,10 @@ async function handleCompleteReturn() {
       activeRental.value.customer_id,
     )
 
-    toast.add({ title: 'Return Success', description: 'Vehicle returned successfully.', color: 'success' })
+    toast.add({ title: t('ret.toast.success'), description: t('ret.toast.success_desc'), color: 'success' })
     router.push('/dashboard')
   } catch (e: any) {
-    toast.add({ title: 'Return Failed', description: e.message, color: 'error' })
+    toast.add({ title: t('ret.toast.failed'), description: e.message, color: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -164,7 +165,7 @@ function handleRestart() {
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
         <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="handleBack" />
-        <h1 class="text-2xl font-bold">Return Vehicle</h1>
+        <h1 class="text-2xl font-bold">{{ t('ret.title') }}</h1>
       </div>
       
       <!-- Progress Indicator -->
@@ -178,22 +179,22 @@ function handleRestart() {
     <!-- Step 1: Vehicle Identification -->
     <div v-if="currentStep === 1" class="space-y-8">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 1: Identify Vehicle</h2>
-        <p class="text-slate-500">Choose a vehicle from the lent list, scan QR, or enter ID manually.</p>
+        <h2 class="text-2xl font-bold">{{ t('ret.s1.title') }}</h2>
+        <p class="text-slate-500">{{ t('ret.s1.desc') }}</p>
       </div>
 
       <!-- Lent Vehicle List -->
       <div class="space-y-4">
         <div class="flex items-center gap-3">
           <UIcon name="i-lucide-log-out" class="size-5 text-orange-600" />
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Currently Lent Vehicles</h3>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ t('ret.s1.list_title') }}</h3>
           <UBadge :label="`${lentVehicles.length}`" color="warning" variant="subtle" size="sm" />
         </div>
 
         <UInput
           v-model="lentVehicleSearch"
           icon="i-lucide-search"
-          placeholder="Search by name, code, or category..."
+          :placeholder="t('rent.search_vehicle_ph')"
           size="lg"
           class="w-full"
         />
@@ -201,7 +202,7 @@ function handleRestart() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-1">
           <div v-if="isLoadingLentVehicles" class="col-span-full py-8 flex flex-col items-center justify-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mb-2" />
-            <p>Loading vehicles...</p>
+            <p>{{ t('rent.loading_vehicles') }}</p>
           </div>
           <UCard
             v-for="vehicle in filteredLentVehicles"
@@ -218,15 +219,15 @@ function handleRestart() {
                 <div class="flex items-center gap-2 text-xs text-slate-500">
                   <span class="font-mono">{{ vehicle.code }}</span>
                   <span>•</span>
-                  <span>{{ vehicle.vehicle_categories?.name || 'Unknown' }}</span>
+                  <span>{{ tName('category', vehicle.vehicle_categories?.name) }}</span>
                 </div>
               </div>
-              <UBadge label="Lent" color="warning" variant="subtle" size="xs" class="shrink-0" />
+              <UBadge :label="tName('status', 'Lent')" color="warning" variant="subtle" size="xs" class="shrink-0" />
               <UIcon name="i-lucide-chevron-right" class="text-slate-400 shrink-0" />
             </div>
           </UCard>
           <div v-if="filteredLentVehicles.length === 0 && !isLoadingLentVehicles" class="col-span-full py-8 text-center text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-            No lent vehicles found.
+            {{ t('ret.s1.empty') }}
           </div>
         </div>
       </div>
@@ -234,7 +235,7 @@ function handleRestart() {
       <!-- Divider -->
       <div class="flex items-center gap-4 py-2">
         <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ t('or') }}</span>
         <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
       </div>
 
@@ -247,7 +248,7 @@ function handleRestart() {
              <UIcon name="i-lucide-qr-code" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
            </div>
            <UButton
-             label="Simulate QR Scan"
+             :label="t('rent.simulate_scan')"
              icon="i-lucide-camera"
              size="xl"
              block
@@ -260,17 +261,17 @@ function handleRestart() {
         <!-- Manual Entry Section -->
         <div class="space-y-6">
           <div class="space-y-4">
-            <UFormField label="Vehicle ID (Code)" name="manualCode">
+            <UFormField :label="t('rent.vehicle_id_code')" name="manualCode">
               <UInput
                 v-model="manualVehicleCode"
-                placeholder="e.g. B-HONDA-001"
+                :placeholder="t('rent.vehicle_id_ph')"
                 size="xl"
                 icon="i-lucide-keyboard"
                 class="bg-white dark:bg-slate-900"
               />
             </UFormField>
             <UButton
-              label="Fetch Lending Info"
+              :label="t('ret.s1.fetch')"
               color="primary"
               size="xl"
               block
@@ -284,7 +285,7 @@ function handleRestart() {
           <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl">
             <p class="text-xs text-slate-500 leading-relaxed">
               <UIcon name="i-lucide-info" class="inline-block mr-1" />
-              This will look for an active lending record associated with this vehicle ID.
+              {{ t('ret.s1.hint') }}
             </p>
           </div>
         </div>
@@ -294,19 +295,19 @@ function handleRestart() {
     <!-- Step 2: Confirmation -->
     <div v-if="currentStep === 2 && activeRental" class="space-y-6">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold font-heading">Step 2: Check Return Details</h2>
-        <p class="text-slate-500">Confirm the rental period and schedule.</p>
+        <h2 class="text-2xl font-bold font-heading">{{ t('ret.s2.title') }}</h2>
+        <p class="text-slate-500">{{ t('ret.s2.desc') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Customer & Vehicle Card -->
         <UCard class="border-slate-200 dark:border-slate-800 shadow-sm">
-          <template #header><p class="font-bold">Summary</p></template>
+          <template #header><p class="font-bold">{{ t('ret.s2.summary') }}</p></template>
           <div class="space-y-6">
             <div class="flex items-center gap-4">
               <UAvatar :alt="activeRental.customers?.full_name" size="lg" />
               <div>
-                <p class="text-xs text-slate-500 font-bold uppercase">Customer</p>
+                <p class="text-xs text-slate-500 font-bold uppercase">{{ t('rent.customer') }}</p>
                 <p class="text-lg font-bold text-slate-900 dark:text-white">{{ activeRental.customers?.full_name }}</p>
               </div>
             </div>
@@ -315,7 +316,7 @@ function handleRestart() {
                 <UIcon :name="activeRental.vehicle?.vehicle_categories?.icon || 'i-lucide-package'" class="size-8" />
               </div>
               <div>
-                <p class="text-xs text-slate-500 font-bold uppercase">Vehicle</p>
+                <p class="text-xs text-slate-500 font-bold uppercase">{{ t('rent.vehicle') }}</p>
                 <p class="text-lg font-bold text-slate-900 dark:text-white">{{ activeRental.vehicle?.name }}</p>
                 <p class="text-sm text-slate-500">{{ activeRental.vehicle?.code }}</p>
               </div>
@@ -325,18 +326,18 @@ function handleRestart() {
 
         <!-- Time Logic Card -->
         <UCard class="border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-          <template #header><p class="font-bold text-blue-600">Schedule Status</p></template>
+          <template #header><p class="font-bold text-blue-600">{{ t('ret.s2.schedule_status') }}</p></template>
           <div class="space-y-4">
              <div>
-               <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">Scheduled Return</p>
-               <p class="text-lg font-bold">{{ new Date(activeRental.end_at).toLocaleString() }}</p>
+               <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">{{ t('ret.s2.scheduled') }}</p>
+               <p class="text-lg font-bold">{{ new Date(activeRental.end_at).toLocaleString(dateLocale) }}</p>
              </div>
              
              <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
 
              <div>
-               <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">Actual Return (Now)</p>
-               <p class="text-lg font-bold text-slate-900 dark:text-white">{{ actualReturnAt.toLocaleString() }}</p>
+               <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">{{ t('ret.s2.actual') }}</p>
+               <p class="text-lg font-bold text-slate-900 dark:text-white">{{ actualReturnAt.toLocaleString(dateLocale) }}</p>
              </div>
 
              <div class="pt-2">
@@ -352,7 +353,7 @@ function handleRestart() {
 
       <div class="flex flex-col gap-4 items-center pt-8">
         <UButton
-          label="Complete Return Process"
+          :label="t('ret.s2.complete')"
           size="xl"
           block
           color="primary"
@@ -361,7 +362,7 @@ function handleRestart() {
           @click="handleCompleteReturn"
         />
         <UButton
-          label="Restart"
+          :label="t('ret.s2.restart')"
           variant="ghost"
           color="neutral"
           class="cursor-pointer"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   VEHICLE_CATEGORY_FILTERS,
-  VEHICLE_CATEGORY_OPTIONS,
+  VEHICLE_CATEGORY_NAMES,
   matchesVehicleFilter,
   toStatusAccessLabel,
   toToggledVehicleStatus,
@@ -15,11 +15,15 @@ const search = ref('')
 const selectedCategory = ref('All')
 const selectedStatus = ref('All')
 
+const { t, tName, dateLocale } = useI18n()
 const { ensureLoaded, vehicleStatuses, vehicleStatusId } = useStatusIds()
 const statusOptions = computed(() => [
-  { label: 'All', value: 'All' },
-  ...vehicleStatuses.value.map(s => ({ label: s.name, value: s.name }))
+  { label: t('all'), value: 'All' },
+  ...vehicleStatuses.value.map(s => ({ label: tName('status', s.name), value: s.name }))
 ])
+const categoryOptions = computed(() =>
+  VEHICLE_CATEGORY_NAMES.map(name => ({ label: tName('category', name), value: name }))
+)
 
 const client = useSupabaseClient()
 const toast = useToast()
@@ -137,7 +141,7 @@ async function handleAddVehicle() {
     await fetchVehicles()
   } catch (e) {
     console.error('Add failed:', e)
-    toast.add({ title: 'Add Failed', description: (e as any)?.message || 'Failed to add vehicle.', color: 'error' })
+    toast.add({ title: t('veh.toast.add_failed'), description: (e as any)?.message || t('veh.toast.add_failed_desc'), color: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -169,7 +173,7 @@ function handleSelectVehicle(v: Vehicle) {
 async function handleToggleVehicleStatus() {
   if (!selectedVehicle.value) return
   if (selectedVehicle.value.status === 'Lent') {
-    toast.add({ title: 'Operation not allowed', description: 'Cannot change status while the vehicle is lent.', color: 'error' })
+    toast.add({ title: t('veh.toast.not_allowed'), description: t('veh.toast.not_allowed_desc'), color: 'error' })
     return
   }
 
@@ -181,7 +185,7 @@ async function handleToggleVehicleStatus() {
   try {
     await updateVehicleByCode(selectedVehicle.value.code, { status_id: targetStatusId })
 
-    toast.add({ title: 'Status Updated', description: `Vehicle is now ${targetStatusName}.`, color: 'success' })
+    toast.add({ title: t('veh.toast.status_updated'), description: t('veh.toast.status_updated_desc', { status: tName('status', targetStatusName) }), color: 'success' })
     
     // Refresh data
     await fetchVehicles()
@@ -190,7 +194,7 @@ async function handleToggleVehicleStatus() {
     selectedVehicle.value = null
   } catch (e: any) {
     console.error('Update failed:', e)
-    toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
   }
 }
 
@@ -215,11 +219,11 @@ async function handleSaveMileage() {
     await updateVehicleByCode(selectedVehicle.value.code, { last_mileage: editMileageValue.value })
     
     selectedVehicle.value.lastMileage = editMileageValue.value
-    toast.add({ title: 'Mileage Updated', description: 'Vehicle mileage has been updated.', color: 'success' })
+    toast.add({ title: t('veh.toast.mileage_updated'), description: t('veh.toast.mileage_updated_desc'), color: 'success' })
     await refreshVehiclesKeepingSelection()
   } catch (e: any) {
     console.error('Update mileage failed:', e)
-    toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
   } finally {
     isUpdatingMileage.value = false
     isEditingMileage.value = false
@@ -241,11 +245,11 @@ async function handleSavePhotos(newUrls: string[]) {
     await updateVehicleByCode(selectedVehicle.value.code, { image_urls: newUrls })
     
     selectedVehicle.value.imageUrls = newUrls
-    toast.add({ title: 'Photos Updated', description: 'Vehicle photos have been updated.', color: 'success' })
+    toast.add({ title: t('veh.toast.photos_updated'), description: t('veh.toast.photos_updated_desc'), color: 'success' })
     await refreshVehiclesKeepingSelection()
   } catch (e: any) {
     console.error('Update photos failed:', e)
-    toast.add({ title: 'Update Failed', description: e.message, color: 'error' })
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
   } finally {
     isUpdatingPhotos.value = false
   }
@@ -268,14 +272,14 @@ watch(selectedVehicle, () => {
             <UInput
               v-model="search"
               icon="i-lucide-search"
-              placeholder="Search vehicles..."
+              :placeholder="t('veh.search')"
               size="md"
               class="w-full"
             />
           </div>
           <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">Category</span>
+              <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('veh.category') }}</span>
               <div class="flex items-center gap-1">
                 <button
                   v-for="cat in VEHICLE_CATEGORY_FILTERS"
@@ -288,13 +292,13 @@ watch(selectedVehicle, () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   ]"
                 >
-                  {{ cat }}
+                  {{ cat === 'All' ? t('all') : tName('category', cat) }}
                 </button>
               </div>
             </div>
 
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
-              <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">Status</span>
+              <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('status') }}</span>
               <div class="flex items-center gap-1">
                 <button
                   v-for="s in statusOptions"
@@ -313,7 +317,7 @@ watch(selectedVehicle, () => {
             </div>
           </div>
           <UButton
-            label="Add Vehicle"
+            :label="t('veh.add')"
             icon="i-lucide-plus"
             color="primary"
             size="md"
@@ -328,16 +332,16 @@ watch(selectedVehicle, () => {
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
           <div v-if="isLoadingVehicles" class="p-8 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2" />
-            <p>Loading vehicles...</p>
+            <p>{{ t('veh.loading') }}</p>
           </div>
           <table v-else class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead class="bg-slate-50 dark:bg-slate-800/50">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vehicle Name</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Vehicle ID</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Last Updated</th>
-                <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('veh.col.name') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('veh.col.id') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('status') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('veh.col.updated') }}</th>
+                <th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{{ t('actions') }}</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
@@ -357,20 +361,20 @@ watch(selectedVehicle, () => {
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-slate-900 dark:text-white">{{ v.name }}</div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ v.category }}</div>
+                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ tName('category', v.category) }}</div>
                     </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600 dark:text-slate-400">{{ v.code }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <UBadge
-                    :label="v.status"
+                    :label="tName('status', v.status)"
                     :color="v.statusColor as any"
                     variant="subtle"
                     class="rounded-full"
                   />
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ v.lastUpdated }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ v.lastUpdated ? new Date(v.lastUpdated).toLocaleDateString(dateLocale) : '' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <UButton
                     icon="i-lucide-ellipsis-vertical"
@@ -382,7 +386,7 @@ watch(selectedVehicle, () => {
               </tr>
               <tr v-if="filteredVehicles.length === 0">
                 <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                  No vehicles found matching your criteria.
+                  {{ t('veh.empty') }}
                 </td>
               </tr>
             </tbody>
@@ -391,7 +395,7 @@ watch(selectedVehicle, () => {
           <!-- Pagination Mock -->
           <div class="bg-white dark:bg-slate-900 px-4 py-3 flex items-center justify-between border-t border-slate-200 dark:border-slate-800 sm:px-6 font-medium">
             <p class="text-sm text-slate-700 dark:text-slate-300">
-              Showing <span class="font-bold">1</span> to <span class="font-bold">{{ filteredVehicles.length }}</span> of <span class="font-bold">{{ filteredVehicles.length }}</span> results
+              {{ t('showing_results', { n: filteredVehicles.length }) }}
             </p>
             <div class="flex gap-2">
               <UButton icon="i-lucide-chevron-left" variant="outline" color="neutral" size="xs" disabled class="cursor-pointer" />
@@ -409,7 +413,7 @@ watch(selectedVehicle, () => {
     >
       <div class="p-6 flex flex-col h-full">
         <div class="flex items-start justify-between mb-6">
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Vehicle Details</h3>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ t('veh.details') }}</h3>
           <UButton
             icon="i-lucide-x"
             variant="ghost"
@@ -424,7 +428,7 @@ watch(selectedVehicle, () => {
             <VehiclePhotoCarousel :images="selectedVehicle.imageUrls" />
             <div class="flex justify-center">
               <UButton
-                label="Edit Photos"
+                :label="t('veh.edit_photos')"
                 icon="i-lucide-camera"
                 size="xs"
                 variant="ghost"
@@ -441,7 +445,7 @@ watch(selectedVehicle, () => {
               @update:model-value="handleSavePhotos"
             />
             <UButton
-              label="Done"
+              :label="t('veh.done')"
               size="sm"
               block
               color="neutral"
@@ -456,7 +460,7 @@ watch(selectedVehicle, () => {
             <p class="text-slate-500 dark:text-slate-400 font-mono text-sm mt-1">{{ selectedVehicle.code }}</p>
             <div class="mt-4">
               <UBadge
-                :label="selectedVehicle.status"
+                :label="tName('status', selectedVehicle.status)"
                 :color="selectedVehicle.statusColor as any"
                 variant="subtle"
                 class="rounded-full px-4"
@@ -467,28 +471,28 @@ watch(selectedVehicle, () => {
 
         <!-- QR Code Display -->
         <div class="mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl flex flex-col items-center border border-slate-200 dark:border-slate-800">
-           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Unique Vehicle QR</p>
+           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{{ t('veh.unique_qr') }}</p>
            <div class="bg-white p-3 rounded-xl shadow-inner border border-slate-100 mb-3">
-             <img :src="toVehicleQrUrl(selectedVehicle.code, 150)" class="size-32" alt="Vehicle QR" />
+             <img :src="toVehicleQrUrl(selectedVehicle.code, 150)" class="size-32" :alt="t('veh.qr_alt')" />
            </div>
            <p class="text-xs font-mono font-bold text-slate-500">{{ selectedVehicle.code }}</p>
         </div>
 
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 flex flex-col gap-4">
           <div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Category</p>
-            <span class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.category }}</span>
+            <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('veh.category') }}</p>
+            <span class="text-sm text-slate-900 dark:text-white font-medium">{{ tName('category', selectedVehicle.category) }}</span>
           </div>
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Status Access</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('veh.status_access') }}</p>
               <span class="text-sm text-slate-900 dark:text-white font-medium">
-                {{ toStatusAccessLabel(selectedVehicle.status) }}
+                {{ toStatusAccessLabel(selectedVehicle.status, t) }}
               </span>
             </div>
             <UButton
               v-if="selectedVehicle.status !== 'Lent'"
-              :label="selectedVehicle.status === 'Available' ? 'Set Unavailable' : 'Set Available'"
+              :label="selectedVehicle.status === 'Available' ? t('veh.set_unavailable') : t('veh.set_available')"
               :variant="selectedVehicle.status === 'Available' ? 'subtle' : 'solid'"
               :color="selectedVehicle.status === 'Available' ? 'error' : 'success'"
               size="xs"
@@ -498,7 +502,7 @@ watch(selectedVehicle, () => {
           </div>
           <div>
             <div class="flex items-center justify-between mb-1">
-              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">Last Mileage</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">{{ t('veh.mileage') }}</p>
               <UButton
                 v-if="!isEditingMileage"
                 icon="i-lucide-pencil"
@@ -543,7 +547,7 @@ watch(selectedVehicle, () => {
           <div class="flex flex-col gap-2">
             <UButton
               v-if="selectedVehicle.status === 'Lent'"
-              label="Process Return"
+              :label="t('veh.process_return')"
               icon="i-lucide-corner-down-left"
               block
               color="primary"
@@ -552,7 +556,7 @@ watch(selectedVehicle, () => {
               @click="navigateTo(`/rentals/return?code=${selectedVehicle.code}`)"
             />
             <UButton
-              label="Print QR Code"
+              :label="t('veh.print_qr')"
               icon="i-lucide-qr-code"
               block
               color="neutral"
@@ -566,28 +570,28 @@ watch(selectedVehicle, () => {
     </aside>
 
     <!-- Add Vehicle Modal -->
-    <UModal v-model:open="isAddModalOpen" title="Register New Vehicle" description="Enter the vehicle details to add it to the inventory.">
+    <UModal v-model:open="isAddModalOpen" :title="t('veh.modal.title')" :description="t('veh.modal.desc')">
       <template #body>
         <UForm :state="newVehicle" class="space-y-4" @submit="handleAddVehicle">
-          <UFormField label="Vehicle Name" name="name" required>
-            <UInput v-model="newVehicle.name" placeholder="e.g. Honda PCX 150" />
+          <UFormField :label="t('veh.modal.name')" name="name" required>
+            <UInput v-model="newVehicle.name" :placeholder="t('veh.modal.name_ph')" />
           </UFormField>
 
-          <UFormField label="Category" name="categoryName" required>
-            <URadioGroup v-model="newVehicle.categoryName" :items="VEHICLE_CATEGORY_OPTIONS" orientation="horizontal" />
+          <UFormField :label="t('veh.category')" name="categoryName" required>
+            <URadioGroup v-model="newVehicle.categoryName" :items="categoryOptions" orientation="horizontal" />
           </UFormField>
 
-          <UFormField label="Initial Mileage (km)" name="lastMileage">
+          <UFormField :label="t('veh.modal.mileage')" name="lastMileage">
             <UInput v-model.number="newVehicle.lastMileage" type="number" />
           </UFormField>
 
-          <UFormField label="Vehicle Photos" name="imageUrls">
+          <UFormField :label="t('veh.modal.photos')" name="imageUrls">
             <VehiclePhotoManager v-model="newVehicle.imageUrls" />
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton label="Save Vehicle" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton :label="t('veh.modal.save')" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>

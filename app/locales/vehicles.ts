@@ -1,0 +1,58 @@
+import type { MessageCatalog } from './types'
+
+export default {
+  'veh.search': { en: 'Search vehicles...', th: 'ค้นหายานพาหนะ...', lo: 'ຄົ້ນຫາພາຫະນະ...', vi: 'Tìm phương tiện...', ms: 'Cari kenderaan...' },
+  'veh.category': { en: 'Category', th: 'ประเภท', lo: 'ປະເພດ', vi: 'Loại', ms: 'Kategori' },
+  'veh.add': { en: 'Add Vehicle', th: 'เพิ่มยานพาหนะ', lo: 'ເພີ່ມພາຫະນະ', vi: 'Thêm phương tiện', ms: 'Tambah Kenderaan' },
+  'veh.loading': { en: 'Loading vehicles...', th: 'กำลังโหลดยานพาหนะ...', lo: 'ກຳລັງໂຫລດພາຫະນະ...', vi: 'Đang tải phương tiện...', ms: 'Memuatkan kenderaan...' },
+  'veh.col.name': { en: 'Vehicle Name', th: 'ชื่อยานพาหนะ', lo: 'ຊື່ພາຫະນະ', vi: 'Tên phương tiện', ms: 'Nama Kenderaan' },
+  'veh.col.id': { en: 'Vehicle ID', th: 'รหัสยานพาหนะ', lo: 'ລະຫັດພາຫະນະ', vi: 'Mã phương tiện', ms: 'ID Kenderaan' },
+  'veh.col.updated': { en: 'Last Updated', th: 'อัปเดตล่าสุด', lo: 'ອັບເດດຫຼ້າສຸດ', vi: 'Cập nhật lần cuối', ms: 'Kemas Kini Terakhir' },
+  'veh.empty': { en: 'No vehicles found matching your criteria.', th: 'ไม่พบยานพาหนะที่ตรงกับเงื่อนไข', lo: 'ບໍ່ພົບພາຫະນະທີ່ກົງກັບເງື່ອນໄຂ', vi: 'Không tìm thấy phương tiện phù hợp.', ms: 'Tiada kenderaan yang sepadan dengan kriteria anda.' },
+
+  'veh.details': { en: 'Vehicle Details', th: 'รายละเอียดยานพาหนะ', lo: 'ລາຍລະອຽດພາຫະນະ', vi: 'Chi tiết phương tiện', ms: 'Butiran Kenderaan' },
+  'veh.edit_photos': { en: 'Edit Photos', th: 'แก้ไขรูปภาพ', lo: 'ແກ້ໄຂຮູບພາບ', vi: 'Sửa ảnh', ms: 'Sunting Foto' },
+  'veh.done': { en: 'Done', th: 'เสร็จสิ้น', lo: 'ສຳເລັດ', vi: 'Xong', ms: 'Selesai' },
+  'veh.unique_qr': { en: 'Unique Vehicle QR', th: 'คิวอาร์โค้ดเฉพาะของยานพาหนะ', lo: 'QR ໂຄ້ດສະເພາະຂອງພາຫະນະ', vi: 'Mã QR riêng của xe', ms: 'QR Unik Kenderaan' },
+  'veh.qr_alt': { en: 'Vehicle QR', th: 'คิวอาร์โค้ดยานพาหนะ', lo: 'QR ໂຄ້ດພາຫະນະ', vi: 'Mã QR xe', ms: 'QR Kenderaan' },
+  'veh.status_access': { en: 'Status Access', th: 'สถานะการใช้งาน', lo: 'ສະຖານະການໃຊ້ງານ', vi: 'Tình trạng sử dụng', ms: 'Akses Status' },
+  'veh.access.ready': { en: 'Ready for Use', th: 'พร้อมใช้งาน', lo: 'ພ້ອມໃຊ້ງານ', vi: 'Sẵn sàng sử dụng', ms: 'Sedia Digunakan' },
+  'veh.access.lent': { en: 'Currently Lent', th: 'กำลังถูกเช่า', lo: 'ກຳລັງຖືກເຊົ່າ', vi: 'Đang được thuê', ms: 'Sedang Disewa' },
+  'veh.access.maintenance': { en: 'Under Maintenance', th: 'อยู่ระหว่างซ่อมบำรุง', lo: 'ຢູ່ລະຫວ່າງສ້ອມບຳລຸງ', vi: 'Đang bảo trì', ms: 'Dalam Penyelenggaraan' },
+  'veh.set_unavailable': { en: 'Set Unavailable', th: 'ตั้งเป็นไม่พร้อมใช้งาน', lo: 'ຕັ້ງເປັນບໍ່ພ້ອມໃຊ້ງານ', vi: 'Đặt là không khả dụng', ms: 'Tetapkan Tidak Tersedia' },
+  'veh.set_available': { en: 'Set Available', th: 'ตั้งเป็นพร้อมใช้งาน', lo: 'ຕັ້ງເປັນພ້ອມໃຊ້ງານ', vi: 'Đặt là sẵn sàng', ms: 'Tetapkan Tersedia' },
+  'veh.mileage': { en: 'Last Mileage', th: 'ระยะทางล่าสุด', lo: 'ໄລຍະທາງຫຼ້າສຸດ', vi: 'Số km gần nhất', ms: 'Jarak Perjalanan Terakhir' },
+  'veh.process_return': { en: 'Process Return', th: 'ดำเนินการรับคืน', lo: 'ດຳເນີນການຮັບຄືນ', vi: 'Xử lý trả xe', ms: 'Proses Pemulangan' },
+  'veh.print_qr': { en: 'Print QR Code', th: 'พิมพ์คิวอาร์โค้ด', lo: 'ພິມ QR ໂຄ້ດ', vi: 'In mã QR', ms: 'Cetak Kod QR' },
+
+  'veh.modal.title': { en: 'Register New Vehicle', th: 'ลงทะเบียนยานพาหนะใหม่', lo: 'ລົງທະບຽນພາຫະນະໃໝ່', vi: 'Đăng ký phương tiện mới', ms: 'Daftar Kenderaan Baharu' },
+  'veh.modal.desc': { en: 'Enter the vehicle details to add it to the inventory.', th: 'กรอกรายละเอียดยานพาหนะเพื่อเพิ่มลงในคลัง', lo: 'ປ້ອນລາຍລະອຽດພາຫະນະເພື່ອເພີ່ມເຂົ້າສາງ', vi: 'Nhập thông tin phương tiện để thêm vào kho.', ms: 'Masukkan butiran kenderaan untuk ditambah ke inventori.' },
+  'veh.modal.name': { en: 'Vehicle Name', th: 'ชื่อยานพาหนะ', lo: 'ຊື່ພາຫະນະ', vi: 'Tên phương tiện', ms: 'Nama Kenderaan' },
+  'veh.modal.name_ph': { en: 'e.g. Honda PCX 150', th: 'เช่น Honda PCX 150', lo: 'ເຊັ່ນ Honda PCX 150', vi: 'VD: Honda PCX 150', ms: 'cth. Honda PCX 150' },
+  'veh.modal.mileage': { en: 'Initial Mileage (km)', th: 'ระยะทางเริ่มต้น (กม.)', lo: 'ໄລຍະທາງເລີ່ມຕົ້ນ (ກມ.)', vi: 'Số km ban đầu (km)', ms: 'Jarak Perjalanan Awal (km)' },
+  'veh.modal.photos': { en: 'Vehicle Photos', th: 'รูปภาพยานพาหนะ', lo: 'ຮູບພາບພາຫະນະ', vi: 'Ảnh phương tiện', ms: 'Foto Kenderaan' },
+  'veh.modal.save': { en: 'Save Vehicle', th: 'บันทึกยานพาหนะ', lo: 'ບັນທຶກພາຫະນະ', vi: 'Lưu phương tiện', ms: 'Simpan Kenderaan' },
+
+  'veh.toast.add_failed': { en: 'Add Failed', th: 'เพิ่มไม่สำเร็จ', lo: 'ເພີ່ມບໍ່ສຳເລັດ', vi: 'Thêm thất bại', ms: 'Penambahan gagal' },
+  'veh.toast.add_failed_desc': { en: 'Failed to add vehicle.', th: 'ไม่สามารถเพิ่มยานพาหนะได้', lo: 'ບໍ່ສາມາດເພີ່ມພາຫະນະໄດ້', vi: 'Không thể thêm phương tiện.', ms: 'Gagal menambah kenderaan.' },
+  'veh.toast.not_allowed': { en: 'Operation not allowed', th: 'ไม่อนุญาตให้ดำเนินการ', lo: 'ບໍ່ອະນຸຍາດໃຫ້ດຳເນີນການ', vi: 'Thao tác không được phép', ms: 'Operasi tidak dibenarkan' },
+  'veh.toast.not_allowed_desc': { en: 'Cannot change status while the vehicle is lent.', th: 'ไม่สามารถเปลี่ยนสถานะได้ขณะที่ยานพาหนะถูกเช่าอยู่', lo: 'ບໍ່ສາມາດປ່ຽນສະຖານະໄດ້ໃນຂະນະທີ່ພາຫະນະຖືກເຊົ່າຢູ່', vi: 'Không thể đổi trạng thái khi xe đang được thuê.', ms: 'Status tidak boleh diubah semasa kenderaan sedang disewa.' },
+  'veh.toast.status_updated': { en: 'Status Updated', th: 'อัปเดตสถานะแล้ว', lo: 'ອັບເດດສະຖານະແລ້ວ', vi: 'Đã cập nhật trạng thái', ms: 'Status dikemas kini' },
+  'veh.toast.status_updated_desc': { en: 'Vehicle is now {status}.', th: 'ยานพาหนะอยู่ในสถานะ{status}แล้ว', lo: 'ພາຫະນະຢູ່ໃນສະຖານະ{status}ແລ້ວ', vi: 'Phương tiện hiện ở trạng thái {status}.', ms: 'Kenderaan kini {status}.' },
+  'veh.toast.mileage_updated': { en: 'Mileage Updated', th: 'อัปเดตระยะทางแล้ว', lo: 'ອັບເດດໄລຍະທາງແລ້ວ', vi: 'Đã cập nhật số km', ms: 'Jarak perjalanan dikemas kini' },
+  'veh.toast.mileage_updated_desc': { en: 'Vehicle mileage has been updated.', th: 'อัปเดตระยะทางของยานพาหนะเรียบร้อยแล้ว', lo: 'ອັບເດດໄລຍະທາງຂອງພາຫະນະຮຽບຮ້ອຍແລ້ວ', vi: 'Số km của xe đã được cập nhật.', ms: 'Jarak perjalanan kenderaan telah dikemas kini.' },
+  'veh.toast.photos_updated': { en: 'Photos Updated', th: 'อัปเดตรูปภาพแล้ว', lo: 'ອັບເດດຮູບພາບແລ້ວ', vi: 'Đã cập nhật ảnh', ms: 'Foto dikemas kini' },
+  'veh.toast.photos_updated_desc': { en: 'Vehicle photos have been updated.', th: 'อัปเดตรูปภาพของยานพาหนะเรียบร้อยแล้ว', lo: 'ອັບເດດຮູບພາບຂອງພາຫະນະຮຽບຮ້ອຍແລ້ວ', vi: 'Ảnh phương tiện đã được cập nhật.', ms: 'Foto kenderaan telah dikemas kini.' },
+
+  // ---- photo manager / carousel / camera ----
+  'photo.none': { en: 'No photos', th: 'ไม่มีรูปภาพ', lo: 'ບໍ່ມີຮູບພາບ', vi: 'Chưa có ảnh', ms: 'Tiada foto' },
+  'photo.label': { en: 'Vehicle photos ({n}/5)', th: 'รูปภาพยานพาหนะ ({n}/5)', lo: 'ຮູບພາບພາຫະນະ ({n}/5)', vi: 'Ảnh phương tiện ({n}/5)', ms: 'Foto kenderaan ({n}/5)' },
+  'photo.take': { en: 'Take photo', th: 'ถ่ายรูป', lo: 'ຖ່າຍຮູບ', vi: 'Chụp ảnh', ms: 'Ambil foto' },
+  'photo.choose_file': { en: 'Choose file', th: 'เลือกไฟล์', lo: 'ເລືອກໄຟລ໌', vi: 'Chọn tệp', ms: 'Pilih fail' },
+  'photo.add': { en: 'Add', th: 'เพิ่ม', lo: 'ເພີ່ມ', vi: 'Thêm', ms: 'Tambah' },
+  'photo.limit': { en: 'Limit reached', th: 'ครบจำนวนสูงสุดแล้ว', lo: 'ຄົບຈຳນວນສູງສຸດແລ້ວ', vi: 'Đã đạt giới hạn', ms: 'Had dicapai' },
+  'photo.limit_desc': { en: 'You can register up to 5 photos.', th: 'ลงทะเบียนรูปภาพได้สูงสุด 5 รูป', lo: 'ລົງທະບຽນຮູບພາບໄດ້ສູງສຸດ 5 ຮູບ', vi: 'Bạn chỉ có thể đăng ký tối đa 5 ảnh.', ms: 'Anda boleh mendaftar sehingga 5 foto.' },
+  'photo.upload_failed': { en: 'Upload failed', th: 'อัปโหลดไม่สำเร็จ', lo: 'ອັບໂຫລດບໍ່ສຳເລັດ', vi: 'Tải lên thất bại', ms: 'Muat naik gagal' },
+  'camera.title': { en: 'Take photo', th: 'ถ่ายรูป', lo: 'ຖ່າຍຮູບ', vi: 'Chụp ảnh', ms: 'Ambil foto' },
+  'camera.denied': { en: 'Camera access was denied or is unavailable.', th: 'การเข้าถึงกล้องถูกปฏิเสธหรือไม่พร้อมใช้งาน', lo: 'ການເຂົ້າເຖິງກ້ອງຖືກປະຕິເສດ ຫຼື ບໍ່ພ້ອມໃຊ້ງານ', vi: 'Quyền truy cập camera bị từ chối hoặc không khả dụng.', ms: 'Akses kamera ditolak atau tidak tersedia.' }
+} satisfies MessageCatalog

@@ -2,6 +2,7 @@
 const props = defineProps<{
   images: string[]
 }>()
+const { t } = useI18n()
 
 const isOpen = ref(false)
 const selectedImage = ref('')
@@ -20,7 +21,7 @@ const openImage = (url: string) => {
       class="aspect-video rounded-xl bg-gray-100 dark:bg-gray-800 flex flex-col items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700"
     >
       <UIcon name="i-lucide-image" class="w-12 h-12 mb-2 opacity-20" />
-      <span class="text-sm font-medium">写真なし</span>
+      <span class="text-sm font-medium">{{ t('photo.none') }}</span>
     </div>
 
     <!-- カルーセル -->
