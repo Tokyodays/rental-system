@@ -108,3 +108,6 @@ END $$;
 -- 7. テストユーザーのロール設定
 UPDATE public.staff SET role_id = '00000000-0000-0000-0001-000000000000' WHERE username = 'admin';
 UPDATE public.staff SET role_id = '00000000-0000-0000-0001-000000000001' WHERE username = 'branchadmin';
+
+-- 8. super_admin(オーナー)は店舗を持たない(ロール設定の後に実行すること: CHECK 制約のため)
+UPDATE public.staff SET store_id = NULL WHERE username = 'admin';

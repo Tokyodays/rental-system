@@ -4,12 +4,6 @@ export default defineEventHandler(async (event) => {
   // 1-2. 認証・権限チェック（スタッフ作成は admin, super_admin のみ許可）
   const adminClient = useSupabaseAdmin()
   const { staff: adminStaff } = await requireStaffRole(event, ['admin', 'super_admin'])
-  const roleName = ((adminStaff?.staff_roles as any)?.name || '').toLowerCase()
-
-  // super_admin は store_id を body から受け取る（自身の store_id を持たない）
-  if (roleName === 'admin' && !adminStaff!.store_id) {
-    throw createError({ statusCode: 400, message: 'Admin must belong to a store' })
-  }
 
   // 3. パラメータの取得
   const body = await readBody(event)
@@ -17,6 +11,14 @@ export default defineEventHandler(async (event) => {
 
   if (!username || !password) {
     throw createError({ statusCode: 400, message: 'Username and password are required' })
+  }
+
+  // super_admin は店舗を持たない。それ以外のロールは必ず店舗に所属させる
+  //   - super_admin が作成する場合: body の store_id が必須
+  //   - admin が作成する場合: 自身の店舗を使う
+  const targetStoreId = store_id || adminStaff!.store_id
+  if ((role_id || ROLE_IDS.STAFF) !== ROLE_IDS.SUPER_ADMIN && !targetStoreId) {
+    throw createError({ statusCode: 400, message: 'store_id is required' })
   }
 
   // 内部的なメールアドレス形式に変換
@@ -44,7 +46,7 @@ export default defineEventHandler(async (event) => {
       .upsert({
         id: authData.user.id,
         role_id: role_id || ROLE_IDS.STAFF,
-        store_id: store_id || adminStaff.store_id,
+        store_id: targetStoreId,
         username: username.toLowerCase()
       }, { onConflict: 'id' })
 

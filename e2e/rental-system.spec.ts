@@ -996,6 +996,38 @@ test.describe('Multi-tenant Management Flow', () => {
 })
 
 // ============================================================
+// 12b. Super Admin without Store (super_admin は店舗を持たない)
+// ============================================================
+test.describe('Super Admin without Store', () => {
+  test('店舗に紐づかない super_admin が管理画面に入れる', async ({ page, context }) => {
+    await clearSession(page, context)
+    await adminLogin(page)
+    await expect(page).toHaveURL(/\/admin\/stores/)
+
+    // スタッフ用画面には入れず、管理画面にとどまる
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL(/\/admin\/stores/)
+
+    await adminLogout(page)
+  })
+
+  test('store_id なしで店舗付きロールのユーザーを作ろうとすると 400 になる', async ({ page, context }) => {
+    await clearSession(page, context)
+    await adminLogin(page)
+
+    const username = `nostore${Date.now()}`
+    const res = await page.request.post('/api/admin/users', {
+      data: { username, password: 'password123', role_id: '00000000-0000-0000-0001-000000000002' }
+    })
+    expect(res.status()).toBe(400)
+    expect(await res.text()).toContain('store_id is required')
+
+    await adminLogout(page)
+  })
+})
+
+// ============================================================
 // 13. Authentication & Security Tests (改善: 要件定義書の問題対応)
 // ============================================================
 test.describe('Authentication & Security', () => {
