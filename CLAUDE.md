@@ -16,7 +16,7 @@ Multi-tenant vehicle rental SaaS built with **Nuxt 4** + **Supabase**.
 | `app/middleware/auth.global.ts` | Global routing middleware |
 | `app/layouts/admin.vue` | Admin console layout (no sidebar) |
 | `app/layouts/default.vue` | Staff interface layout (with sidebar) |
-| `e2e/rental-system.spec.ts` | All E2E tests (35 tests) |
+| `e2e/rental-system.spec.ts` | All E2E tests (36 tests) |
 | `server/api/admin/` | Admin-only API routes |
 | `supabase/migrations/` | DB schema migrations |
 

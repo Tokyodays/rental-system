@@ -32,13 +32,13 @@ const openImage = (url: string) => {
         :dots="images.length > 1"
         :prev="{
           icon: 'i-lucide-chevron-left',
-          color: 'white',
+          color: 'neutral',
           variant: 'solid',
           class: 'rounded-full shadow-lg opacity-80 hover:opacity-100 transition-opacity z-20'
         }"
         :next="{
           icon: 'i-lucide-chevron-right',
-          color: 'white',
+          color: 'neutral',
           variant: 'solid',
           class: 'rounded-full shadow-lg opacity-80 hover:opacity-100 transition-opacity z-20'
         }"
@@ -73,7 +73,7 @@ const openImage = (url: string) => {
           />
           <UButton
             type="button"
-            color="white"
+            color="neutral"
             variant="ghost"
             icon="i-lucide-x"
             class="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full z-20"

@@ -16,7 +16,7 @@ The server starts on **http://localhost:3000**.
 ## Environment requirements
 
 - Node.js 18+
-- `.env` file present (copy from `.env.example` if missing)
+- `.env` file present (no `.env.example` exists in this repo — if `.env` is missing, ask the user for credentials; required vars listed below)
 - Required env vars: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Verify it's running

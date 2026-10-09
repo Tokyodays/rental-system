@@ -1,28 +1,7 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
-
 export default defineEventHandler(async (event) => {
-  // 1. 認証チェック
-  const user = await serverSupabaseUser(event)
-  if (!user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  // 2. 権限チェック (管理者のみ店舗追加が可能とする)
-  // RLSをバイパスして確実にロールを確認するため AdminClient (Service Role) を使用
+  // 1-2. 認証・権限チェック（店舗作成は super_admin のみ許可）
   const adminClient = useSupabaseAdmin()
-  const userId = user.sub || user.id
-  const { data: staff, error: staffError } = await adminClient
-    .from('staff')
-    .select('username, role_id, staff_roles(name)')
-    .eq('id', userId)
-    .single()
-
-  const roleName = (staff?.staff_roles as any)?.name
-
-  // 店舗作成は super_admin のみ許可
-  if (staffError || roleName?.toLowerCase() !== 'super_admin') {
-    throw createError({ statusCode: 403, message: 'Forbidden: Super admin access required' })
-  }
+  await requireStaffRole(event, ['super_admin'])
 
   // 3. パラメータの取得
   const body = await readBody(event)

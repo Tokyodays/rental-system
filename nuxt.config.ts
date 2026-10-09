@@ -9,6 +9,12 @@ export default defineNuxtConfig({
     redirect: false
   },
   css: ['~/assets/css/main.css'],
+  fonts: {
+    families: [
+      { name: 'Bricolage Grotesque', provider: 'google', weights: [600, 700, 800] },
+      { name: 'Plus Jakarta Sans', provider: 'google', weights: [400, 500, 600, 700, 800] }
+    ]
+  },
   devtools: { enabled: true },
   runtimeConfig: {
     public: {

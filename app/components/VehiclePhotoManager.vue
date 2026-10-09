@@ -26,7 +26,7 @@ const handleFileChange = async (event: Event) => {
     toast.add({
       title: '上限に達しました',
       description: '写真は最大5枚まで登録可能です。',
-      color: 'red'
+      color: 'error'
     })
     return
   }
@@ -53,7 +53,7 @@ const processAndUpload = async (file: File) => {
     toast.add({
       title: 'アップロード失敗',
       description: error.message,
-      color: 'red'
+      color: 'error'
     })
   }
 }

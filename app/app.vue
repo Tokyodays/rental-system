@@ -17,7 +17,7 @@ const { connectionError, checkConnection } = useSupabaseConnection()
         </div>
         <UButton
           size="xs"
-          color="red"
+          color="error"
           variant="soft"
           icon="i-lucide-refresh-cw"
           label="再試行"

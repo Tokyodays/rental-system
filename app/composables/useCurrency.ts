@@ -1,6 +1,8 @@
+import type { Database } from '../types/database.types'
+
 export const useCurrency = () => {
   const { staff } = useStaff()
-  const supabase = useSupabaseClient()
+  const supabase = useSupabaseClient<Database>()
 
   interface CurrencyRecord {
     id: number
@@ -12,9 +14,9 @@ export const useCurrency = () => {
 
   const fetchCurrencies = async () => {
     if (currencies.value.length > 0) return
-    
+
     const { data, error } = await supabase
-      .from('currency' as any)
+      .from('currency')
       .select('*')
       .order('id')
     
@@ -24,7 +26,7 @@ export const useCurrency = () => {
   }
 
   // 初期化時に非同期で取得
-  if (process.client) {
+  if (import.meta.client) {
     onMounted(() => {
       fetchCurrencies()
     })

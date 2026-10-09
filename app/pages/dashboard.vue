@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient()
+const { ensureLoaded, vehicleStatusId } = useStatusIds()
 
 const stats = ref([
   { label: 'Lending', value: '0', icon: 'i-lucide-log-out', color: 'blue' },
@@ -25,16 +26,16 @@ async function fetchDashboardData() {
     isLoading.value = true
     
     // Fetch vehicle statuses for count
-    const { data: vStatuses } = await supabase.from('vehicle_statuses').select('id, name')
+    await ensureLoaded()
     const { data: vehicles } = await supabase.from('vehicles').select('status_id')
-    
+
     let lentCount = 0
     let availableCount = 0
-    
-    if (vStatuses && vehicles) {
-      const lentStatusId = vStatuses.find((s: any) => s.name === 'Lent')?.id
-      const availStatusId = vStatuses.find((s: any) => s.name === 'Available')?.id
-      
+
+    if (vehicles) {
+      const lentStatusId = vehicleStatusId('Lent')
+      const availStatusId = vehicleStatusId('Available')
+
       lentCount = vehicles.filter((v: any) => v.status_id === lentStatusId).length
       availableCount = vehicles.filter((v: any) => v.status_id === availStatusId).length
     }

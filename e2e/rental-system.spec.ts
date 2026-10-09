@@ -406,7 +406,7 @@ test.describe('Lending Flow', () => {
     await page.getByRole('button', { name: 'Start Lending Now' }).click()
 
     // 成功時にダッシュボードへリダイレクト
-    await expect(page).toHaveURL('/', { timeout: 15_000 })
+    await expect(page).toHaveURL('/dashboard', { timeout: 15_000 })
   })
 })
 
@@ -452,7 +452,7 @@ test.describe('Return Flow', () => {
     await page.getByRole('button', { name: 'Complete Return Process' }).click()
 
     // 成功時にダッシュボードへリダイレクト
-    await expect(page).toHaveURL('/', { timeout: 15_000 })
+    await expect(page).toHaveURL('/dashboard', { timeout: 15_000 })
   })
 })
 

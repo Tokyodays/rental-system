@@ -1,26 +1,10 @@
-import { serverSupabaseUser } from '#supabase/server'
+import { ROLE_IDS, toInternalEmail } from '#shared/constants/auth'
 
 export default defineEventHandler(async (event) => {
-  // 1. リクエスト送信者の認証チェック
-  const user = await serverSupabaseUser(event)
-  if (!user) {
-    throw createError({ statusCode: 401, message: 'Unauthorized' })
-  }
-
-  // 2. リクエスト送信者の権限と所属店舗のチェック（stores.post.ts と同様に adminClient + user.sub || user.id を使用）
+  // 1-2. 認証・権限チェック（スタッフ作成は admin, super_admin のみ許可）
   const adminClient = useSupabaseAdmin()
-  const userId = user.sub || user.id
-  const { data: adminStaff, error: staffError } = await adminClient
-    .from('staff')
-    .select('store_id, staff_roles(name)')
-    .eq('id', userId)
-    .single()
-
-  const roleName = (adminStaff?.staff_roles as any)?.name?.toLowerCase()
-  const ALLOWED_ROLES = ['admin', 'super_admin']
-  if (staffError || !ALLOWED_ROLES.includes(roleName)) {
-    throw createError({ statusCode: 403, message: 'Forbidden: Admin access required' })
-  }
+  const { staff: adminStaff } = await requireStaffRole(event, ['admin', 'super_admin'])
+  const roleName = ((adminStaff?.staff_roles as any)?.name || '').toLowerCase()
 
   // super_admin は store_id を body から受け取る（自身の store_id を持たない）
   if (roleName === 'admin' && !adminStaff!.store_id) {
@@ -36,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 内部的なメールアドレス形式に変換
-  const internalEmail = `${username.toLowerCase()}@rental.local`
+  const internalEmail = toInternalEmail(username)
 
   // 4. Supabase Admin API を使用してユーザーを作成
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -59,13 +43,15 @@ export default defineEventHandler(async (event) => {
       .from('staff')
       .upsert({
         id: authData.user.id,
-        role_id: role_id || '00000000-0000-0000-0001-000000000002',
+        role_id: role_id || ROLE_IDS.STAFF,
         store_id: store_id || adminStaff.store_id,
         username: username.toLowerCase()
       }, { onConflict: 'id' })
 
     if (upsertError) {
       console.error('[AdminAPI] Failed to upsert staff record:', upsertError)
+      await adminClient.auth.admin.deleteUser(authData.user.id)
+      throw createError({ statusCode: 500, message: `Failed to create staff record: ${upsertError.message}` })
     }
   }
 

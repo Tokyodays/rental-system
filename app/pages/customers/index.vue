@@ -1,50 +1,46 @@
 <script setup lang="ts">
+import {
+  type Customer,
+  type CustomerRow,
+  type CustomerTransaction,
+  type NewCustomerForm,
+  type CustomerUpdateForm,
+  toCustomer,
+  matchesCustomerSearch,
+  matchesCustomerStatusFilter,
+  toCustomerInsertPayload,
+  toCustomerUpdatePayload
+} from '~/utils/customer'
+
 const search = ref('')
 const client = useSupabaseClient()
 const toast = useToast()
 const { staff } = useStaff()
-
-
-interface Customer {
-  id: string
-  full_name: string
-  email: string | null
-  phone: string | null
-  passport_number?: string | null
-  passport_url?: string | null
-  customer_statuses: {
-    name: string
-    color: string
-  }
-  status_id?: string
-  created_at: string
-}
+const { uploadPassportImage } = useCustomerPassport()
 
 const customers = ref<Customer[]>([])
 const isLoading = ref(true)
 const fetchError = ref<string | null>(null)
-const statuses = ref<{ id: string, name: string }[]>([])
+const { ensureLoaded, customerStatuses, customerStatusId } = useStatusIds()
 const statusFilter = ref('all')
 
-const activeStatusId = computed(() => statuses.value.find(s => s.name === 'Active')?.id)
-const unactiveStatusId = computed(() => statuses.value.find(s => s.name === 'Unactive')?.id)
-const rentingStatusId = computed(() => statuses.value.find(s => s.name === 'Renting')?.id)
+const rentingStatusId = computed(() => customerStatusId('Renting'))
 
 const statusOptions = computed(() => [
-  { label: 'Active', value: activeStatusId.value || '' },
-  { label: 'Unactive', value: unactiveStatusId.value || '' }
+  { label: 'Active', value: customerStatusId('Active') || '' },
+  { label: 'Unactive', value: customerStatusId('Unactive') || '' }
 ])
 
 const filterStatuses = computed(() => [
   { name: 'All Statuses', id: 'all' },
-  ...statuses.value
+  ...customerStatuses.value
 ])
 
 // Add Customer Modal State
 const isAddModalOpen = ref(false)
 const isSubmitting = ref(false)
 const addStep = ref(1) // 1: Info, 2: Camera
-const newCustomer = reactive({
+const newCustomer = reactive<NewCustomerForm>({
   full_name: '',
   email: '',
   phone: '',
@@ -53,7 +49,7 @@ const newCustomer = reactive({
 
 // Update Customer Modal State
 const isUpdateModalOpen = ref(false)
-const customerToUpdate = reactive({
+const customerToUpdate = reactive<CustomerUpdateForm>({
   id: '',
   full_name: '',
   email: '',
@@ -69,7 +65,7 @@ const customerToDelete = ref<Customer | null>(null)
 
 // Detail Pane State
 const selectedCustomerForDetail = ref<Customer | null>(null)
-const customerTransactions = ref<any[]>([])
+const customerTransactions = ref<CustomerTransaction[]>([])
 const isLoadingTransactions = ref(false)
 
 async function fetchCustomerTransactions(customerId: string) {
@@ -91,94 +87,31 @@ async function fetchCustomerTransactions(customerId: string) {
   }
 }
 
-function selectCustomer(customer: Customer) {
+function handleSelectCustomer(customer: Customer) {
   selectedCustomerForDetail.value = customer
   fetchCustomerTransactions(customer.id)
 }
 
-function getPassportPublicUrl(path: string | null | undefined) {
-  if (!path) return null
-  
-  // If it's already a full URL, return it
-  if (path.startsWith('http')) return path
-  
-  const { data } = client.storage.from('customer-passports').getPublicUrl(path)
-  return data.publicUrl
+function closeDetailPane() {
+  selectedCustomerForDetail.value = null
 }
-
-const selectedFile = ref<File | null>(0 as any) // Dummy cast to avoid selection error
-const fileInput = ref<HTMLInputElement | null>(null)
 
 // Camera related
-const videoRef = ref<HTMLVideoElement | null>(null)
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const cameraStream = ref<MediaStream | null>(null)
 const capturedPhoto = ref<string | null>(null) // DataURL for preview
 const capturedBlob = ref<Blob | null>(null) // Blob for upload
-const isCameraLoading = ref(false)
-const isCapturing = ref(false)
-
-async function startCamera() {
-  isCameraLoading.value = true
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' }, // 手元のパスポートを撮るため背面カメラ優先
-      audio: false 
-    })
-    cameraStream.value = stream
-    if (videoRef.value) {
-      videoRef.value.srcObject = stream
-    }
-  } catch (err) {
-    console.error('Camera error:', err)
-    toast.add({ title: 'Camera Error', description: 'Could not access camera.', color: 'error' })
-  } finally {
-    isCameraLoading.value = false
-  }
-}
-
-function stopCamera() {
-  if (cameraStream.value) {
-    cameraStream.value.getTracks().forEach(track => track.stop())
-    cameraStream.value = null
-  }
-}
-
-function takePhoto() {
-  if (videoRef.value && canvasRef.value) {
-    const video = videoRef.value
-    const canvas = canvasRef.value
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const context = canvas.getContext('2d')
-    if (context) {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height)
-      capturedPhoto.value = canvas.toDataURL('image/webp', 0.8)
-      canvas.toBlob((blob) => {
-        capturedBlob.value = blob
-      }, 'image/webp', 0.8)
-    }
-  }
-}
+const isCameraOpen = ref(false)
 
 function resetPhoto() {
+  if (capturedPhoto.value) URL.revokeObjectURL(capturedPhoto.value)
   capturedPhoto.value = null
   capturedBlob.value = null
 }
 
-function handleFileChange(event: any) {
-  const file = event.target.files?.[0]
-  if (file) {
-    // If user uploaded a file manually, we don't force webp conversion here 
-    // unless you want to re-process it through canvas.
-    // For now, just keep the original blob for manual uploads.
-    capturedBlob.value = file
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      capturedPhoto.value = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-  }
+function handleCapture(blob: Blob) {
+  if (capturedPhoto.value) URL.revokeObjectURL(capturedPhoto.value)
+  capturedBlob.value = blob
+  capturedPhoto.value = URL.createObjectURL(blob)
+  isCameraOpen.value = false
 }
 
 async function fetchCustomers() {
@@ -195,11 +128,7 @@ async function fetchCustomers() {
       throw error
     }
     
-    // Normalize column names (handle potential legacy name passport_image_url)
-    customers.value = data?.map((c: any) => ({
-      ...c,
-      passport_url: c.passport_url || c.passport_image_url || null
-    })) || []
+    customers.value = data?.map((row: CustomerRow) => toCustomer(row)) || []
   } catch (e: any) {
     console.error('Error fetching customers:', e)
     fetchError.value = e.message || 'Unknown error'
@@ -208,13 +137,47 @@ async function fetchCustomers() {
   }
 }
 
-async function fetchStatuses() {
-  const { data, error } = await client
-    .from('customer_statuses')
-    .select('id, name')
-  if (!error && data) {
-    statuses.value = data
+function openAddModal() {
+  isAddModalOpen.value = true
+  addStep.value = 1
+}
+
+function resetAddCustomerForm() {
+  newCustomer.full_name = ''
+  newCustomer.email = ''
+  newCustomer.phone = ''
+  newCustomer.passport_number = ''
+  capturedBlob.value = null
+  capturedPhoto.value = null
+  addStep.value = 1
+}
+
+async function createCustomer(storeId: string) {
+  // 1. Generate ID beforehand (Client-side UUID)
+  const customerId = crypto.randomUUID()
+  let passportUrl = ''
+
+  // 2. Upload photo IF captured BEFORE inserting record
+  if (capturedBlob.value) {
+    passportUrl = await uploadPassportImage(customerId, capturedBlob.value)
   }
+
+  // 3. Get Status ID (Active)
+  await ensureLoaded()
+  const statusId = customerStatusId('Active') || null
+
+  // 4. Perform SINGLE INSERT with all information including passport_url
+  const { error: insertError } = await client
+    .from('customers')
+    .insert(toCustomerInsertPayload({
+      id: customerId,
+      form: newCustomer,
+      passportUrl,
+      statusId,
+      storeId
+    }) as any)
+  
+  if (insertError) throw insertError
 }
 
 async function handleAddCustomer() {
@@ -223,62 +186,12 @@ async function handleAddCustomer() {
     const storeId = staff.value?.store_id
     if (!storeId) throw new Error('Store ID not found.')
 
-    // 1. Generate ID beforehand (Client-side UUID)
-    const customerId = crypto.randomUUID()
-    let passportUrl = ''
-
-    // 2. Upload photo IF captured BEFORE inserting record
-    if (capturedBlob.value) {
-      const fileName = `${customerId}-passport.webp`
-      const filePath = `passports/${fileName}`
-
-      const { error: uploadError } = await client
-        .storage
-        .from('customer-passports')
-        .upload(filePath, capturedBlob.value, {
-          upsert: true,
-          contentType: 'image/jpeg'
-        })
-      
-      if (uploadError) throw uploadError
-      passportUrl = filePath
-    }
-
-    // 3. Get Status ID (Active)
-    const { data: activeStatus } = await client
-      .from('customer_statuses')
-      .select('id')
-      .eq('name', 'Active')
-      .single() as any
-    const statusId = activeStatus?.id || null
-
-    // 4. Perform SINGLE INSERT with all information including passport_url
-    const { error: insertError } = await client
-      .from('customers')
-      .insert({
-        id: customerId, // Explicitly provide the generated ID
-        full_name: newCustomer.full_name,
-        email: newCustomer.email,
-        phone: newCustomer.phone,
-        passport_number: newCustomer.passport_number,
-        passport_url: passportUrl,
-        status_id: statusId,
-        store_id: storeId
-      } as any)
-    
-    if (insertError) throw insertError
+    await createCustomer(storeId)
 
     // Success - UI Updates
     isAddModalOpen.value = false
-    newCustomer.full_name = ''
-    newCustomer.email = ''
-    newCustomer.phone = ''
-    newCustomer.passport_number = ''
-    capturedBlob.value = null
-    capturedPhoto.value = null
-    addStep.value = 1
-    stopCamera()
-    
+    resetAddCustomerForm()
+
     await fetchCustomers()
     toast.add({
       title: 'Success',
@@ -297,9 +210,18 @@ async function handleAddCustomer() {
   }
 }
 
-function confirmDelete(customer: Customer) {
+function openDeleteModal(customer: Customer) {
   customerToDelete.value = customer
   isDeleteModalOpen.value = true
+}
+
+async function deleteCustomer(customerId: string) {
+  const { error } = await client
+    .from('customers')
+    .delete()
+    .eq('id', customerId)
+  
+  if (error) throw error
 }
 
 async function handleDeleteCustomer() {
@@ -307,12 +229,7 @@ async function handleDeleteCustomer() {
   
   isDeleting.value = true
   try {
-    const { error } = await client
-      .from('customers')
-      .delete()
-      .eq('id', customerToDelete.value.id)
-    
-    if (error) throw error
+    await deleteCustomer(customerToDelete.value.id)
 
     isDeleteModalOpen.value = false
     customerToDelete.value = null
@@ -347,50 +264,29 @@ function openUpdateModal(customer: Customer) {
   isUpdateModalOpen.value = true
 }
 
+async function updateCustomer() {
+  let passportUrl = ''
+
+  // 1. Upload photo if captured (Overwrite)
+  if (capturedBlob.value) {
+    passportUrl = await uploadPassportImage(customerToUpdate.id, capturedBlob.value)
+  }
+
+  // 2. Update database
+  const { error } = await client
+    .from('customers')
+    .update(toCustomerUpdatePayload(customerToUpdate, passportUrl) as any)
+    .eq('id', customerToUpdate.id)
+  
+  if (error) throw error
+}
+
 async function handleUpdateCustomer() {
   isSubmitting.value = true
   try {
-    let passportUrl = ''
-
-    // 1. Upload photo if captured (Overwrite)
-    if (capturedBlob.value) {
-      const fileName = `${customerToUpdate.id}-passport.webp`
-      const filePath = `passports/${fileName}`
-
-      const { error: uploadError } = await client
-        .storage
-        .from('customer-passports')
-        .upload(filePath, capturedBlob.value, {
-          upsert: true,
-          contentType: 'image/jpeg'
-        })
-      
-      if (uploadError) throw uploadError
-      passportUrl = filePath
-    }
-
-    // 2. Update database
-    const updateData: any = {
-      full_name: customerToUpdate.full_name,
-      email: customerToUpdate.email,
-      phone: customerToUpdate.phone,
-      passport_number: customerToUpdate.passport_number,
-      status_id: customerToUpdate.status_id
-    }
-
-    if (passportUrl) {
-      updateData.passport_url = passportUrl
-    }
-
-    const { error } = await client
-      .from('customers')
-      .update(updateData)
-      .eq('id', customerToUpdate.id)
-    
-    if (error) throw error
+    await updateCustomer()
 
     isUpdateModalOpen.value = false
-    stopCamera()
     resetPhoto()
     await fetchCustomers()
     toast.add({
@@ -412,21 +308,16 @@ async function handleUpdateCustomer() {
 
 onMounted(() => {
   fetchCustomers()
-  fetchStatuses()
+  ensureLoaded()
 })
 
 const filteredCustomers = computed(() => {
-  const s = search.value.toLowerCase()
-  const f = statusFilter.value
-  
-  return customers.value.filter(c => {
-    const matchesSearch = c.full_name.toLowerCase().includes(s) || 
-                         (c.email && c.email.toLowerCase().includes(s))
-    
-    const matchesFilter = f === 'all' || c.status_id === f
-    
-    return matchesSearch && matchesFilter
-  })
+  const keyword = search.value.toLowerCase()
+  const filter = statusFilter.value
+
+  return customers.value.filter(c =>
+    matchesCustomerSearch(c, keyword) && matchesCustomerStatusFilter(c, filter)
+  )
 })
 </script>
 
@@ -471,7 +362,7 @@ const filteredCustomers = computed(() => {
             color="primary"
             size="md"
             class="cursor-pointer"
-            @click="isAddModalOpen = true; addStep = 1"
+            @click="openAddModal"
           />
         </div>
       </div>
@@ -502,7 +393,7 @@ const filteredCustomers = computed(() => {
               <tr 
                 v-for="c in filteredCustomers" 
                 :key="c.id" 
-                @click="selectCustomer(c)"
+                @click="handleSelectCustomer(c)"
                 :class="[
                   'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer',
                   selectedCustomerForDetail?.id === c.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
@@ -553,7 +444,7 @@ const filteredCustomers = computed(() => {
                       color="error"
                       size="xs"
                       class="cursor-pointer"
-                      @click.stop="confirmDelete(c)"
+                      @click.stop="openDeleteModal(c)"
                     />
                   </div>
                 </td>
@@ -576,130 +467,15 @@ const filteredCustomers = computed(() => {
     </main>
 
     <!-- Details Sidebar (Right Pane) -->
-    <aside
+    <CustomersDetailPane
       v-if="selectedCustomerForDetail"
-      class="w-96 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
-    >
-      <div class="p-6 flex flex-col h-full space-y-6">
-        <div class="flex items-start justify-between">
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Customer Profile</h3>
-          <UButton
-            icon="i-lucide-x"
-            variant="ghost"
-            color="neutral"
-            class="cursor-pointer"
-            @click="selectedCustomerForDetail = null"
-          />
-        </div>
-
-        <!-- Passport Image Display -->
-        <div class="flex flex-col items-center">
-          <div class="w-full aspect-[4/3] bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 mb-4 border border-slate-200 dark:border-slate-800 overflow-hidden relative shadow-sm">
-            <template v-if="selectedCustomerForDetail.passport_url">
-              <img 
-                :src="getPassportPublicUrl(selectedCustomerForDetail.passport_url)" 
-                class="w-full h-full object-cover" 
-                @error="(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Load+Error'"
-              />
-            </template>
-            <div v-else class="flex flex-col items-center gap-2">
-               <UIcon name="i-lucide-user" class="text-6xl text-slate-300" />
-               <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">No Passport Photo</p>
-            </div>
-          </div>
-          <h2 class="text-2xl font-bold text-slate-900 dark:text-white text-center">{{ selectedCustomerForDetail.full_name }}</h2>
-          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-4">{{ selectedCustomerForDetail.email }}</p>
-          
-          <UBadge
-            v-if="selectedCustomerForDetail.customer_statuses"
-            :label="selectedCustomerForDetail.customer_statuses.name"
-            :color="selectedCustomerForDetail.customer_statuses.color as any"
-            variant="subtle"
-            class="rounded-full px-4"
-          />
-        </div>
-
-        <!-- Actions -->
-        <div class="grid grid-cols-2 gap-3">
-          <UButton
-            label="Edit Info"
-            icon="i-lucide-pencil"
-            color="neutral"
-            variant="subtle"
-            block
-            class="cursor-pointer font-bold"
-            @click="openUpdateModal(selectedCustomerForDetail)"
-          />
-          <UButton
-            label="Delete"
-            icon="i-lucide-trash-2"
-            color="error"
-            variant="subtle"
-            block
-            class="cursor-pointer font-bold"
-            @click="confirmDelete(selectedCustomerForDetail)"
-          />
-        </div>
-
-        <div class="border-t border-slate-100 dark:border-slate-800 pt-6 space-y-6">
-          <!-- Details Grid -->
-          <div class="grid grid-cols-2 gap-y-4 gap-x-2">
-            <div>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Phone Number</p>
-              <p class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedCustomerForDetail.phone || 'N/A' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Passport Number</p>
-              <p class="text-sm font-mono text-blue-600 dark:text-blue-400 font-bold uppercase">{{ selectedCustomerForDetail.passport_number || 'N/A' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">Registered At</p>
-              <p class="text-sm text-slate-900 dark:text-white font-medium">{{ new Date(selectedCustomerForDetail.created_at).toLocaleDateString() }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">ID</p>
-              <p class="text-xs font-mono text-slate-400 truncate">{{ selectedCustomerForDetail.id.split('-')[0] }}...</p>
-            </div>
-          </div>
-
-          <!-- Rental History -->
-          <div class="space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-              <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <UIcon name="i-lucide-history" class="size-4" />
-                Rental History
-              </h4>
-              <UBadge :label="`${customerTransactions.length}`" color="neutral" variant="subtle" size="xs" />
-            </div>
-
-            <div v-if="isLoadingTransactions" class="flex flex-col items-center py-4 space-y-2">
-               <UIcon name="i-lucide-loader-2" class="size-5 animate-spin text-slate-400" />
-               <p class="text-[10px] text-slate-500">Loading history...</p>
-            </div>
-            <div v-else-if="customerTransactions.length === 0" class="text-center py-6 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-xl">
-               <p class="text-xs text-slate-400">No rental records found.</p>
-            </div>
-            <div v-else class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-               <div v-for="t in customerTransactions" :key="t.id" class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 transition-colors">
-                  <div class="flex items-start justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                       <UIcon :name="t.vehicles?.vehicle_categories?.icon || 'i-lucide-package'" class="size-3.5 text-blue-500" />
-                       <p class="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[120px]">{{ t.vehicles?.name }}</p>
-                    </div>
-                    <span :class="['text-[10px] px-1.5 py-0.5 rounded-full font-bold', t.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300']">
-                      {{ t.status }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between text-[10px]">
-                    <p class="text-slate-500">{{ new Date(t.start_at).toLocaleDateString() }}</p>
-                    <p class="font-bold text-blue-600 dark:text-blue-400">{{ t.price }}</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
+      :customer="selectedCustomerForDetail"
+      :transactions="customerTransactions"
+      :is-loading-transactions="isLoadingTransactions"
+      @close="closeDetailPane"
+      @edit="openUpdateModal"
+      @delete="openDeleteModal"
+    />
 
     <!-- Modals (Add, Delete, Update) -->
     <UModal v-model:open="isAddModalOpen" :title="addStep === 1 ? 'Add New Customer' : 'Take Passport Photo'" :description="addStep === 1 ? 'Register a new customer to the system.' : 'Scan or take a photo of the passport identification page.'">
@@ -724,53 +500,32 @@ const filteredCustomers = computed(() => {
 
           <div class="flex justify-end gap-3 mt-6 flex-wrap">
             <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2; startCamera()" />
+            <UButton label="Next: Passport Photo" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
             <UButton label="Register Customer" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
 
         <!-- Step 2: Camera Capture -->
         <div v-else class="space-y-6">
-          <!-- Camera Preview / Captured Photo -->
-          <div class="relative aspect-[4/3] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-inner flex items-center justify-center group">
-            <video v-show="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover shadow-xl"></video>
-            <img v-if="capturedPhoto" :src="capturedPhoto" class="w-full h-full object-cover" />
-            
-            <div v-if="isCameraLoading" class="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-               <UIcon name="i-lucide-loader-2" class="size-10 animate-spin text-white" />
-            </div>
-
-            <!-- Focus box overlay -->
-            <div v-if="!capturedPhoto" class="absolute inset-0 border-[40px] border-black/40 pointer-events-none flex items-center justify-center">
-              <div class="w-full h-full border-2 border-white/50 border-dashed rounded-lg flex items-center justify-center">
-                 <p class="text-white/70 text-[10px] font-bold uppercase tracking-widest bg-black/20 px-2 py-1 rounded">Align Passport Here</p>
-              </div>
-            </div>
+          <!-- Captured Photo Preview -->
+          <div v-if="capturedPhoto" class="relative aspect-[4/3] bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 shadow-inner">
+            <img :src="capturedPhoto" class="w-full h-full object-cover" />
+          </div>
+          <div v-else class="flex flex-col items-center gap-4 py-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+            <UIcon name="i-lucide-camera" class="size-12 text-slate-300" />
+            <p class="text-sm text-slate-500 text-center px-6">Take a photo of the passport identification page.</p>
+            <UButton
+              label="Open Camera"
+              icon="i-lucide-camera"
+              color="primary"
+              size="xl"
+              class="cursor-pointer font-bold"
+              @click="isCameraOpen = true"
+            />
           </div>
 
           <div class="flex flex-col gap-3">
-             <div v-if="!capturedPhoto" class="grid grid-cols-2 gap-3">
-               <UButton
-                 label="Capture Photo"
-                 icon="i-lucide-camera"
-                 color="primary"
-                 size="xl"
-                 block
-                 class="cursor-pointer font-bold"
-                 @click="takePhoto"
-               />
-               <UButton
-                 label="Skip and Register"
-                 variant="subtle"
-                 color="neutral"
-                 size="xl"
-                 block
-                 class="cursor-pointer"
-                 :loading="isSubmitting"
-                 @click="handleAddCustomer"
-               />
-             </div>
-             <div v-else class="grid grid-cols-2 gap-3">
+             <div v-if="capturedPhoto" class="grid grid-cols-2 gap-3">
                <UButton
                  label="Retake"
                  variant="outline"
@@ -791,19 +546,27 @@ const filteredCustomers = computed(() => {
                  @click="handleAddCustomer"
                />
              </div>
-             
+             <UButton
+               v-else
+               label="Skip and Register"
+               variant="subtle"
+               color="neutral"
+               size="xl"
+               block
+               class="cursor-pointer"
+               :loading="isSubmitting"
+               @click="handleAddCustomer"
+             />
+
              <UButton
                label="Back to Info"
                variant="ghost"
                color="neutral"
                size="sm"
                class="cursor-pointer self-center"
-               @click="addStep = 1; stopCamera()"
+               @click="addStep = 1"
              />
           </div>
-
-          <!-- Hidden canvas for processing -->
-          <canvas ref="canvasRef" class="hidden"></canvas>
         </div>
       </template>
     </UModal>
@@ -849,37 +612,16 @@ const filteredCustomers = computed(() => {
              <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-slate-900 dark:text-white">Passport Photo</span>
                 <UButton
-                  v-if="!isCapturing"
                   :label="capturedPhoto ? 'Change Photo' : 'Update Photo'"
                   icon="i-lucide-camera"
                   variant="subtle"
                   size="xs"
                   class="cursor-pointer"
-                  @click="isCapturing = true; startCamera()"
+                  @click="isCameraOpen = true"
                 />
              </div>
 
-             <!-- Photo Review / Capture Area -->
-             <div v-if="isCapturing" class="space-y-3">
-                <div class="relative aspect-square bg-slate-900 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-800 flex items-center justify-center">
-                  <video v-if="!capturedPhoto" ref="videoRef" autoplay playsinline class="w-full h-full object-cover"></video>
-                  <img v-else :src="capturedPhoto" class="w-full h-full object-cover" />
-                  <div v-if="isCameraLoading" class="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-                    <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-white" />
-                  </div>
-                </div>
-                <div class="flex gap-2">
-                   <template v-if="!capturedPhoto">
-                     <UButton label="Capture" icon="i-lucide-camera" block class="flex-1 cursor-pointer" @click="takePhoto" />
-                     <UButton label="Cancel" variant="ghost" class="cursor-pointer" @click="isCapturing = false; stopCamera()" />
-                   </template>
-                   <template v-else>
-                     <UButton label="Retake" variant="outline" block class="flex-1 cursor-pointer" @click="resetPhoto" />
-                     <UButton label="Done" variant="subtle" color="primary" class="cursor-pointer" @click="isCapturing = false; stopCamera()" />
-                   </template>
-                </div>
-             </div>
-             <div v-else-if="capturedPhoto" class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 rounded-lg">
+             <div v-if="capturedPhoto" class="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 rounded-lg">
                 <div class="size-12 rounded bg-white dark:bg-slate-800 overflow-hidden border border-green-200 dark:border-green-800 shrink-0">
                   <img :src="capturedPhoto" class="w-full h-full object-cover" />
                 </div>
@@ -904,12 +646,17 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false; stopCamera()" />
+            <UButton label="Cancel" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
             <UButton label="Update Customer" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
           </div>
         </UForm>
       </template>
     </UModal>
-    <canvas ref="canvasRef" class="hidden"></canvas>
+
+    <CameraCapture
+      v-if="isCameraOpen"
+      @capture="handleCapture"
+      @close="isCameraOpen = false"
+    />
   </div>
 </template>

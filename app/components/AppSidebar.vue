@@ -17,16 +17,7 @@ const items = computed(() => [
   { label: t('history'), icon: 'i-lucide-history', to: '/history' },
 ])
 
-// デバッグ用: 現在の権限状態をログ出力
-watch([isAdmin, staff], ([newAdmin, newStaff]) => {
-  console.log('[AppSidebar] Admin Check:', {
-    isAdmin: newAdmin,
-    username: newStaff?.username,
-    roleName: newStaff?.staff_roles?.name,
-    roleId: newStaff?.role_id
-  })
-}, { immediate: true })
-
+const howToUseItem = { label: 'How to use', icon: 'i-lucide-book-open', to: '/howtouse' }
 const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-settings', to: '/settings' }))
 </script>
 
@@ -58,10 +49,19 @@ const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-sett
       </template>
     </nav>
 
-    <!-- Footer Section (Settings) -->
-    <!-- 救済措置: isAdmin判定がNGでも、ユーザー名がadminなら表示する -->
-    <div v-if="isAdmin || staff?.username === 'admin' || staff?.staff_roles?.name === 'admin'" class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <!-- Footer Section (How to use / Settings) -->
+    <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col gap-1">
       <NuxtLink
+        :to="howToUseItem.to"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer"
+        active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-semibold"
+        inactive-class="text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+      >
+        <UIcon :name="howToUseItem.icon" class="size-5" />
+        {{ howToUseItem.label }}
+      </NuxtLink>
+      <NuxtLink
+        v-if="isAdmin"
         :to="settingItem.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer group"
         active-class="bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 font-semibold"
