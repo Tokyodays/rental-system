@@ -1,5 +1,4 @@
-/** 貸出開始時に transactions へ insert するペイロード */
-export interface LendingTransactionInsert {
+export interface CompleteLendingParams {
   vehicle_id: string
   customer_id: string
   staff_id: string
@@ -8,39 +7,40 @@ export interface LendingTransactionInsert {
   end_at: string
   start_mileage: number
   price: number
-  status: 'Active'
 }
 
 /**
- * 貸出・返却処理の DB 書き込み（1ステップ1関数）。
- * いずれも失敗時は例外を投げる（呼び出し側で toast 表示）。
+ * 貸出・返却処理の DB 書き込み。
+ * 各関数は Supabase RPC を呼び出し、3 操作を 1 トランザクションで実行する。
+ * 失敗時は例外を投げる（呼び出し側で toast 表示）。
  */
 export const useRentalTransactions = () => {
   const supabase = useSupabaseClient()
 
-  async function createLendingTransaction(payload: LendingTransactionInsert) {
-    const { error: rentalError } = await (supabase.from('transactions').insert(payload as any) as any)
-    if (rentalError) throw rentalError
+  async function completeLending(params: CompleteLendingParams): Promise<string> {
+    const { data, error } = await (supabase.rpc('complete_lending', {
+      p_vehicle_id:    params.vehicle_id,
+      p_customer_id:   params.customer_id,
+      p_staff_id:      params.staff_id,
+      p_store_id:      params.store_id,
+      p_start_at:      params.start_at,
+      p_end_at:        params.end_at,
+      p_start_mileage: params.start_mileage,
+      p_price:         params.price,
+    }) as any)
+    if (error) throw error
+    return data as string
   }
 
-  async function updateTransactionToCompleted(transactionId: string, endAt: string) {
-    const { error: rError } = await ((supabase.from('transactions') as any)
-      .update({ status: 'Completed', end_at: endAt })
-      .eq('id', transactionId) as any)
-    if (rError) throw rError
+  async function completeReturn(transactionId: string, endAt: string, vehicleId: string, customerId: string): Promise<void> {
+    const { error } = await (supabase.rpc('complete_return', {
+      p_transaction_id: transactionId,
+      p_end_at:         endAt,
+      p_vehicle_id:     vehicleId,
+      p_customer_id:    customerId,
+    }) as any)
+    if (error) throw error
   }
 
-  async function updateVehicleStatus(vehicleId: string, statusId: string | undefined) {
-    const { error: vehicleError } = await (supabase.from('vehicles') as any)
-      .update({ status_id: statusId }).eq('id', vehicleId)
-    if (vehicleError) throw new Error(`Vehicle status update failed: ${vehicleError.message}`)
-  }
-
-  async function updateCustomerStatus(customerId: string, statusId: string | undefined) {
-    const { error: customerError } = await (supabase.from('customers') as any)
-      .update({ status_id: statusId }).eq('id', customerId)
-    if (customerError) throw new Error(`Customer status update failed: ${customerError.message}`)
-  }
-
-  return { createLendingTransaction, updateTransactionToCompleted, updateVehicleStatus, updateCustomerStatus }
+  return { completeLending, completeReturn }
 }

@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import type { RentalVehicle } from '~/utils/rentalVehicles'
-import type { LendingTransactionInsert } from '~/composables/useRentalTransactions'
-
 const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 const { formatPrice } = useCurrency()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
-const { createLendingTransaction, updateVehicleStatus, updateCustomerStatus } = useRentalTransactions()
+const { completeLending } = useRentalTransactions()
 
 const currentStep = ref(1) // 1: Customer, 2: Vehicle Scan, 3: Return Date, 4: Price Input, 5: Confirmation
 const isLoading = ref(false)
@@ -144,41 +142,26 @@ const isPriceValid = computed(() => price.value >= 0)
 // Step 5: Confirmation & Process
 const isSubmitting = ref(false)
 
-/** 入力内容から transactions への insert ペイロードを組み立てる */
-function buildLendingTransactionPayload(staffId: string, storeId: string): LendingTransactionInsert {
-  return {
-    vehicle_id: selectedVehicle.value.id,
-    customer_id: selectedCustomer.value.id,
-    staff_id: staffId,
-    store_id: storeId,
-    start_at: new Date().toISOString(),
-    end_at: new Date(formattedReturnAt.value).toISOString(),
-    start_mileage: selectedVehicle.value.last_mileage || 0,
-    price: price.value,
-    status: 'Active'
-  }
-}
-
 async function handleCompleteLending() {
   if (!selectedCustomer.value || !selectedVehicle.value) return
   isSubmitting.value = true
-  
+
   try {
-    // 1. Get Status IDs
-    await ensureLoaded()
-    const lentStatusId = vehicleStatusId('Lent')
-    const rentingStatusId = customerStatusId('Renting')
-    
-    // 1.5 Validate Staff and Store Info
     if (!currentStaff.value?.id || !currentStaff.value?.store_id) {
       toast.add({ title: 'Authentication Error', description: 'Could not identify your store. Please try logging in again.', color: 'error' })
       return
     }
 
-    // 2. Insert Transaction → 3. Update Vehicle Status → 4. Update Customer Status
-    await createLendingTransaction(buildLendingTransactionPayload(currentStaff.value.id, currentStaff.value.store_id))
-    await updateVehicleStatus(selectedVehicle.value.id, lentStatusId)
-    await updateCustomerStatus(selectedCustomer.value.id, rentingStatusId)
+    await completeLending({
+      vehicle_id:    selectedVehicle.value.id,
+      customer_id:   selectedCustomer.value.id,
+      staff_id:      currentStaff.value.id,
+      store_id:      currentStaff.value.store_id,
+      start_at:      new Date().toISOString(),
+      end_at:        new Date(formattedReturnAt.value).toISOString(),
+      start_mileage: selectedVehicle.value.last_mileage || 0,
+      price:         price.value,
+    })
 
     toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
     router.push('/dashboard')
