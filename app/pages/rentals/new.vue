@@ -4,6 +4,7 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
+const { t, tName } = useI18n()
 const { formatPrice } = useCurrency()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
 const { completeLending } = useRentalTransactions()
@@ -61,7 +62,7 @@ const {
   vehicleSearch,
   filteredVehicles,
   fetchVehicles: fetchAvailableVehicles
-} = useRentalVehicles('Available', 'Could not load available vehicles.')
+} = useRentalVehicles('Available', t('rent.load_available_failed'))
 
 function handleSelectVehicle(vehicle: RentalVehicle) {
   selectedVehicle.value = vehicle
@@ -85,10 +86,10 @@ async function identifyVehicleByCode(code: string) {
       selectedVehicle.value = data
       currentStep.value = 3
     } else {
-      toast.add({ title: 'Identification Failed', description: 'Vehicle not found or not available.', color: 'error' })
+      toast.add({ title: t('lend.s2.id_failed'), description: t('lend.s2.id_failed_desc'), color: 'error' })
     }
   } catch (e: any) {
-    toast.add({ title: 'Error', description: 'Could not identify vehicle.', color: 'error' })
+    toast.add({ title: t('error'), description: t('lend.s2.id_error'), color: 'error' })
   } finally {
     isIdentifying.value = false
   }
@@ -115,7 +116,7 @@ async function handleSimulateScan() {
     if (vehicle) {
       await identifyVehicleByCode(vehicle.code)
     } else {
-      toast.add({ title: 'Scan Failed', description: 'No available vehicle found.', color: 'error' })
+      toast.add({ title: t('lend.s2.scan_failed'), description: t('lend.s2.scan_failed_desc'), color: 'error' })
     }
   } finally {
     isScanning.value = false
@@ -131,7 +132,7 @@ const formattedReturnAt = computed(() => {
   return `${returnDate.value} ${returnTime.value}`
 })
 
-const durationText = computed(() => toLendingDurationText(formattedReturnAt.value, new Date()))
+const durationText = computed(() => toLendingDurationText(formattedReturnAt.value, new Date(), t))
 
 const isPastDate = computed(() => isReturnAtNotInFuture(formattedReturnAt.value, new Date()))
 
@@ -148,7 +149,7 @@ async function handleCompleteLending() {
 
   try {
     if (!currentStaff.value?.id || !currentStaff.value?.store_id) {
-      toast.add({ title: 'Authentication Error', description: 'Could not identify your store. Please try logging in again.', color: 'error' })
+      toast.add({ title: t('lend.toast.auth'), description: t('lend.toast.auth_desc'), color: 'error' })
       return
     }
 
@@ -163,10 +164,10 @@ async function handleCompleteLending() {
       price:         price.value,
     })
 
-    toast.add({ title: 'Lending Success', description: 'Transaction completed successfully.', color: 'success' })
+    toast.add({ title: t('lend.toast.success'), description: t('lend.toast.success_desc'), color: 'success' })
     router.push('/dashboard')
   } catch (e: any) {
-    toast.add({ title: 'Lending Failed', description: e.message, color: 'error' })
+    toast.add({ title: t('lend.toast.failed'), description: e.message, color: 'error' })
   } finally {
     isSubmitting.value = false
   }
@@ -189,7 +190,7 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-4">
         <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" class="cursor-pointer" @click="handleBack" />
-        <h1 class="text-2xl font-bold">New Lending</h1>
+        <h1 class="text-2xl font-bold">{{ t('lend.title') }}</h1>
       </div>
       
       <!-- Progress Indicator -->
@@ -203,14 +204,14 @@ onMounted(() => {
     <!-- Step 1: Customer Selection -->
     <div v-if="currentStep === 1" class="space-y-4">
       <div class="flex flex-col gap-1">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Step 1: Select Customer</h2>
-        <p class="text-slate-500 text-sm">Only active customers are shown.</p>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white">{{ t('lend.s1.title') }}</h2>
+        <p class="text-slate-500 text-sm">{{ t('lend.s1.desc') }}</p>
       </div>
 
       <UInput
         v-model="customerSearch"
         icon="i-lucide-search"
-        placeholder="Search customers by name or email..."
+        :placeholder="t('lend.s1.search')"
         size="lg"
         class="w-full"
       />
@@ -218,7 +219,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-if="isLoading" class="col-span-full py-12 flex flex-col items-center justify-center text-slate-500">
           <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mb-2" />
-          <p>Loading customers...</p>
+          <p>{{ t('lend.s1.loading') }}</p>
         </div>
         <UCard
           v-for="customer in filteredCustomers"
@@ -230,13 +231,13 @@ onMounted(() => {
             <UAvatar :alt="customer.full_name" size="md" />
             <div class="flex-1">
               <p class="font-bold text-slate-900 dark:text-white">{{ customer.full_name }}</p>
-              <p class="text-xs text-slate-500">{{ customer.email || 'No email' }}</p>
+              <p class="text-xs text-slate-500">{{ customer.email || t('lend.s1.no_email') }}</p>
             </div>
             <UIcon name="i-lucide-chevron-right" class="text-slate-400" />
           </div>
         </UCard>
         <div v-if="filteredCustomers.length === 0 && !isLoading" class="col-span-full py-12 text-center text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-          No active customers found.
+          {{ t('lend.s1.empty') }}
         </div>
       </div>
     </div>
@@ -244,22 +245,22 @@ onMounted(() => {
     <!-- Step 2: Vehicle Scan -->
     <div v-if="currentStep === 2" class="space-y-8">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 2: Select Vehicle</h2>
-        <p class="text-slate-500">Choose a vehicle from the list, scan QR, or enter ID manually.</p>
+        <h2 class="text-2xl font-bold">{{ t('lend.s2.title') }}</h2>
+        <p class="text-slate-500">{{ t('lend.s2.desc') }}</p>
       </div>
 
       <!-- Available Vehicle List -->
       <div class="space-y-4">
         <div class="flex items-center gap-3">
           <UIcon name="i-lucide-list" class="size-5 text-blue-600" />
-          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Available Vehicles</h3>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">{{ t('lend.s2.list_title') }}</h3>
           <UBadge :label="`${availableVehicles.length}`" color="info" variant="subtle" size="sm" />
         </div>
 
         <UInput
           v-model="vehicleSearch"
           icon="i-lucide-search"
-          placeholder="Search by name, code, or category..."
+          :placeholder="t('rent.search_vehicle_ph')"
           size="lg"
           class="w-full"
         />
@@ -267,7 +268,7 @@ onMounted(() => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-1">
           <div v-if="isLoadingVehicles" class="col-span-full py-8 flex flex-col items-center justify-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="size-8 animate-spin mb-2" />
-            <p>Loading vehicles...</p>
+            <p>{{ t('rent.loading_vehicles') }}</p>
           </div>
           <UCard
             v-for="vehicle in filteredVehicles"
@@ -284,14 +285,14 @@ onMounted(() => {
                 <div class="flex items-center gap-2 text-xs text-slate-500">
                   <span class="font-mono">{{ vehicle.code }}</span>
                   <span>•</span>
-                  <span>{{ vehicle.vehicle_categories?.name || 'Unknown' }}</span>
+                  <span>{{ tName('category', vehicle.vehicle_categories?.name) }}</span>
                 </div>
               </div>
               <UIcon name="i-lucide-chevron-right" class="text-slate-400 shrink-0" />
             </div>
           </UCard>
           <div v-if="filteredVehicles.length === 0 && !isLoadingVehicles" class="col-span-full py-8 text-center text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-            No available vehicles found.
+            {{ t('lend.s2.empty') }}
           </div>
         </div>
       </div>
@@ -299,7 +300,7 @@ onMounted(() => {
       <!-- Divider -->
       <div class="flex items-center gap-4 py-2">
         <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">OR</span>
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ t('or') }}</span>
         <div class="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
       </div>
 
@@ -312,7 +313,7 @@ onMounted(() => {
              <UIcon name="i-lucide-qr-code" :class="['size-12 text-slate-800', isScanning ? 'animate-pulse' : '']" />
            </div>
            <UButton
-             label="Simulate QR Scan"
+             :label="t('rent.simulate_scan')"
              icon="i-lucide-camera"
              size="xl"
              block
@@ -325,17 +326,17 @@ onMounted(() => {
         <!-- Manual Entry Section -->
         <div class="space-y-6">
           <div class="space-y-4">
-            <UFormField label="Vehicle ID (Code)" name="manualCode">
+            <UFormField :label="t('rent.vehicle_id_code')" name="manualCode">
               <UInput
                 v-model="manualVehicleCode"
-                placeholder="e.g. B-HONDA-001"
+                :placeholder="t('rent.vehicle_id_ph')"
                 size="xl"
                 icon="i-lucide-keyboard"
                 class="bg-white dark:bg-slate-900"
               />
             </UFormField>
             <UButton
-              label="Identify Vehicle"
+              :label="t('lend.s2.identify')"
               color="primary"
               size="xl"
               block
@@ -349,7 +350,7 @@ onMounted(() => {
           <div class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl">
             <p class="text-xs text-slate-500 leading-relaxed">
               <UIcon name="i-lucide-info" class="inline-block mr-1" />
-              Ensure the vehicle is available for lending before identifying.
+              {{ t('lend.s2.hint') }}
             </p>
           </div>
         </div>
@@ -359,13 +360,13 @@ onMounted(() => {
     <!-- Step 3: Return Date & Time Selection -->
     <div v-if="currentStep === 3" class="space-y-6 flex flex-col items-center">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold font-heading">Step 3: Return Schedule</h2>
-        <p class="text-slate-500">When is the customer planning to return the vehicle?</p>
+        <h2 class="text-2xl font-bold font-heading">{{ t('lend.s3.title') }}</h2>
+        <p class="text-slate-500">{{ t('lend.s3.desc') }}</p>
       </div>
 
       <UCard class="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
         <div class="p-6 space-y-6">
-          <UFormField label="Return Date" name="returnDate">
+          <UFormField :label="t('lend.s3.date')" name="returnDate">
             <UInput
               v-model="returnDate"
               type="date"
@@ -374,7 +375,7 @@ onMounted(() => {
             />
           </UFormField>
 
-          <UFormField label="Return Time" name="returnTime">
+          <UFormField :label="t('lend.s3.time')" name="returnTime">
             <UInput
               v-model="returnTime"
               type="time"
@@ -387,7 +388,7 @@ onMounted(() => {
             <div class="flex items-center gap-3 mb-3">
               <UIcon :name="isPastDate ? 'i-lucide-alert-triangle' : 'i-lucide-calendar-clock'" :class="['size-6', isPastDate ? 'text-red-500' : 'text-blue-600']" />
               <p :class="['text-xs font-bold uppercase tracking-wider', isPastDate ? 'text-red-500' : 'text-blue-600']">
-                {{ isPastDate ? 'Invalid Return Schedule' : 'Scheduled Return' }}
+                {{ isPastDate ? t('lend.s3.invalid') : t('lend.s3.scheduled') }}
               </p>
             </div>
             <div class="space-y-3">
@@ -397,13 +398,13 @@ onMounted(() => {
               <div :class="['h-px w-full', isPastDate ? 'bg-red-200 dark:bg-red-700' : 'bg-blue-200 dark:bg-blue-700']"></div>
               <p :class="['font-bold text-xl flex items-center gap-2', isPastDate ? 'text-red-500' : 'text-blue-600 dark:text-blue-400']">
                 <UIcon :name="isPastDate ? 'i-lucide-x-circle' : 'i-lucide-timer'" class="size-6" />
-                {{ isPastDate ? 'Return date must be in the future' : durationText }}
+                {{ isPastDate ? t('lend.s3.must_future') : durationText }}
               </p>
             </div>
           </div>
 
           <UButton
-            label="Continue to Price Input"
+            :label="t('lend.s3.continue')"
             color="primary"
             size="xl"
             block
@@ -418,13 +419,13 @@ onMounted(() => {
     <!-- Step 4: Price Input -->
     <div v-if="currentStep === 4" class="space-y-6 flex flex-col items-center">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold font-heading">Step 4: Payment Amount</h2>
-        <p class="text-slate-500">Enter the rental fee for this transaction.</p>
+        <h2 class="text-2xl font-bold font-heading">{{ t('lend.s4.title') }}</h2>
+        <p class="text-slate-500">{{ t('lend.s4.desc') }}</p>
       </div>
 
       <UCard class="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
         <div class="p-6 space-y-6">
-          <UFormField label="Rental Price" name="price">
+          <UFormField :label="t('lend.s4.price')" name="price">
             <UInput
               v-model="price"
               type="number"
@@ -435,7 +436,7 @@ onMounted(() => {
           </UFormField>
 
           <UButton
-            label="Continue to Confirmation"
+            :label="t('lend.s4.continue')"
             color="primary"
             size="xl"
             block
@@ -450,14 +451,14 @@ onMounted(() => {
     <!-- Step 5: Confirmation -->
     <div v-if="currentStep === 5 && selectedCustomer && selectedVehicle" class="space-y-6">
       <div class="text-center space-y-2">
-        <h2 class="text-2xl font-bold">Step 5: Confirm Transaction</h2>
-        <p class="text-slate-500">Please review the lending details below.</p>
+        <h2 class="text-2xl font-bold">{{ t('lend.s5.title') }}</h2>
+        <p class="text-slate-500">{{ t('lend.s5.desc') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Customer Details -->
         <UCard class="border-slate-200 dark:border-slate-800 shadow-sm">
-          <template #header><p class="font-bold">Customer</p></template>
+          <template #header><p class="font-bold">{{ t('rent.customer') }}</p></template>
           <div class="flex items-center gap-4">
             <UAvatar :alt="selectedCustomer.full_name" size="lg" />
             <div>
@@ -469,7 +470,7 @@ onMounted(() => {
 
         <!-- Vehicle Details -->
         <UCard class="border-slate-200 dark:border-slate-800 shadow-sm">
-          <template #header><p class="font-bold">Vehicle</p></template>
+          <template #header><p class="font-bold">{{ t('rent.vehicle') }}</p></template>
           <div class="flex items-center gap-4">
             <div class="size-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-500">
                <UIcon :name="selectedVehicle.vehicle_categories?.icon || 'i-lucide-package'" class="size-8" />
@@ -489,7 +490,7 @@ onMounted(() => {
                 <UIcon name="i-lucide-calendar-check" class="size-6" />
               </div>
               <div class="flex-1">
-                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Return Schedule</p>
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.schedule') }}</p>
                 <p class="text-lg font-bold text-slate-900 dark:text-white">{{ formattedReturnAt }}</p>
                 <div class="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
                 <p class="text-lg font-bold text-blue-600 flex items-center gap-2">
@@ -498,7 +499,7 @@ onMounted(() => {
                 </p>
               </div>
             </div>
-            <UButton label="Change" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 3" />
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 3" />
           </div>
         </UCard>
 
@@ -510,18 +511,18 @@ onMounted(() => {
                 <UIcon name="i-lucide-banknote" class="size-6" />
               </div>
               <div class="flex-1">
-                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Payment Amount</p>
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.amount') }}</p>
                 <p class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(price) }}</p>
               </div>
             </div>
-            <UButton label="Change" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
           </div>
         </UCard>
       </div>
 
       <div class="flex flex-col gap-4 items-center pt-8">
         <UButton
-          label="Start Lending Now"
+          :label="t('lend.s5.start')"
           size="xl"
           block
           color="primary"
@@ -530,7 +531,7 @@ onMounted(() => {
           @click="handleCompleteLending"
         />
         <UButton
-          label="Cancel and Restart"
+          :label="t('lend.s5.restart')"
           variant="ghost"
           color="neutral"
           class="cursor-pointer"

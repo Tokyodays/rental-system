@@ -1153,3 +1153,68 @@ test.describe('User Management & Data Integrity', () => {
     await expect(page).toHaveURL('/login')
   })
 })
+
+// ============================================================
+// Internationalization (en / th / lo / vi / ms)
+// ============================================================
+test.describe('Internationalization', () => {
+  // ランディングページ右上のプルダウンで全5言語に切り替えられる
+  const LANDING_HERO: { code: string, lang: string, hero: string }[] = [
+    { code: 'th', lang: 'th', hero: 'ธุรกิจเช่ายานพาหนะของคุณ' },
+    { code: 'lo', lang: 'lo', hero: 'ທຸລະກິດໃຫ້ເຊົ່າພາຫະນະຂອງທ່ານ' },
+    { code: 'vi', lang: 'vi', hero: 'việc kinh doanh cho thuê của bạn' },
+    { code: 'ms', lang: 'ms', hero: 'perniagaan penyewaan anda' },
+    { code: 'en', lang: 'en', hero: 'rental business' }
+  ]
+
+  test('ランディングページの言語プルダウンで5言語に切り替わる', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+
+    for (const { code, lang, hero } of LANDING_HERO) {
+      await page.getByTestId('landing-lang-toggle').click()
+      await page.getByTestId(`landing-lang-${code}`).click()
+      await expect(page.locator('h1').first()).toContainText(hero)
+      await expect(page.locator('html')).toHaveAttribute('lang', lang)
+    }
+  })
+
+  test('ランディングページで選んだ言語はリロード後も保持される', async ({ page }) => {
+    await page.goto('/')
+    await page.waitForLoadState('networkidle')
+    await page.getByTestId('landing-lang-toggle').click()
+    await page.getByTestId('landing-lang-th').click()
+    await expect(page.locator('h1').first()).toContainText('ธุรกิจเช่ายานพาหนะของคุณ')
+
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await expect(page.locator('h1').first()).toContainText('ธุรกิจเช่ายานพาหนะของคุณ')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'th')
+  })
+
+  test('設定画面の言語切替でダッシュボード全体が切り替わる（ラオス語・タイ語）', async ({ page }) => {
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    try {
+      await page.getByText('ພາສາລາວ').click()
+      await expect(page.locator('aside').first()).toContainText('ແດຊບອດ')
+      await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toContainText('ຕັ້ງຄ່າ')
+
+      await page.getByText('ภาษาไทย').click()
+      await expect(page.locator('aside').first()).toContainText('แดชบอร์ด')
+
+      // 他ページにも反映される
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await expect(page.getByRole('button', { name: 'เพิ่มยานพาหนะ' })).toBeVisible()
+    } finally {
+      // 店舗のデフォルト言語が他のテストに影響しないよう必ず English に戻す
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await page.getByText('English').click()
+      await expect(page.locator('aside').first()).toContainText('Dashboard')
+    }
+  })
+})

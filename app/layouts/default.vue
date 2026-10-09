@@ -4,17 +4,19 @@ const isSidebarOpen = ref(false)
 const { appEnv } = useRuntimeConfig().public
 const isDev = appEnv === 'development'
 
+const { t } = useI18n()
+
 const pageTitle = computed(() => {
   const path = route.path
-  if (path === '/dashboard') return 'Dashboard Overview'
-  if (path.startsWith('/vehicles')) return 'Vehicle List'
-  if (path.startsWith('/rentals/new')) return 'Lending Transaction'
-  if (path.startsWith('/rentals/return')) return 'Return Transaction'
-  if (path.startsWith('/customers')) return 'Customer Management'
-  if (path.startsWith('/history')) return 'Transaction History'
-  if (path.startsWith('/settings')) return 'Settings'
-  if (path.startsWith('/howtouse')) return 'How to use'
-  return 'Rental System'
+  if (path === '/dashboard') return t('title.dashboard')
+  if (path.startsWith('/vehicles')) return t('title.vehicles')
+  if (path.startsWith('/rentals/new')) return t('title.lending')
+  if (path.startsWith('/rentals/return')) return t('title.return')
+  if (path.startsWith('/customers')) return t('title.customers')
+  if (path.startsWith('/history')) return t('title.history')
+  if (path.startsWith('/settings')) return t('settings')
+  if (path.startsWith('/howtouse')) return t('howtouse')
+  return t('title.app')
 })
 </script>
 
@@ -22,7 +24,7 @@ const pageTitle = computed(() => {
   <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-[sans-serif]">
     <!-- Dev environment banner -->
     <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide shrink-0">
-      🔧 DEVELOPMENT ENVIRONMENT
+      {{ t('dev_banner') }}
     </div>
     <div class="flex flex-1 min-h-0">
     <!-- Sidebar -->

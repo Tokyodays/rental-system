@@ -16,9 +16,9 @@ const { t } = useI18n()
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) {
-    toast.add({ title: 'Logout Failed', description: error.message, color: 'error' })
+    toast.add({ title: t('logout_failed'), description: error.message, color: 'error' })
   } else {
-    toast.add({ title: 'Logged Out', description: 'You have been successfully logged out.', color: 'success' })
+    toast.add({ title: t('logged_out'), description: t('logged_out_desc'), color: 'success' })
     await router.push('/login')
   }
 }
