@@ -10,6 +10,7 @@ const emit = defineEmits<{
 
 const { uploadImage, deleteImageFromStorage, isUploading } = useVehicleImages()
 const toast = useToast()
+const { t } = useI18n()
 
 const tempVehicleId = ref(props.vehicleId || `temp-${Date.now()}`)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -24,8 +25,8 @@ const handleFileChange = async (event: Event) => {
 
   if (props.modelValue.length >= 5) {
     toast.add({
-      title: '上限に達しました',
-      description: '写真は最大5枚まで登録可能です。',
+      title: t('photo.limit'),
+      description: t('photo.limit_desc'),
       color: 'error'
     })
     return
@@ -51,7 +52,7 @@ const processAndUpload = async (file: File) => {
     emit('update:modelValue', [...props.modelValue, url])
   } catch (error: any) {
     toast.add({
-      title: 'アップロード失敗',
+      title: t('photo.upload_failed'),
       description: error.message,
       color: 'error'
     })
@@ -81,7 +82,7 @@ const openFilePicker = () => {
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        車両の写真 ({{ modelValue.length }}/5)
+        {{ t('photo.label', { n: modelValue.length }) }}
       </label>
       <div class="flex gap-2">
         <UButton
@@ -90,7 +91,7 @@ const openFilePicker = () => {
           size="xs"
           variant="soft"
           icon="i-lucide-camera"
-          label="写真を撮影"
+          :label="t('photo.take')"
           :loading="isUploading"
           @click="isCameraOpen = true"
         />
@@ -100,7 +101,7 @@ const openFilePicker = () => {
           size="xs"
           variant="ghost"
           icon="i-lucide-image"
-          label="ファイル選択"
+          :label="t('photo.choose_file')"
           @click="openFilePicker"
         />
       </div>
@@ -146,7 +147,7 @@ const openFilePicker = () => {
         @click.prevent="isCameraOpen = true"
       >
         <UIcon name="i-lucide-plus" class="w-6 h-6" />
-        <span class="text-[10px] mt-1">追加</span>
+        <span class="text-[10px] mt-1">{{ t('photo.add') }}</span>
       </button>
     </div>
   </div>

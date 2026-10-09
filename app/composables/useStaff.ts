@@ -63,7 +63,7 @@ export const useStaff = () => {
     try {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, username, store_id, role_id, staff_roles(name), stores(id, name, address, currency_id, currency(id, currency_text, currency_symbol))')
+        .select('id, username, store_id, role_id, staff_roles(name), stores(id, name, address, currency_id, default_locale, currency(id, currency_text, currency_symbol))')
         .eq('id', uid)
         .maybeSingle()
 
