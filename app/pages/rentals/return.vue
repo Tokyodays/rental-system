@@ -105,17 +105,17 @@ async function fetchAnyActiveRentalVehicleCode(): Promise<string | undefined> {
 
 async function handleSimulateScan() {
   isScanning.value = true
-  await waitForSimulatedScan()
-  
-  // For simulation, find ANY active rental vehicle code
-  const vehicleCode = await fetchAnyActiveRentalVehicleCode()
-
-  if (vehicleCode) {
-    await identifyVehicleForReturn(vehicleCode)
-  } else {
-    toast.add({ title: 'Scan Failed', description: 'No active rentals found to simulate return.', color: 'error' })
+  try {
+    await waitForSimulatedScan()
+    const vehicleCode = await fetchAnyActiveRentalVehicleCode()
+    if (vehicleCode) {
+      await identifyVehicleForReturn(vehicleCode)
+    } else {
+      toast.add({ title: 'Scan Failed', description: 'No active rentals found to simulate return.', color: 'error' })
+    }
+  } finally {
+    isScanning.value = false
   }
-  isScanning.value = false
 }
 
 // Step 2: Information Display & Process

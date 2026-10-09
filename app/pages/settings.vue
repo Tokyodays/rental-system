@@ -45,7 +45,7 @@ const { locale, t, availableLocales } = useI18n()
 async function fetchStore(storeId: string) {
   const { data: storeData } = await supabase
     .from('stores')
-    .select('id, name, address, currency_id')
+    .select('id, name, address, currency_id, default_locale')
     .eq('id', storeId)
     .single() as any
 
