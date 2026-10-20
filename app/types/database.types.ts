@@ -271,6 +271,7 @@ export type Database = {
           id: string
           key_handed_over: boolean
           price: number | null
+          returned_at: string | null
           staff_id: string | null
           start_at: string | null
           start_mileage: number | null
@@ -288,6 +289,7 @@ export type Database = {
           id?: string
           key_handed_over?: boolean
           price?: number | null
+          returned_at?: string | null
           staff_id?: string | null
           start_at?: string | null
           start_mileage?: number | null
@@ -305,6 +307,7 @@ export type Database = {
           id?: string
           key_handed_over?: boolean
           price?: number | null
+          returned_at?: string | null
           staff_id?: string | null
           start_at?: string | null
           start_mileage?: number | null

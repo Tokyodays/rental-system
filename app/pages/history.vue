@@ -37,11 +37,11 @@ const transactionEvents = computed(() => {
     vehicle: r.vehicles,
     customer: r.customers,
     lendingTime: r.start_at,
-    returnedTime: r.status === 'Completed' ? r.end_at : null,
-    duration: r.status === 'Completed' && r.end_at ? calculateDurationText(r.start_at, r.end_at) : null,
+    returnedTime: r.status === 'Completed' ? r.returned_at : null,
+    duration: r.status === 'Completed' && r.returned_at ? calculateDurationText(r.start_at, r.returned_at) : null,
     price: r.price,
     status: r.status,
-    expectedReturnTime: r.end_at // end_at stores the expected return date for active rentals
+    expectedReturnTime: r.end_at // end_at は返却予定日時（返却後も上書きされない）
   })).sort((a, b) => new Date(b.lendingTime).getTime() - new Date(a.lendingTime).getTime())
 })
 

@@ -39,10 +39,10 @@ export const useRentalTransactions = () => {
     return data as string
   }
 
-  async function completeReturn(transactionId: string, endAt: string, vehicleId: string, customerId: string): Promise<void> {
+  async function completeReturn(transactionId: string, returnedAt: string, vehicleId: string, customerId: string): Promise<void> {
     const { error } = await (supabase.rpc('complete_return', {
       p_transaction_id: transactionId,
-      p_end_at:         endAt,
+      p_end_at:         returnedAt, // DB 側で returned_at に保存される
       p_vehicle_id:     vehicleId,
       p_customer_id:    customerId,
     }) as any)
