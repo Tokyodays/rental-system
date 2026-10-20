@@ -694,6 +694,25 @@ test.describe('Navigation & Layout', () => {
     await expect(page.getByText('Step 1: Identify Vehicle')).toBeVisible()
     await expect(page.getByText('Currently Lent Vehicles')).toBeVisible()
   })
+
+  test('トップバーの為替リンクが OANDA を別ウィンドウで開く', async ({ page, context }) => {
+    // 外部サイトには実際にアクセスしない
+    await context.route('https://www.oanda.com/**', route => route.fulfill({ body: 'stub' }))
+
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    const link = page.getByRole('banner').getByRole('link', { name: 'Currency Converter' })
+    await expect(link).toHaveAttribute('href', 'https://www.oanda.com/currency-converter/')
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', /noopener/)
+
+    const popupPromise = context.waitForEvent('page')
+    await link.click()
+    const popup = await popupPromise
+    await expect(popup).toHaveURL('https://www.oanda.com/currency-converter/')
+    await expect(page).toHaveURL('/dashboard')
+  })
 })
 
 // ============================================================
