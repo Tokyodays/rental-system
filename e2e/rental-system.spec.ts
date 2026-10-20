@@ -1,4 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+import { toInternalEmail } from '../shared/constants/auth'
 
 /**
  * E2E Tests for Rental System
@@ -458,11 +460,29 @@ test.describe('Return Flow', () => {
     await expect(page.getByText('Summary')).toBeVisible()
     await expect(page.getByText('Schedule Status')).toBeVisible()
 
+    // 返却する取引の id を RPC リクエストから取得する
+    const returnRequest = page.waitForRequest(req => req.url().includes('/rpc/complete_return'))
+
     // Complete Return
     await page.getByRole('button', { name: 'Complete Return Process' }).click()
+    const transactionId = (await returnRequest).postDataJSON().p_transaction_id as string
 
     // 成功時にダッシュボードへリダイレクト
     await expect(page).toHaveURL('/dashboard', { timeout: 15_000 })
+
+    // 返却予定日時（end_at）は残り、実際の返却日時は returned_at に入る
+    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
+    expect(authError).toBeNull()
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('status, end_at, returned_at')
+      .eq('id', transactionId)
+      .single()
+    expect(tx?.status).toBe('Completed')
+    expect(tx?.returned_at).toBeTruthy()
+    expect(tx?.end_at).toBeTruthy()
+    expect(tx?.end_at).not.toBe(tx?.returned_at)
   })
 })
 

@@ -76,17 +76,17 @@ async function fetchDashboardData() {
         })
       }
       
-      // Check end_at for 'Return' event
-      if (r.status === 'Completed' && r.end_at) {
-        const endAt = new Date(r.end_at)
-        if (endAt >= today) transactionCountToday++
-        
+      // Check returned_at for 'Return' event
+      if (r.status === 'Completed' && r.returned_at) {
+        const returnedAt = new Date(r.returned_at)
+        if (returnedAt >= today) transactionCountToday++
+
         events.push({
           id: `${r.id}-R`,
           item: r.vehicles?.name || '',
           user: r.customers?.full_name || '',
           action: 'Return',
-          timeObj: endAt,
+          timeObj: returnedAt,
           status: 'Completed',
           statusColor: 'green'
         })
