@@ -5,7 +5,7 @@ const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 const { t, tName } = useI18n()
-const { formatPrice } = useCurrency()
+const { formatPrice, currencyLabel } = useCurrency()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
 const { completeLending } = useRentalTransactions()
 
@@ -139,6 +139,10 @@ const isPastDate = computed(() => isReturnAtNotInFuture(formattedReturnAt.value,
 // Step 4: Price Input
 const price = ref(0)
 const isPriceValid = computed(() => price.value >= 0)
+const helmetLent = ref(false)
+const keyHandedOver = ref(false)
+// 通貨が円・ドル等まちまちなので、数値ではなく自由入力
+const deposit = ref('')
 
 // Step 5: Confirmation & Process
 const isSubmitting = ref(false)
@@ -154,14 +158,17 @@ async function handleCompleteLending() {
     }
 
     await completeLending({
-      vehicle_id:    selectedVehicle.value.id,
-      customer_id:   selectedCustomer.value.id,
-      staff_id:      currentStaff.value.id,
-      store_id:      currentStaff.value.store_id,
-      start_at:      new Date().toISOString(),
-      end_at:        new Date(formattedReturnAt.value).toISOString(),
-      start_mileage: selectedVehicle.value.last_mileage || 0,
-      price:         price.value,
+      vehicle_id:      selectedVehicle.value.id,
+      customer_id:     selectedCustomer.value.id,
+      staff_id:        currentStaff.value.id,
+      store_id:        currentStaff.value.store_id,
+      start_at:        new Date().toISOString(),
+      end_at:          new Date(formattedReturnAt.value).toISOString(),
+      start_mileage:   selectedVehicle.value.last_mileage || 0,
+      price:           price.value,
+      helmet_lent:     helmetLent.value,
+      key_handed_over: keyHandedOver.value,
+      deposit:         deposit.value,
     })
 
     toast.add({ title: t('lend.toast.success'), description: t('lend.toast.success_desc'), color: 'success' })
@@ -177,6 +184,9 @@ function handleRestart() {
   currentStep.value = 1
   selectedCustomer.value = null
   selectedVehicle.value = null
+  helmetLent.value = false
+  keyHandedOver.value = false
+  deposit.value = ''
 }
 
 onMounted(() => {
@@ -431,9 +441,29 @@ onMounted(() => {
               type="number"
               size="xl"
               icon="i-lucide-banknote"
-              :placeholder="`0 (${formatPrice(0).split(' ')[0]})`"
+              placeholder="0"
+              class="w-full"
+            >
+              <template v-if="currencyLabel" #trailing>
+                <span data-testid="price-currency" class="text-sm font-bold text-slate-500">{{ currencyLabel }}</span>
+              </template>
+            </UInput>
+          </UFormField>
+
+          <UFormField :label="t('lend.s4.deposit')" :hint="t('lend.s4.deposit_hint')" name="deposit">
+            <UInput
+              v-model="deposit"
+              size="xl"
+              icon="i-lucide-wallet"
+              :placeholder="t('lend.s4.deposit_ph')"
+              class="w-full"
             />
           </UFormField>
+
+          <div class="space-y-4">
+            <USwitch v-model="helmetLent" :label="t('lend.s4.helmet')" size="lg" />
+            <USwitch v-model="keyHandedOver" :label="t('lend.s4.key')" size="lg" />
+          </div>
 
           <UButton
             :label="t('lend.s4.continue')"
@@ -513,6 +543,27 @@ onMounted(() => {
               <div class="flex-1">
                 <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.amount') }}</p>
                 <p class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(price) }}</p>
+              </div>
+            </div>
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
+          </div>
+        </UCard>
+
+        <!-- Lending Items Summary -->
+        <UCard class="md:col-span-2 border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
+              <div>
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.deposit') }}</p>
+                <p class="text-lg font-bold text-slate-900 dark:text-white">{{ deposit.trim() || t('lend.s5.none') }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.helmet') }}</p>
+                <UBadge :label="helmetLent ? t('lend.s5.yes') : t('lend.s5.no')" :color="helmetLent ? 'success' : 'neutral'" variant="subtle" />
+              </div>
+              <div>
+                <p class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">{{ t('lend.s5.key') }}</p>
+                <UBadge :label="keyHandedOver ? t('lend.s5.yes') : t('lend.s5.no')" :color="keyHandedOver ? 'success' : 'neutral'" variant="subtle" />
               </div>
             </div>
             <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />

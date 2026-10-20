@@ -11,6 +11,7 @@ export default {
   'hist.col.returned': { en: 'Returned Time', th: 'เวลาคืน', lo: 'ເວລາຄືນ', vi: 'Giờ trả', ms: 'Masa Dipulangkan' },
   'hist.col.duration': { en: 'Duration', th: 'ระยะเวลา', lo: 'ໄລຍະເວລາ', vi: 'Thời lượng', ms: 'Tempoh' },
   'hist.col.price': { en: 'Price', th: 'ราคา', lo: 'ລາຄາ', vi: 'Giá', ms: 'Harga' },
+  'hist.extended': { en: 'Extended ×{n} (+{price})', th: 'ขยายเวลา {n} ครั้ง (+{price})', lo: 'ຂະຫຍາຍເວລາ {n} ຄັ້ງ (+{price})', vi: 'Gia hạn {n} lần (+{price})', ms: 'Dilanjutkan ×{n} (+{price})' },
   'hist.badge_lending': { en: 'Lending', th: 'กำลังเช่า', lo: 'ກຳລັງເຊົ່າ', vi: 'Đang thuê', ms: 'Sedang disewa' },
   'hist.expected_return': { en: 'Expected Return:', th: 'กำหนดคืน:', lo: 'ກຳນົດຄືນ:', vi: 'Dự kiến trả:', ms: 'Jangkaan Pulang:' },
   'hist.empty': { en: 'No transactions found.', th: 'ไม่พบธุรกรรม', lo: 'ບໍ່ພົບທຸລະກຳ', vi: 'Không tìm thấy giao dịch.', ms: 'Tiada transaksi ditemui.' },

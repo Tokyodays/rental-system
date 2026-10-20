@@ -260,14 +260,76 @@ export type Database = {
           },
         ]
       }
+      transaction_extensions: {
+        Row: {
+          additional_price: number
+          created_at: string
+          id: string
+          new_end_at: string
+          note: string | null
+          previous_end_at: string
+          staff_id: string | null
+          store_id: string
+          transaction_id: string
+        }
+        Insert: {
+          additional_price?: number
+          created_at?: string
+          id?: string
+          new_end_at: string
+          note?: string | null
+          previous_end_at: string
+          staff_id?: string | null
+          store_id: string
+          transaction_id: string
+        }
+        Update: {
+          additional_price?: number
+          created_at?: string
+          id?: string
+          new_end_at?: string
+          note?: string | null
+          previous_end_at?: string
+          staff_id?: string | null
+          store_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_extensions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_extensions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_extensions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           created_at: string | null
           customer_id: string | null
+          deposit: string | null
           end_at: string | null
           end_mileage: number | null
+          helmet_lent: boolean
           id: string
+          key_handed_over: boolean
           price: number | null
+          returned_at: string | null
           staff_id: string | null
           start_at: string | null
           start_mileage: number | null
@@ -278,10 +340,14 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customer_id?: string | null
+          deposit?: string | null
           end_at?: string | null
           end_mileage?: number | null
+          helmet_lent?: boolean
           id?: string
+          key_handed_over?: boolean
           price?: number | null
+          returned_at?: string | null
           staff_id?: string | null
           start_at?: string | null
           start_mileage?: number | null
@@ -292,10 +358,14 @@ export type Database = {
         Update: {
           created_at?: string | null
           customer_id?: string | null
+          deposit?: string | null
           end_at?: string | null
           end_mileage?: number | null
+          helmet_lent?: boolean
           id?: string
+          key_handed_over?: boolean
           price?: number | null
+          returned_at?: string | null
           staff_id?: string | null
           start_at?: string | null
           start_mileage?: number | null
