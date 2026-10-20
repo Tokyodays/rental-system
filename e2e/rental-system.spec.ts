@@ -403,6 +403,9 @@ test.describe('Lending Flow', () => {
     // Step 4: Payment Amount
     await expect(page.getByText('Step 4: Payment Amount')).toBeVisible()
 
+    // 料金欄に店舗の通貨（記号＋コード、例: "฿ THB"）が表示される
+    await expect(page.getByTestId('price-currency')).toHaveText(/^\S+ [A-Z]{3}$/)
+
     // 価格を入力
     const priceInput = page.locator('input[type="number"]')
     await priceInput.fill('1000')
@@ -453,6 +456,7 @@ test.describe('Return Flow', () => {
     const modal = page.getByRole('dialog')
     await expect(modal.getByText('Extend Rental')).toBeVisible()
     await modal.getByRole('button', { name: '+1 day(s)' }).click()
+    await expect(modal.getByTestId('extend-price-currency')).toHaveText(/^\S+ [A-Z]{3}$/)
     await modal.locator('input[type="number"]').fill('500')
     await modal.getByPlaceholder('e.g. Requested via WhatsApp').fill('E2E extension')
 

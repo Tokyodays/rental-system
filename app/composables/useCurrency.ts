@@ -37,6 +37,13 @@ export const useCurrency = () => {
     return staff.value?.stores?.currency?.currency_symbol || '—'
   })
 
+  // 金額入力欄に添える通貨表示（例: "฿ THB"）。記号だけでは $ などが紛らわしいのでコードも出す
+  const currencyLabel = computed(() => {
+    const currency = staff.value?.stores?.currency
+    if (!currency) return ''
+    return `${currency.currency_symbol} ${currency.currency_text}`
+  })
+
   // 金額をフォーマット（記号を前に出す）
   const formatPrice = (amount: number | null | undefined) => {
     if (amount === null || amount === undefined) return '—'
@@ -59,6 +66,7 @@ export const useCurrency = () => {
     currencies,
     fetchCurrencies,
     currentSymbol,
+    currencyLabel,
     formatPrice,
     updateCurrency
   }

@@ -8,7 +8,7 @@ const router = useRouter()
 const route = useRoute()
 const { completeReturn, extendRental } = useRentalTransactions()
 const { t, tName, dateLocale } = useI18n()
-const { formatPrice } = useCurrency()
+const { formatPrice, currencyLabel } = useCurrency()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 
@@ -505,7 +505,11 @@ function handleRestart() {
           <p v-if="!isExtendDateValid" class="text-xs text-red-500">{{ t('ret.ext.must_later') }}</p>
 
           <UFormField :label="t('ret.ext.additional_price')" name="extendPrice">
-            <UInput v-model.number="extendPrice" type="number" min="0" icon="i-lucide-banknote" class="w-full" />
+            <UInput v-model.number="extendPrice" type="number" min="0" icon="i-lucide-banknote" class="w-full">
+              <template v-if="currencyLabel" #trailing>
+                <span data-testid="extend-price-currency" class="text-sm font-bold text-slate-500">{{ currencyLabel }}</span>
+              </template>
+            </UInput>
           </UFormField>
 
           <UFormField :label="t('ret.ext.note')" name="extendNote">

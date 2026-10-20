@@ -5,7 +5,7 @@ const toast = useToast()
 const router = useRouter()
 const { staff: currentStaff } = useStaff()
 const { t, tName } = useI18n()
-const { formatPrice } = useCurrency()
+const { formatPrice, currencyLabel } = useCurrency()
 const { ensureLoaded, vehicleStatusId, customerStatusId } = useStatusIds()
 const { completeLending } = useRentalTransactions()
 
@@ -441,8 +441,13 @@ onMounted(() => {
               type="number"
               size="xl"
               icon="i-lucide-banknote"
-              :placeholder="`0 (${formatPrice(0).split(' ')[0]})`"
-            />
+              placeholder="0"
+              class="w-full"
+            >
+              <template v-if="currencyLabel" #trailing>
+                <span data-testid="price-currency" class="text-sm font-bold text-slate-500">{{ currencyLabel }}</span>
+              </template>
+            </UInput>
           </UFormField>
 
           <UFormField :label="t('lend.s4.deposit')" :hint="t('lend.s4.deposit_hint')" name="deposit">
@@ -451,6 +456,7 @@ onMounted(() => {
               size="xl"
               icon="i-lucide-wallet"
               :placeholder="t('lend.s4.deposit_ph')"
+              class="w-full"
             />
           </UFormField>
 
