@@ -1,4 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+import { toInternalEmail } from '../shared/constants/auth'
 
 /**
  * E2E Tests for Rental System
@@ -60,6 +62,14 @@ async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
   } catch {
     // スピナーが見つからなかった場合は無視
   }
+}
+
+/** テストユーザーでログインした Supabase クライアント（DB の中身を検証する用） */
+async function signedInSupabase() {
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+  const { error } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
+  expect(error).toBeNull()
+  return supabase
 }
 
 /** ログアウトする（スタッフ/ブランチ管理者用） */
@@ -393,14 +403,27 @@ test.describe('Lending Flow', () => {
     // Step 4: Payment Amount
     await expect(page.getByText('Step 4: Payment Amount')).toBeVisible()
 
+    // 料金欄に店舗の通貨（記号＋コード、例: "฿ THB"）が表示される
+    await expect(page.getByTestId('price-currency')).toHaveText(/^\S+ [A-Z]{3}$/)
+
     // 価格を入力
     const priceInput = page.locator('input[type="number"]')
     await priceInput.fill('1000')
+
+    // デポジット（通貨込みの自由入力）とヘルメット・鍵のトグル
+    await page.getByPlaceholder('e.g. 5000 JPY, $50').fill('$50')
+    const helmetSwitch = page.getByRole('switch', { name: 'Helmet lent' })
+    await helmetSwitch.click()
+    await expect(helmetSwitch).toBeChecked()
+    await expect(page.getByRole('switch', { name: 'Key handed over' })).not.toBeChecked()
 
     await page.getByRole('button', { name: 'Continue to Confirmation' }).click()
 
     // Step 5: Confirm
     await expect(page.getByText('Step 5: Confirm Transaction')).toBeVisible()
+    await expect(page.getByText('$50')).toBeVisible()
+    await expect(page.getByText('Yes', { exact: true })).toBeVisible()
+    await expect(page.getByText('No', { exact: true })).toBeVisible()
 
     // Start Lending Now
     await page.getByRole('button', { name: 'Start Lending Now' }).click()
@@ -414,6 +437,65 @@ test.describe('Lending Flow', () => {
 // 5. Return Flow Test
 // ============================================================
 test.describe('Return Flow', () => {
+  test('レンタル中車両を延長でき、返却予定日時と延長料金が反映される', async ({ page }) => {
+    await page.goto('/rentals/return')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // Lending Flow で貸し出した車両を選ぶ
+    const lentVehicleCards = page.locator('.max-h-80 .cursor-pointer')
+    await lentVehicleCards.first().waitFor({ state: 'visible', timeout: 10_000 })
+    await lentVehicleCards.first().click()
+    await expect(page.getByText('Step 2: Check Return Details')).toBeVisible({ timeout: 10_000 })
+
+    const scheduledBefore = await page.getByTestId('scheduled-return').innerText()
+    const extensionRowsBefore = await page.getByTestId('extension-row').count()
+
+    // 延長モーダル: +1 日、追加料金 500、メモ
+    await page.getByRole('button', { name: 'Extend', exact: true }).click()
+    const modal = page.getByRole('dialog')
+    await expect(modal.getByText('Extend Rental')).toBeVisible()
+    await modal.getByRole('button', { name: '+1 day(s)' }).click()
+    await expect(modal.getByTestId('extend-price-currency')).toHaveText(/^\S+ [A-Z]{3}$/)
+    await modal.locator('input[type="number"]').fill('500')
+    await modal.getByPlaceholder('e.g. Requested via WhatsApp').fill('E2E extension')
+
+    const extendRequest = page.waitForRequest(req => req.url().includes('/rpc/extend_rental'))
+    await modal.getByRole('button', { name: 'Confirm Extension' }).click()
+    const transactionId = (await extendRequest).postDataJSON().p_transaction_id as string
+
+    // 画面: 返却予定日時が変わり、延長の内訳が 1 行増える
+    await expect(page.getByText('Rental Extended', { exact: true })).toBeVisible()
+    await expect(modal).toBeHidden()
+    await expect(page.getByTestId('extension-row')).toHaveCount(extensionRowsBefore + 1)
+    await expect(page.getByTestId('scheduled-return')).not.toHaveText(scheduledBefore)
+    await expect(page.getByText('Collect the extension fee at return.')).toBeVisible()
+
+    // DB: 延長記録が残り、transactions.end_at が延長後の日時になる（ちょうど 1 日後）
+    const supabase = await signedInSupabase()
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('end_at, transaction_extensions(previous_end_at, new_end_at, additional_price, note, created_at)')
+      .eq('id', transactionId)
+      .single()
+    const latest = [...(tx?.transaction_extensions || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    expect(latest).toBeTruthy()
+    expect(Number(latest!.additional_price)).toBe(500)
+    expect(latest!.note).toBe('E2E extension')
+    expect(new Date(tx!.end_at!).getTime()).toBe(new Date(latest!.new_end_at).getTime())
+    expect(new Date(latest!.new_end_at).getTime() - new Date(latest!.previous_end_at).getTime()).toBe(24 * 60 * 60 * 1000)
+
+    // 延長記録は RPC 経由でしか書き込めない（RLS で直接 INSERT は拒否される）
+    const { error: insertError } = await supabase.from('transaction_extensions').insert({
+      transaction_id: transactionId,
+      store_id: '00000000-0000-0000-0000-000000000000',
+      previous_end_at: latest!.new_end_at,
+      new_end_at: latest!.new_end_at,
+    })
+    expect(insertError).not.toBeNull()
+  })
+
   test('任意のレンタル中車両を正しく返却でき、正常に完了する', async ({ page }) => {
     await page.goto('/rentals/return')
     await page.waitForLoadState('networkidle')
@@ -448,11 +530,27 @@ test.describe('Return Flow', () => {
     await expect(page.getByText('Summary')).toBeVisible()
     await expect(page.getByText('Schedule Status')).toBeVisible()
 
+    // 返却する取引の id を RPC リクエストから取得する
+    const returnRequest = page.waitForRequest(req => req.url().includes('/rpc/complete_return'))
+
     // Complete Return
     await page.getByRole('button', { name: 'Complete Return Process' }).click()
+    const transactionId = (await returnRequest).postDataJSON().p_transaction_id as string
 
     // 成功時にダッシュボードへリダイレクト
     await expect(page).toHaveURL('/dashboard', { timeout: 15_000 })
+
+    // 返却予定日時（end_at）は残り、実際の返却日時は returned_at に入る
+    const supabase = await signedInSupabase()
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('status, end_at, returned_at')
+      .eq('id', transactionId)
+      .single()
+    expect(tx?.status).toBe('Completed')
+    expect(tx?.returned_at).toBeTruthy()
+    expect(tx?.end_at).toBeTruthy()
+    expect(tx?.end_at).not.toBe(tx?.returned_at)
   })
 })
 
@@ -683,6 +781,25 @@ test.describe('Navigation & Layout', () => {
     await expect(page.getByText('Return Vehicle')).toBeVisible()
     await expect(page.getByText('Step 1: Identify Vehicle')).toBeVisible()
     await expect(page.getByText('Currently Lent Vehicles')).toBeVisible()
+  })
+
+  test('トップバーの為替リンクが OANDA を別ウィンドウで開く', async ({ page, context }) => {
+    // 外部サイトには実際にアクセスしない
+    await context.route('https://www.oanda.com/**', route => route.fulfill({ body: 'stub' }))
+
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    const link = page.getByRole('banner').getByRole('link', { name: 'Currency Converter' })
+    await expect(link).toHaveAttribute('href', 'https://www.oanda.com/currency-converter/')
+    await expect(link).toHaveAttribute('target', '_blank')
+    await expect(link).toHaveAttribute('rel', /noopener/)
+
+    const popupPromise = context.waitForEvent('page')
+    await link.click()
+    const popup = await popupPromise
+    await expect(popup).toHaveURL('https://www.oanda.com/currency-converter/')
+    await expect(page).toHaveURL('/dashboard')
   })
 })
 
