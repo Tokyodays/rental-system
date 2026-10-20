@@ -5,6 +5,8 @@ defineProps<{
 
 const emit = defineEmits(['toggle-sidebar'])
 
+const CURRENCY_CONVERTER_URL = 'https://www.oanda.com/currency-converter/'
+
 const supabase = useSupabaseClient()
 const router = useRouter()
 const toast = useToast()
@@ -45,6 +47,19 @@ const userMenuItems = computed(() => [
     </div>
 
     <div class="flex items-center gap-4">
+      <UButton
+        :to="CURRENCY_CONVERTER_URL"
+        target="_blank"
+        rel="noopener noreferrer"
+        icon="i-lucide-arrow-left-right"
+        trailing-icon="i-lucide-external-link"
+        :label="t('currency_converter')"
+        :aria-label="t('currency_converter')"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        :ui="{ label: 'hidden sm:inline' }"
+      />
       <UDropdownMenu :items="userMenuItems">
         <div data-testid="user-menu" class="flex items-center gap-2 cursor-pointer group px-2 py-1 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
           <!-- Loading State -->
