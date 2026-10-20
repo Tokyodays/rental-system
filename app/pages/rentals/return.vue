@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { RentalVehicle } from '~/utils/rentalVehicles'
+import type { RentalExtension } from '~/utils/rentalExtension'
 
 const supabase = useSupabaseClient()
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
-const { completeReturn } = useRentalTransactions()
+const { completeReturn, extendRental } = useRentalTransactions()
 const { t, tName, dateLocale } = useI18n()
+const { formatPrice } = useCurrency()
 
 const currentStep = ref(1) // 1: Vehicle Identification, 2: Confirmation
 
@@ -56,7 +58,7 @@ async function fetchVehicleByCode(code: string) {
 async function fetchActiveRentalByVehicleId(vehicleId: string) {
   return await (supabase
     .from('transactions')
-    .select('*, customers(full_name, email, phone)')
+    .select('*, customers(full_name, email, phone), transaction_extensions(id, previous_end_at, new_end_at, additional_price, note, created_at)')
     .eq('vehicle_id', vehicleId)
     .eq('status', 'Active')
     .order('start_at', { ascending: false })
@@ -131,6 +133,60 @@ const timeDiffColorClass = computed(() => {
   if (!activeRental.value?.end_at) return ''
   return toReturnTimeDiffColorClass(activeRental.value.end_at, actualReturnAt.value)
 })
+
+// 延長
+const extensions = computed<RentalExtension[]>(() => sortExtensions(activeRental.value?.transaction_extensions || []))
+const extensionTotal = computed(() => sumExtensionPrice(extensions.value))
+const totalPrice = computed(() => Number(activeRental.value?.price || 0) + extensionTotal.value)
+
+const isExtendModalOpen = ref(false)
+const isExtending = ref(false)
+const extendDate = ref('')
+const extendTime = ref('')
+const extendPrice = ref(0)
+const extendNote = ref('')
+
+const extendNewEndAt = computed(() => {
+  if (!extendDate.value || !extendTime.value) return null
+  return new Date(`${extendDate.value}T${extendTime.value}`)
+})
+const isExtendDateValid = computed(() =>
+  !!extendNewEndAt.value
+  && !!activeRental.value?.end_at
+  && extendNewEndAt.value.getTime() > new Date(activeRental.value.end_at).getTime()
+)
+const isExtendValid = computed(() => isExtendDateValid.value && extendPrice.value >= 0)
+
+function setExtendDays(days: number) {
+  const { date, time } = toLocalDateTimeInputs(addDays(new Date(activeRental.value.end_at), days))
+  extendDate.value = date
+  extendTime.value = time
+}
+
+function openExtendModal() {
+  setExtendDays(1)
+  extendPrice.value = 0
+  extendNote.value = ''
+  isExtendModalOpen.value = true
+}
+
+async function handleExtend() {
+  if (!activeRental.value || !extendNewEndAt.value || !isExtendValid.value) return
+  isExtending.value = true
+  try {
+    await extendRental(activeRental.value.id, extendNewEndAt.value.toISOString(), extendPrice.value, extendNote.value)
+    // 延長後の end_at と延長履歴を取り直す
+    const { data: rental, error } = await fetchActiveRentalByVehicleId(activeRental.value.vehicle_id)
+    if (error || !rental) throw error || new Error(t('ret.s1.no_tx_desc'))
+    activeRental.value = { ...rental, vehicle: activeRental.value.vehicle }
+    isExtendModalOpen.value = false
+    toast.add({ title: t('ret.ext.toast.success'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('ret.ext.toast.failed'), description: e.message, color: 'error' })
+  } finally {
+    isExtending.value = false
+  }
+}
 
 async function handleCompleteReturn() {
   if (!activeRental.value) return
@@ -328,9 +384,19 @@ function handleRestart() {
         <UCard class="border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <template #header><p class="font-bold text-blue-600">{{ t('ret.s2.schedule_status') }}</p></template>
           <div class="space-y-4">
-             <div>
-               <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">{{ t('ret.s2.scheduled') }}</p>
-               <p class="text-lg font-bold">{{ new Date(activeRental.end_at).toLocaleString(dateLocale) }}</p>
+             <div class="flex items-start justify-between gap-2">
+               <div>
+                 <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">{{ t('ret.s2.scheduled') }}</p>
+                 <p data-testid="scheduled-return" class="text-lg font-bold">{{ new Date(activeRental.end_at).toLocaleString(dateLocale) }}</p>
+               </div>
+               <UButton
+                 :label="t('ret.ext.button')"
+                 icon="i-lucide-calendar-plus"
+                 variant="soft"
+                 color="primary"
+                 class="cursor-pointer shrink-0"
+                 @click="openExtendModal"
+               />
              </div>
              
              <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
@@ -347,6 +413,41 @@ function handleRestart() {
                   </p>
                 </div>
              </div>
+          </div>
+        </UCard>
+
+        <!-- Payment & Extensions Card -->
+        <UCard class="md:col-span-2 border-slate-200 dark:border-slate-800 shadow-sm">
+          <template #header><p class="font-bold">{{ t('ret.ext.payment') }}</p></template>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500">{{ t('ret.ext.rental_price') }}</span>
+              <span class="font-bold">{{ formatPrice(Number(activeRental.price || 0)) }}</span>
+            </div>
+            <div
+              v-for="(ext, i) in extensions"
+              :key="ext.id"
+              data-testid="extension-row"
+              class="flex items-start justify-between gap-4"
+            >
+              <div class="min-w-0">
+                <p class="text-slate-500">{{ t('ret.ext.nth', { n: i + 1 }) }}</p>
+                <p class="text-xs text-slate-400">
+                  {{ new Date(ext.previous_end_at).toLocaleString(dateLocale) }} → {{ new Date(ext.new_end_at).toLocaleString(dateLocale) }}
+                </p>
+                <p v-if="ext.note" class="text-xs text-slate-400 truncate">{{ ext.note }}</p>
+              </div>
+              <span class="font-bold shrink-0">+ {{ formatPrice(Number(ext.additional_price)) }}</span>
+            </div>
+            <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+            <div class="flex items-center justify-between">
+              <span class="font-bold">{{ t('ret.ext.total') }}</span>
+              <span data-testid="total-price" class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(totalPrice) }}</span>
+            </div>
+            <p v-if="extensionTotal > 0" class="text-xs text-orange-600">
+              <UIcon name="i-lucide-info" class="inline-block mr-1" />
+              {{ t('ret.ext.collect_hint') }}
+            </p>
           </div>
         </UCard>
       </div>
@@ -370,6 +471,60 @@ function handleRestart() {
         />
       </div>
     </div>
+
+    <!-- Extend Modal -->
+    <UModal v-model:open="isExtendModalOpen" :title="t('ret.ext.title')" :description="t('ret.ext.desc')">
+      <template #body>
+        <div v-if="activeRental" class="space-y-5">
+          <div class="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-sm">
+            <p class="text-xs text-slate-500 uppercase font-bold tracking-tight mb-1">{{ t('ret.ext.current') }}</p>
+            <p class="font-bold">{{ new Date(activeRental.end_at).toLocaleString(dateLocale) }}</p>
+          </div>
+
+          <div class="flex gap-2">
+            <UButton
+              v-for="days in [1, 2, 3]"
+              :key="days"
+              :label="t('ret.ext.plus_days', { d: days })"
+              variant="outline"
+              color="neutral"
+              size="sm"
+              class="cursor-pointer"
+              @click="setExtendDays(days)"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField :label="t('lend.s3.date')" name="extendDate">
+              <UInput v-model="extendDate" type="date" icon="i-lucide-calendar" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('lend.s3.time')" name="extendTime">
+              <UInput v-model="extendTime" type="time" icon="i-lucide-clock" class="w-full" />
+            </UFormField>
+          </div>
+          <p v-if="!isExtendDateValid" class="text-xs text-red-500">{{ t('ret.ext.must_later') }}</p>
+
+          <UFormField :label="t('ret.ext.additional_price')" name="extendPrice">
+            <UInput v-model.number="extendPrice" type="number" min="0" icon="i-lucide-banknote" class="w-full" />
+          </UFormField>
+
+          <UFormField :label="t('ret.ext.note')" name="extendNote">
+            <UInput v-model="extendNote" :placeholder="t('ret.ext.note_ph')" icon="i-lucide-message-square" class="w-full" />
+          </UFormField>
+
+          <UButton
+            :label="t('ret.ext.confirm')"
+            color="primary"
+            size="lg"
+            block
+            :loading="isExtending"
+            :disabled="!isExtendValid"
+            class="cursor-pointer font-bold"
+            @click="handleExtend"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 

@@ -64,6 +64,14 @@ async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
   }
 }
 
+/** テストユーザーでログインした Supabase クライアント（DB の中身を検証する用） */
+async function signedInSupabase() {
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+  const { error } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
+  expect(error).toBeNull()
+  return supabase
+}
+
 /** ログアウトする（スタッフ/ブランチ管理者用） */
 async function logout(page: Page) {
   // AppTopbar の data-testid="user-menu" からドロップダウンを開く
@@ -426,6 +434,64 @@ test.describe('Lending Flow', () => {
 // 5. Return Flow Test
 // ============================================================
 test.describe('Return Flow', () => {
+  test('レンタル中車両を延長でき、返却予定日時と延長料金が反映される', async ({ page }) => {
+    await page.goto('/rentals/return')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // Lending Flow で貸し出した車両を選ぶ
+    const lentVehicleCards = page.locator('.max-h-80 .cursor-pointer')
+    await lentVehicleCards.first().waitFor({ state: 'visible', timeout: 10_000 })
+    await lentVehicleCards.first().click()
+    await expect(page.getByText('Step 2: Check Return Details')).toBeVisible({ timeout: 10_000 })
+
+    const scheduledBefore = await page.getByTestId('scheduled-return').innerText()
+    const extensionRowsBefore = await page.getByTestId('extension-row').count()
+
+    // 延長モーダル: +1 日、追加料金 500、メモ
+    await page.getByRole('button', { name: 'Extend', exact: true }).click()
+    const modal = page.getByRole('dialog')
+    await expect(modal.getByText('Extend Rental')).toBeVisible()
+    await modal.getByRole('button', { name: '+1 day(s)' }).click()
+    await modal.locator('input[type="number"]').fill('500')
+    await modal.getByPlaceholder('e.g. Requested via WhatsApp').fill('E2E extension')
+
+    const extendRequest = page.waitForRequest(req => req.url().includes('/rpc/extend_rental'))
+    await modal.getByRole('button', { name: 'Confirm Extension' }).click()
+    const transactionId = (await extendRequest).postDataJSON().p_transaction_id as string
+
+    // 画面: 返却予定日時が変わり、延長の内訳が 1 行増える
+    await expect(page.getByText('Rental Extended', { exact: true })).toBeVisible()
+    await expect(modal).toBeHidden()
+    await expect(page.getByTestId('extension-row')).toHaveCount(extensionRowsBefore + 1)
+    await expect(page.getByTestId('scheduled-return')).not.toHaveText(scheduledBefore)
+    await expect(page.getByText('Collect the extension fee at return.')).toBeVisible()
+
+    // DB: 延長記録が残り、transactions.end_at が延長後の日時になる（ちょうど 1 日後）
+    const supabase = await signedInSupabase()
+    const { data: tx } = await supabase
+      .from('transactions')
+      .select('end_at, transaction_extensions(previous_end_at, new_end_at, additional_price, note, created_at)')
+      .eq('id', transactionId)
+      .single()
+    const latest = [...(tx?.transaction_extensions || [])]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    expect(latest).toBeTruthy()
+    expect(Number(latest!.additional_price)).toBe(500)
+    expect(latest!.note).toBe('E2E extension')
+    expect(new Date(tx!.end_at!).getTime()).toBe(new Date(latest!.new_end_at).getTime())
+    expect(new Date(latest!.new_end_at).getTime() - new Date(latest!.previous_end_at).getTime()).toBe(24 * 60 * 60 * 1000)
+
+    // 延長記録は RPC 経由でしか書き込めない（RLS で直接 INSERT は拒否される）
+    const { error: insertError } = await supabase.from('transaction_extensions').insert({
+      transaction_id: transactionId,
+      store_id: '00000000-0000-0000-0000-000000000000',
+      previous_end_at: latest!.new_end_at,
+      new_end_at: latest!.new_end_at,
+    })
+    expect(insertError).not.toBeNull()
+  })
+
   test('任意のレンタル中車両を正しく返却でき、正常に完了する', async ({ page }) => {
     await page.goto('/rentals/return')
     await page.waitForLoadState('networkidle')
@@ -471,9 +537,7 @@ test.describe('Return Flow', () => {
     await expect(page).toHaveURL('/dashboard', { timeout: 15_000 })
 
     // 返却予定日時（end_at）は残り、実際の返却日時は returned_at に入る
-    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
-    const { error: authError } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
-    expect(authError).toBeNull()
+    const supabase = await signedInSupabase()
     const { data: tx } = await supabase
       .from('transactions')
       .select('status, end_at, returned_at')

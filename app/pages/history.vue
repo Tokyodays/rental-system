@@ -7,7 +7,7 @@ const search = ref('')
 const { data, pending } = await useAsyncData('transactions-history', async () => {
   const { data } = await (supabase
     .from('transactions')
-    .select('*, vehicles(name, code), customers(full_name)')
+    .select('*, vehicles(name, code), customers(full_name), transaction_extensions(additional_price)')
     .order('start_at', { ascending: false }) as any)
   return data || []
 })
@@ -39,7 +39,10 @@ const transactionEvents = computed(() => {
     lendingTime: r.start_at,
     returnedTime: r.status === 'Completed' ? r.returned_at : null,
     duration: r.status === 'Completed' && r.returned_at ? calculateDurationText(r.start_at, r.returned_at) : null,
-    price: r.price,
+    // 延長料金は返却時にまとめて支払うので、料金は貸出料金＋延長料金の合計
+    price: r.price == null ? null : Number(r.price) + sumExtensionPrice(r.transaction_extensions || []),
+    extensionCount: (r.transaction_extensions || []).length,
+    extensionTotal: sumExtensionPrice(r.transaction_extensions || []),
     status: r.status,
     expectedReturnTime: r.end_at // end_at は返却予定日時（返却後も上書きされない）
   })).sort((a, b) => new Date(b.lendingTime).getTime() - new Date(a.lendingTime).getTime())
@@ -89,15 +92,9 @@ const filteredTransactions = computed(() => {
   return filtered
 })
 
-const displayedTotal = computed(() => {
-  const uniqueIds = new Set(filteredTransactions.value.map(t => t.transactionId))
-  let sum = 0
-  uniqueIds.forEach(id => {
-    const r = rentals.value.find(r => r.id === id)
-    if (r && r.price) sum += Number(r.price)
-  })
-  return sum
-})
+const displayedTotal = computed(() =>
+  filteredTransactions.value.reduce((sum, t) => sum + Number(t.price || 0), 0)
+)
 
 const toast = useToast()
 const isExportModalOpen = ref(false)
@@ -252,6 +249,9 @@ function formatDate(date: string | null) {
             </td>
             <td class="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">
               {{ tx.price ? formatPrice(tx.price) : '-' }}
+              <p v-if="tx.extensionCount > 0" data-testid="history-extension" class="text-[11px] font-medium text-orange-600">
+                {{ t('hist.extended', { n: tx.extensionCount, price: formatPrice(tx.extensionTotal) }) }}
+              </p>
             </td>
           </tr>
           <tr v-if="!pending && filteredTransactions.length === 0">

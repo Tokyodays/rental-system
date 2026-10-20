@@ -92,5 +92,24 @@ export default {
   'ret.s2.restart': { en: 'Restart', th: 'เริ่มใหม่', lo: 'ເລີ່ມໃໝ່', vi: 'Bắt đầu lại', ms: 'Mula Semula' },
   'ret.toast.success': { en: 'Return Success', th: 'รับคืนสำเร็จ', lo: 'ຮັບຄືນສຳເລັດ', vi: 'Trả xe thành công', ms: 'Pemulangan berjaya' },
   'ret.toast.success_desc': { en: 'Vehicle returned successfully.', th: 'รับคืนยานพาหนะเรียบร้อยแล้ว', lo: 'ຮັບຄືນພາຫະນະຮຽບຮ້ອຍແລ້ວ', vi: 'Đã trả phương tiện thành công.', ms: 'Kenderaan berjaya dipulangkan.' },
-  'ret.toast.failed': { en: 'Return Failed', th: 'รับคืนไม่สำเร็จ', lo: 'ຮັບຄືນບໍ່ສຳເລັດ', vi: 'Trả xe thất bại', ms: 'Pemulangan gagal' }
+  'ret.toast.failed': { en: 'Return Failed', th: 'รับคืนไม่สำเร็จ', lo: 'ຮັບຄືນບໍ່ສຳເລັດ', vi: 'Trả xe thất bại', ms: 'Pemulangan gagal' },
+
+  // ---- extension ----
+  'ret.ext.button': { en: 'Extend', th: 'ขยายเวลา', lo: 'ຂະຫຍາຍເວລາ', vi: 'Gia hạn', ms: 'Lanjutkan' },
+  'ret.ext.title': { en: 'Extend Rental', th: 'ขยายเวลาการเช่า', lo: 'ຂະຫຍາຍເວລາການເຊົ່າ', vi: 'Gia hạn thuê', ms: 'Lanjutkan Sewaan' },
+  'ret.ext.desc': { en: 'Set the new return date and the additional fee. The fee is collected at return.', th: 'กำหนดวันคืนใหม่และค่าบริการเพิ่มเติม เก็บเงินตอนคืนรถ', lo: 'ກຳນົດວັນຄືນໃໝ່ ແລະ ຄ່າບໍລິການເພີ່ມເຕີມ ເກັບເງິນຕອນຄືນລົດ', vi: 'Đặt ngày trả mới và phí bổ sung. Phí được thu khi trả xe.', ms: 'Tetapkan tarikh pulang baharu dan caj tambahan. Caj dikutip semasa pemulangan.' },
+  'ret.ext.current': { en: 'Current Return Schedule', th: 'กำหนดคืนปัจจุบัน', lo: 'ກຳນົດຄືນປັດຈຸບັນ', vi: 'Lịch trả hiện tại', ms: 'Jadual Pemulangan Semasa' },
+  'ret.ext.plus_days': { en: '+{d} day(s)', th: '+{d} วัน', lo: '+{d} ມື້', vi: '+{d} ngày', ms: '+{d} hari' },
+  'ret.ext.must_later': { en: 'The new return date must be later than the current one.', th: 'วันคืนใหม่ต้องหลังกำหนดคืนปัจจุบัน', lo: 'ວັນຄືນໃໝ່ຕ້ອງຫຼັງກຳນົດຄືນປັດຈຸບັນ', vi: 'Ngày trả mới phải sau lịch trả hiện tại.', ms: 'Tarikh pulang baharu mestilah selepas jadual semasa.' },
+  'ret.ext.additional_price': { en: 'Additional Fee', th: 'ค่าบริการเพิ่มเติม', lo: 'ຄ່າບໍລິການເພີ່ມເຕີມ', vi: 'Phí bổ sung', ms: 'Caj Tambahan' },
+  'ret.ext.note': { en: 'Note', th: 'หมายเหตุ', lo: 'ໝາຍເຫດ', vi: 'Ghi chú', ms: 'Nota' },
+  'ret.ext.note_ph': { en: 'e.g. Requested via WhatsApp', th: 'เช่น ติดต่อมาทาง LINE', lo: 'ເຊັ່ນ ຕິດຕໍ່ມາທາງ WhatsApp', vi: 'VD: Liên hệ qua Zalo', ms: 'cth. Diminta melalui WhatsApp' },
+  'ret.ext.confirm': { en: 'Confirm Extension', th: 'ยืนยันการขยายเวลา', lo: 'ຢືນຢັນການຂະຫຍາຍເວລາ', vi: 'Xác nhận gia hạn', ms: 'Sahkan Lanjutan' },
+  'ret.ext.payment': { en: 'Payment', th: 'การชำระเงิน', lo: 'ການຊຳລະເງິນ', vi: 'Thanh toán', ms: 'Bayaran' },
+  'ret.ext.rental_price': { en: 'Rental Fee', th: 'ค่าเช่า', lo: 'ຄ່າເຊົ່າ', vi: 'Phí thuê', ms: 'Bayaran Sewa' },
+  'ret.ext.nth': { en: 'Extension #{n}', th: 'ขยายเวลาครั้งที่ {n}', lo: 'ຂະຫຍາຍເວລາຄັ້ງທີ {n}', vi: 'Gia hạn lần {n}', ms: 'Lanjutan #{n}' },
+  'ret.ext.total': { en: 'Total', th: 'รวม', lo: 'ລວມ', vi: 'Tổng cộng', ms: 'Jumlah' },
+  'ret.ext.collect_hint': { en: 'Collect the extension fee at return.', th: 'เก็บค่าขยายเวลาตอนคืนรถ', lo: 'ເກັບຄ່າຂະຫຍາຍເວລາຕອນຄືນລົດ', vi: 'Thu phí gia hạn khi trả xe.', ms: 'Kutip caj lanjutan semasa pemulangan.' },
+  'ret.ext.toast.success': { en: 'Rental Extended', th: 'ขยายเวลาเรียบร้อย', lo: 'ຂະຫຍາຍເວລາຮຽບຮ້ອຍ', vi: 'Đã gia hạn', ms: 'Sewaan dilanjutkan' },
+  'ret.ext.toast.failed': { en: 'Extension Failed', th: 'ขยายเวลาไม่สำเร็จ', lo: 'ຂະຫຍາຍເວລາບໍ່ສຳເລັດ', vi: 'Gia hạn thất bại', ms: 'Lanjutan gagal' }
 } satisfies MessageCatalog

@@ -49,5 +49,17 @@ export const useRentalTransactions = () => {
     if (error) throw error
   }
 
-  return { completeLending, completeReturn }
+  /** 延長: 延長記録の追加と transactions.end_at の更新を 1 トランザクションで実行する */
+  async function extendRental(transactionId: string, newEndAt: string, additionalPrice: number, note: string): Promise<string> {
+    const { data, error } = await (supabase.rpc('extend_rental', {
+      p_transaction_id:   transactionId,
+      p_new_end_at:       newEndAt,
+      p_additional_price: additionalPrice,
+      p_note:             note,
+    }) as any)
+    if (error) throw error
+    return data as string
+  }
+
+  return { completeLending, completeReturn, extendRental }
 }
