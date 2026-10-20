@@ -397,10 +397,20 @@ test.describe('Lending Flow', () => {
     const priceInput = page.locator('input[type="number"]')
     await priceInput.fill('1000')
 
+    // デポジット（通貨込みの自由入力）とヘルメット・鍵のトグル
+    await page.getByPlaceholder('e.g. 5000 JPY, $50').fill('$50')
+    const helmetSwitch = page.getByRole('switch', { name: 'Helmet lent' })
+    await helmetSwitch.click()
+    await expect(helmetSwitch).toBeChecked()
+    await expect(page.getByRole('switch', { name: 'Key handed over' })).not.toBeChecked()
+
     await page.getByRole('button', { name: 'Continue to Confirmation' }).click()
 
     // Step 5: Confirm
     await expect(page.getByText('Step 5: Confirm Transaction')).toBeVisible()
+    await expect(page.getByText('$50')).toBeVisible()
+    await expect(page.getByText('Yes', { exact: true })).toBeVisible()
+    await expect(page.getByText('No', { exact: true })).toBeVisible()
 
     // Start Lending Now
     await page.getByRole('button', { name: 'Start Lending Now' }).click()

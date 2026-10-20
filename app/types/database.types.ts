@@ -264,9 +264,12 @@ export type Database = {
         Row: {
           created_at: string | null
           customer_id: string | null
+          deposit: string | null
           end_at: string | null
           end_mileage: number | null
+          helmet_lent: boolean
           id: string
+          key_handed_over: boolean
           price: number | null
           staff_id: string | null
           start_at: string | null
@@ -278,9 +281,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customer_id?: string | null
+          deposit?: string | null
           end_at?: string | null
           end_mileage?: number | null
+          helmet_lent?: boolean
           id?: string
+          key_handed_over?: boolean
           price?: number | null
           staff_id?: string | null
           start_at?: string | null
@@ -292,9 +298,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           customer_id?: string | null
+          deposit?: string | null
           end_at?: string | null
           end_mileage?: number | null
+          helmet_lent?: boolean
           id?: string
+          key_handed_over?: boolean
           price?: number | null
           staff_id?: string | null
           start_at?: string | null
