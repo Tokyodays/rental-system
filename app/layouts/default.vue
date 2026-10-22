@@ -4,6 +4,11 @@ const isSidebarOpen = ref(false)
 const { appEnv } = useRuntimeConfig().public
 const isDev = appEnv === 'development'
 
+// モバイルのドロワーはページ遷移したら閉じる
+watch(() => route.fullPath, () => {
+  isSidebarOpen.value = false
+})
+
 const { t } = useI18n()
 
 const pageTitle = computed(() => {

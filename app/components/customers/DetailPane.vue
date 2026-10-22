@@ -19,7 +19,7 @@ const { t, tName, dateLocale } = useI18n()
 
 <template>
   <aside
-    class="w-96 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
+    class="fixed inset-0 z-40 w-full lg:static lg:z-auto lg:w-96 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto"
   >
     <div class="p-6 flex flex-col h-full space-y-6">
       <div class="flex items-start justify-between">

@@ -206,6 +206,7 @@ function formatDate(date: string | null) {
     </div>
 
     <UCard class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" :ui="{ body: 'p-0' }">
+      <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
         <thead class="bg-slate-50 dark:bg-slate-800/50">
           <tr>
@@ -261,6 +262,7 @@ function formatDate(date: string | null) {
           </tr>
         </tbody>
       </table>
+      </div>
     </UCard>
 
     <div class="flex justify-end pt-4">

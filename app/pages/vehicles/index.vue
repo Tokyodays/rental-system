@@ -264,11 +264,11 @@ watch(selectedVehicle, () => {
 
 <template>
   <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)]">
-    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-[600px]">
+    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0">
       <!-- Sub Header / Filters -->
-      <div class="flex flex-col gap-4 p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex-1 relative">
+      <div class="flex flex-col gap-4 p-4 md:p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
+          <div class="relative w-full sm:w-auto sm:flex-1 sm:min-w-48">
             <UInput
               v-model="search"
               icon="i-lucide-search"
@@ -280,7 +280,7 @@ watch(selectedVehicle, () => {
           <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('veh.category') }}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-1">
                 <button
                   v-for="cat in VEHICLE_CATEGORY_FILTERS"
                   :key="cat"
@@ -299,7 +299,7 @@ watch(selectedVehicle, () => {
 
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('status') }}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-1">
                 <button
                   v-for="s in statusOptions"
                   :key="s.value"
@@ -328,8 +328,8 @@ watch(selectedVehicle, () => {
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
+      <div class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto text-sm">
           <div v-if="isLoadingVehicles" class="p-8 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2" />
             <p>{{ t('veh.loading') }}</p>
@@ -409,7 +409,7 @@ watch(selectedVehicle, () => {
     <!-- Details Sidebar -->
     <aside
       v-if="selectedVehicle"
-      class="w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
+      class="fixed inset-0 z-40 w-full lg:static lg:z-auto lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto"
     >
       <div class="p-6 flex flex-col h-full">
         <div class="flex items-start justify-between mb-6">

@@ -108,8 +108,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-6 max-w-6xl mx-auto space-y-6">
-    <div class="flex justify-between items-center">
+  <div class="md:p-6 max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-wrap justify-between items-center gap-3">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white">{{ t('store_management') }}</h1>
         <p class="text-slate-500 text-sm">Manage all business locations</p>
@@ -124,7 +124,8 @@ onMounted(() => {
     </div>
 
     <UCard class="overflow-hidden" :ui="{ body: 'p-0' }">
-      <table class="w-full text-left border-collapse">
+      <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse whitespace-nowrap">
         <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm uppercase tracking-wider">
           <tr>
             <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">Name</th>
@@ -158,6 +159,7 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+      </div>
     </UCard>
 
     <!-- Add Store Modal -->

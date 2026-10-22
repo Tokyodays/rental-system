@@ -801,6 +801,38 @@ test.describe('Navigation & Layout', () => {
     await expect(popup).toHaveURL('https://www.oanda.com/currency-converter/')
     await expect(page).toHaveURL('/dashboard')
   })
+
+  test('スマホ幅でメニューのリンクを押すとドロワーが閉じる', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByRole('banner').getByRole('button').first().click()
+    const drawer = page.getByRole('dialog')
+    await expect(drawer).toBeVisible()
+
+    await drawer.locator('a[href="/vehicles"]').click()
+    await expect(page).toHaveURL('/vehicles')
+    await expect(drawer).toBeHidden()
+  })
+
+  test('スマホ幅で各ページが横にはみ出さない', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    for (const path of ['/dashboard', '/vehicles', '/rentals/new', '/rentals/return', '/customers', '/history', '/settings']) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+      expect(scrollWidth, path).toBeLessThanOrEqual(375)
+    }
+
+    // overflow-hidden で切られて押せなくなっていないか（scrollWidth では検出できない）
+    for (const [path, name] of [['/vehicles', 'Add Vehicle'], ['/customers', 'Add New Customer']]) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      const box = await page.getByRole('button', { name }).boundingBox()
+      expect(box && box.x + box.width, path).toBeLessThanOrEqual(375)
+    }
+  })
 })
 
 // ============================================================
