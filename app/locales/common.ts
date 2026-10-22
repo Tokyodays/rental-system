@@ -29,6 +29,7 @@ export default {
   'password': { en: 'Password', th: 'รหัสผ่าน', lo: 'ລະຫັດຜ່ານ', vi: 'Mật khẩu', ms: 'Kata Laluan' },
   'login': { en: 'Login', th: 'เข้าสู่ระบบ', lo: 'ເຂົ້າສູ່ລະບົບ', vi: 'Đăng nhập', ms: 'Log Masuk' },
   'language': { en: 'Language', th: 'ภาษา', lo: 'ພາສາ', vi: 'Ngôn ngữ', ms: 'Bahasa' },
+  'lang.store_default': { en: 'Store default ({lang})', th: 'ค่าเริ่มต้นของร้าน ({lang})', lo: 'ຄ່າເລີ່ມຕົ້ນຂອງຮ້ານ ({lang})', vi: 'Mặc định của cửa hàng ({lang})', ms: 'Lalai kedai ({lang})' },
   'save': { en: 'Save', th: 'บันทึก', lo: 'ບັນທຶກ', vi: 'Lưu', ms: 'Simpan' },
   'add': { en: 'Add', th: 'เพิ่ม', lo: 'ເພີ່ມ', vi: 'Thêm', ms: 'Tambah' },
   'edit': { en: 'Edit', th: 'แก้ไข', lo: 'ແກ້ໄຂ', vi: 'Sửa', ms: 'Sunting' },
