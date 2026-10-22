@@ -1026,6 +1026,36 @@ test.describe('Navigation & Layout', () => {
     await expect(page).toHaveURL('/dashboard')
   })
 
+  test('右上の Print ボタンで印刷でき、印刷時は左メニューが出ず一覧も切れない', async ({ page }) => {
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // 実際の印刷ダイアログは開かず、window.print が呼ばれたかを確かめる
+    await page.evaluate(() => {
+      (window as any).__printed = 0
+      window.print = () => { (window as any).__printed++ }
+    })
+    await page.getByRole('banner').getByRole('button', { name: 'Print' }).click()
+    expect(await page.evaluate(() => (window as any).__printed)).toBe(1)
+
+    // A4 の幅で印刷用の表示にする
+    await page.setViewportSize({ width: 794, height: 1123 })
+    await page.emulateMedia({ media: 'print' })
+    await expect(page.locator('aside').filter({ hasText: 'Dashboard' })).toBeHidden()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Print' })).toBeHidden()
+    await expect(page.getByRole('banner')).toContainText('Vehicle List')
+
+    // 車両一覧が画面の高さで切れず、表も横にはみ出さない
+    const clipped = await page.evaluate(() => [...document.querySelectorAll('main *')].filter((el) => {
+      const s = getComputedStyle(el)
+      if (el.clientHeight <= 1) return false
+      return (/(auto|scroll|hidden|clip)/.test(s.overflowY) && el.scrollHeight - el.clientHeight > 4) ||
+        (/(auto|scroll|hidden|clip)/.test(s.overflowX) && el.scrollWidth - el.clientWidth > 4)
+    }).length)
+    expect(clipped).toBe(0)
+  })
+
   test('スマホ幅でメニューのリンクを押すとドロワーが閉じる', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/dashboard')
