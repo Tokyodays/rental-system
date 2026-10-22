@@ -41,3 +41,25 @@ export function toReturnTimeDiffText(scheduledEndAt: string, actualReturnAt: Dat
 export function toReturnTimeDiffColorClass(scheduledEndAt: string, actualReturnAt: Date): string {
   return isReturnDelayed(scheduledEndAt, actualReturnAt) ? 'text-red-600' : 'text-green-600'
 }
+
+/** ダッシュボード「本日の返却予定」に出す貸出 */
+export interface ReturnDueItem<T> {
+  transaction: T
+  /** 返却予定日時を過ぎている（前日以前の予定、または本日の予定時刻を過ぎた） */
+  isOverdue: boolean
+}
+
+/**
+ * 貸出中（status = 'Active'）のうち、返却予定が本日中（端末のローカル日付）または既に過ぎているものを、
+ * 返却予定の早い順に返す。延長すると end_at が更新されるので、end_at が現在の返却予定。
+ */
+export function selectReturnsDue<T extends { status: string | null, end_at: string | null }>(
+  transactions: T[],
+  now: Date
+): ReturnDueItem<T>[] {
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  return transactions
+    .filter(tx => tx.status === 'Active' && tx.end_at && new Date(tx.end_at) < endOfToday)
+    .sort((a, b) => new Date(a.end_at!).getTime() - new Date(b.end_at!).getTime())
+    .map(tx => ({ transaction: tx, isOverdue: new Date(tx.end_at!) < now }))
+}

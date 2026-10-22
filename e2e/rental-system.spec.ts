@@ -200,12 +200,13 @@ test.describe('Dashboard', () => {
 
     await expect(page.getByText('Recent Transactions')).toBeVisible()
 
-    // テーブルヘッダーが存在する
-    await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'User' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Action' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Time' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
+    // テーブルヘッダーが存在する（Today's Returns にも同名の列があるため Recent Transactions の中で探す）
+    const recent = page.getByTestId('recent-transactions')
+    await expect(recent.getByRole('columnheader', { name: 'Item' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'User' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Action' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Time' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Status' })).toBeVisible()
   })
 
   test('Lending ボタンが /rentals/new へ遷移する', async ({ page }) => {
@@ -229,6 +230,51 @@ test.describe('Dashboard', () => {
     await viewAll.click()
     await page.waitForLoadState('networkidle')
     await expect(page).toHaveURL('/history')
+  })
+})
+
+test.describe('Dashboard: Today\'s Returns', () => {
+  test('本日の返却予定と延滞中の貸出が、返却予定の早い順に表示される', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const branchAdmin = await signedInSupabase()
+    const userId = (await branchAdmin.auth.getUser()).data.user!.id
+    const { data: me } = await branchAdmin.from('staff').select('store_id').eq('id', userId).single()
+    const { data: customer } = await service.from('customers').select('id, full_name').eq('store_id', me!.store_id).limit(1).single()
+    const { data: vehicles } = await service.from('vehicles').select('id, code').eq('store_id', me!.store_id).is('deleted_at', null).limit(2)
+
+    // テスト用の貸出（車両のステータスは変えないので、返却フローなど他のテストには影響しない）
+    const now = new Date()
+    const laterToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 58)
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0)
+    const base = { customer_id: customer!.id, staff_id: userId, store_id: me!.store_id, status: 'Active', price: 1, start_at: new Date(now.getTime() - 3 * 86_400_000).toISOString() }
+    const { data: inserted, error } = await service.from('transactions').insert([
+      { ...base, vehicle_id: vehicles![0]!.id, end_at: laterToday.toISOString() },
+      { ...base, vehicle_id: vehicles![1]!.id, end_at: yesterday.toISOString() }
+    ]).select('id')
+    expect(error).toBeNull()
+
+    try {
+      await page.goto('/dashboard')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+
+      const rows = page.getByTestId('returns-due').getByTestId('return-due-row')
+      const overdueRow = rows.filter({ hasText: vehicles![1]!.code })
+      const todayRow = rows.filter({ hasText: vehicles![0]!.code })
+      await expect(overdueRow).toContainText('Overdue')
+      await expect(overdueRow).toContainText(customer!.full_name)
+      await expect(todayRow).toContainText('Due today')
+
+      // 延滞（昨日）が本日の予定より先に並ぶ
+      const codes = await rows.locator('td:nth-child(2) p.font-mono').allInnerTexts()
+      expect(codes.indexOf(vehicles![1]!.code)).toBeLessThan(codes.indexOf(vehicles![0]!.code))
+
+      // 返却ボタンでその車両の返却画面へ
+      await todayRow.getByRole('link', { name: 'Return' }).click()
+      await expect(page).toHaveURL(new RegExp(`/rentals/return\\?code=${vehicles![0]!.code}`))
+    } finally {
+      await service.from('transactions').delete().in('id', inserted!.map(r => r.id))
+    }
   })
 })
 
