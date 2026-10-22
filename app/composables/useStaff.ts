@@ -52,12 +52,13 @@ export const useStaff = () => {
 
   /**
    * スタッフ情報を取得する
+   * 取得済みなら何もしない。店舗設定の保存後など、最新の値が必要なときは force: true で取り直す
    */
-  const fetchStaff = async () => {
+  const fetchStaff = async ({ force = false }: { force?: boolean } = {}) => {
     const uid = user.value?.id
     if (!uid) return
 
-    if (staff.value && staff.value.id === uid) return 
+    if (!force && staff.value && staff.value.id === uid) return
 
     isLoading.value = true
     try {

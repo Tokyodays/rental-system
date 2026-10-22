@@ -1053,6 +1053,37 @@ test.describe('Settings & User Management', () => {
     await expect(page.locator('aside').first()).toContainText('Dashboard', { timeout: 5000 })
   })
 
+  test('通貨を保存すると、再読み込みなしで貸出画面の料金欄に反映される', async ({ page }) => {
+    const saveCurrency = async (code: string) => {
+      await page.getByRole('button', { name: code, exact: true }).click()
+      const saved = page.waitForResponse(r => r.url().includes('/rest/v1/stores') && r.request().method() === 'PATCH')
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      expect((await saved).ok()).toBeTruthy()
+    }
+
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    await saveCurrency('JPY')
+
+    try {
+      // page.goto だと再読み込みになるため、サイドバーから画面遷移する
+      await page.locator('aside a[href="/rentals/new"]').click()
+      await page.locator('.grid .cursor-pointer').first().click()
+      await expect(page.getByText('Step 2: Select Vehicle')).toBeVisible({ timeout: 10_000 })
+      await waitForLoadingComplete(page)
+      await page.locator('.space-y-4 .grid .cursor-pointer').first().click()
+      await page.getByRole('button', { name: 'Continue to Price Input' }).click()
+      await expect(page.getByTestId('price-currency')).toHaveText('¥ JPY')
+    } finally {
+      // 他のテストに影響しないよう THB に戻す
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await saveCurrency('THB')
+    }
+  })
+
   test('スタッフを新規追加および削除できる', async ({ page }) => {
     await page.goto('/settings')
     await page.waitForLoadState('networkidle')
