@@ -72,6 +72,11 @@ async function signedInSupabase() {
   return supabase
 }
 
+/** 設定画面の店舗情報が読み込まれ、言語のラジオボタンが押せるようになるまで待つ */
+async function waitForStoreSettings(page: Page) {
+  await expect(page.getByTestId('language-select').getByRole('radio').first()).toBeEnabled({ timeout: 10_000 })
+}
+
 /** ログアウトする（スタッフ/ブランチ管理者用） */
 async function logout(page: Page) {
   // AppTopbar の data-testid="user-menu" からドロップダウンを開く
@@ -324,6 +329,43 @@ test.describe('Vehicle List', () => {
     await expect(sidebar.getByText(/Category|category/i)).toBeVisible()
     await expect(sidebar.getByText(/Status|status/i)).toBeVisible()
     await expect(sidebar.getByText(/Mileage|mileage/i)).toBeVisible()
+  })
+
+  test('最後にオイル交換した日付を記録でき、再読み込み後も残る', async ({ page }) => {
+    const testDate = '2020-01-15' // 他のデータと区別できる日付。後始末でこの日付の車両を未記録に戻す
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    try {
+      const firstName = (await page.locator('tbody tr').first().locator('td').first().innerText()).split('\n')[0]!
+      await page.locator('tbody tr').first().click()
+      const oil = page.getByTestId('oil-change')
+
+      // 編集を始めると今日の日付が入っている
+      await oil.getByRole('button', { name: 'Last Oil Change' }).click()
+      const input = oil.locator('input[type="date"]')
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      await expect(input).toHaveValue(today)
+
+      await input.fill(testDate)
+      await oil.getByRole('button', { name: 'Save' }).click()
+      await expect(page.getByTestId('oil-change-value')).toContainText('1/15/2020')
+      await expect(page.getByTestId('oil-change-value')).toContainText('days ago')
+
+      // 再読み込みしても同じ車両に残っている（更新しても一覧の並び順が変わらない）
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await expect(page.locator('tbody tr').first().locator('td').first()).toContainText(firstName)
+      await page.locator('tbody tr').first().click()
+      await expect(page.getByTestId('oil-change-value')).toContainText('1/15/2020')
+    } finally {
+      await service.from('vehicles').update({ last_oil_change_on: null }).eq('last_oil_change_on', testDate)
+    }
   })
 })
 
@@ -1038,6 +1080,7 @@ test.describe('Settings & User Management', () => {
     await waitForLoadingComplete(page)
 
     // Bahasa Melayu を選択
+    await waitForStoreSettings(page)
     const malayOption = page.getByText('Bahasa Melayu')
     await expect(malayOption).toBeVisible()
     await malayOption.click()
@@ -1552,6 +1595,7 @@ test.describe('Internationalization', () => {
     await waitForLoadingComplete(page)
 
     try {
+      await waitForStoreSettings(page)
       await page.getByText('ພາສາລາວ').click()
       await expect(page.locator('aside').first()).toContainText('ແດຊບອດ')
       await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toContainText('ຕັ້ງຄ່າ')
@@ -1567,6 +1611,7 @@ test.describe('Internationalization', () => {
       // 店舗のデフォルト言語が他のテストに影響しないよう必ず English に戻す
       await page.goto('/settings')
       await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
       await page.getByText('English').click()
       await expect(page.locator('aside').first()).toContainText('Dashboard')
     }
@@ -1597,6 +1642,7 @@ test.describe('Internationalization', () => {
       // 店舗のデフォルトを変えても、本人の言語は変わらない
       await page.goto('/settings')
       await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
       await page.getByText('ภาษาไทย').click()
       await expect(page.getByText('Bahasa dikemas kini').first()).toBeVisible()
       await expect(firstNav(page)).toHaveText('Papan Pemuka')
@@ -1610,6 +1656,7 @@ test.describe('Internationalization', () => {
       await supabase.rpc('set_my_locale', { p_locale: '' })
       await page.goto('/settings')
       await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
       await page.getByText('English').click()
       await expect(firstNav(page)).toHaveText('Dashboard')
     }

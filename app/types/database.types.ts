@@ -481,6 +481,7 @@ export type Database = {
           image_url: string | null
           image_urls: string[] | null
           last_mileage: number | null
+          last_oil_change_on: string | null
           name: string
           status_id: string | null
           store_id: string
@@ -494,6 +495,7 @@ export type Database = {
           image_url?: string | null
           image_urls?: string[] | null
           last_mileage?: number | null
+          last_oil_change_on?: string | null
           name: string
           status_id?: string | null
           store_id: string
@@ -507,6 +509,7 @@ export type Database = {
           image_url?: string | null
           image_urls?: string[] | null
           last_mileage?: number | null
+          last_oil_change_on?: string | null
           name?: string
           status_id?: string | null
           store_id?: string
@@ -582,6 +585,7 @@ export type Database = {
       generate_unique_vehicle_code: { Args: never; Returns: string }
       get_auth_store_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       set_my_locale: { Args: { p_locale: string }; Returns: undefined }
     }
     Enums: {

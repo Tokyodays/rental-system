@@ -22,6 +22,9 @@ export default {
   'veh.set_unavailable': { en: 'Set Unavailable', th: 'ตั้งเป็นไม่พร้อมใช้งาน', lo: 'ຕັ້ງເປັນບໍ່ພ້ອມໃຊ້ງານ', vi: 'Đặt là không khả dụng', ms: 'Tetapkan Tidak Tersedia' },
   'veh.set_available': { en: 'Set Available', th: 'ตั้งเป็นพร้อมใช้งาน', lo: 'ຕັ້ງເປັນພ້ອມໃຊ້ງານ', vi: 'Đặt là sẵn sàng', ms: 'Tetapkan Tersedia' },
   'veh.mileage': { en: 'Last Mileage', th: 'ระยะทางล่าสุด', lo: 'ໄລຍະທາງຫຼ້າສຸດ', vi: 'Số km gần nhất', ms: 'Jarak Perjalanan Terakhir' },
+  'veh.oil_change': { en: 'Last Oil Change', th: 'เปลี่ยนน้ำมันเครื่องครั้งล่าสุด', lo: 'ປ່ຽນນ້ຳມັນເຄື່ອງຄັ້ງຫຼ້າສຸດ', vi: 'Thay dầu gần nhất', ms: 'Penukaran Minyak Terakhir' },
+  'veh.oil_change_none': { en: 'Not recorded', th: 'ยังไม่ได้บันทึก', lo: 'ຍັງບໍ່ໄດ້ບັນທຶກ', vi: 'Chưa ghi nhận', ms: 'Belum direkod' },
+  'veh.oil_change_days_ago': { en: '{n} days ago', th: '{n} วันที่แล้ว', lo: '{n} ມື້ກ່ອນ', vi: '{n} ngày trước', ms: '{n} hari lalu' },
   'veh.process_return': { en: 'Process Return', th: 'ดำเนินการรับคืน', lo: 'ດຳເນີນການຮັບຄືນ', vi: 'Xử lý trả xe', ms: 'Proses Pemulangan' },
   'veh.print_qr': { en: 'Print QR Code', th: 'พิมพ์คิวอาร์โค้ด', lo: 'ພິມ QR ໂຄ້ດ', vi: 'In mã QR', ms: 'Cetak Kod QR' },
 
@@ -30,6 +33,7 @@ export default {
   'veh.modal.name': { en: 'Vehicle Name', th: 'ชื่อยานพาหนะ', lo: 'ຊື່ພາຫະນະ', vi: 'Tên phương tiện', ms: 'Nama Kenderaan' },
   'veh.modal.name_ph': { en: 'e.g. Honda PCX 150', th: 'เช่น Honda PCX 150', lo: 'ເຊັ່ນ Honda PCX 150', vi: 'VD: Honda PCX 150', ms: 'cth. Honda PCX 150' },
   'veh.modal.mileage': { en: 'Initial Mileage (km)', th: 'ระยะทางเริ่มต้น (กม.)', lo: 'ໄລຍະທາງເລີ່ມຕົ້ນ (ກມ.)', vi: 'Số km ban đầu (km)', ms: 'Jarak Perjalanan Awal (km)' },
+  'veh.modal.oil_change': { en: 'Last Oil Change (optional)', th: 'เปลี่ยนน้ำมันเครื่องครั้งล่าสุด (ไม่บังคับ)', lo: 'ປ່ຽນນ້ຳມັນເຄື່ອງຄັ້ງຫຼ້າສຸດ (ບໍ່ບັງຄັບ)', vi: 'Thay dầu gần nhất (không bắt buộc)', ms: 'Penukaran Minyak Terakhir (pilihan)' },
   'veh.modal.photos': { en: 'Vehicle Photos', th: 'รูปภาพยานพาหนะ', lo: 'ຮູບພາບພາຫະນະ', vi: 'Ảnh phương tiện', ms: 'Foto Kenderaan' },
   'veh.modal.save': { en: 'Save Vehicle', th: 'บันทึกยานพาหนะ', lo: 'ບັນທຶກພາຫະນະ', vi: 'Lưu phương tiện', ms: 'Simpan Kenderaan' },
 
@@ -41,6 +45,7 @@ export default {
   'veh.toast.status_updated_desc': { en: 'Vehicle is now {status}.', th: 'ยานพาหนะอยู่ในสถานะ{status}แล้ว', lo: 'ພາຫະນະຢູ່ໃນສະຖານະ{status}ແລ້ວ', vi: 'Phương tiện hiện ở trạng thái {status}.', ms: 'Kenderaan kini {status}.' },
   'veh.toast.mileage_updated': { en: 'Mileage Updated', th: 'อัปเดตระยะทางแล้ว', lo: 'ອັບເດດໄລຍະທາງແລ້ວ', vi: 'Đã cập nhật số km', ms: 'Jarak perjalanan dikemas kini' },
   'veh.toast.mileage_updated_desc': { en: 'Vehicle mileage has been updated.', th: 'อัปเดตระยะทางของยานพาหนะเรียบร้อยแล้ว', lo: 'ອັບເດດໄລຍະທາງຂອງພາຫະນະຮຽບຮ້ອຍແລ້ວ', vi: 'Số km của xe đã được cập nhật.', ms: 'Jarak perjalanan kenderaan telah dikemas kini.' },
+  'veh.toast.oil_change_updated': { en: 'Oil change date updated', th: 'อัปเดตวันที่เปลี่ยนน้ำมันเครื่องแล้ว', lo: 'ອັບເດດວັນທີປ່ຽນນ້ຳມັນເຄື່ອງແລ້ວ', vi: 'Đã cập nhật ngày thay dầu', ms: 'Tarikh penukaran minyak dikemas kini' },
   'veh.toast.photos_updated': { en: 'Photos Updated', th: 'อัปเดตรูปภาพแล้ว', lo: 'ອັບເດດຮູບພາບແລ້ວ', vi: 'Đã cập nhật ảnh', ms: 'Foto dikemas kini' },
   'veh.toast.photos_updated_desc': { en: 'Vehicle photos have been updated.', th: 'อัปเดตรูปภาพของยานพาหนะเรียบร้อยแล้ว', lo: 'ອັບເດດຮູບພາບຂອງພາຫະນະຮຽບຮ້ອຍແລ້ວ', vi: 'Ảnh phương tiện đã được cập nhật.', ms: 'Foto kenderaan telah dikemas kini.' },
 

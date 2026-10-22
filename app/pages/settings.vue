@@ -296,6 +296,7 @@ watch(() => staff.value?.store_id, (newId) => {
           :model-value="toLocale(store?.default_locale) ?? DEFAULT_LOCALE"
           :items="availableLocales"
           data-testid="language-select"
+          :disabled="!store"
           @update:model-value="(v) => handleStoreLocaleChange(v as Locale)"
           orientation="horizontal"
           :ui="{ fieldset: 'flex-wrap gap-x-8 gap-y-4' }"
