@@ -1,6 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
-import { toInternalEmail } from '../shared/constants/auth'
+import { ROLE_IDS, toInternalEmail } from '../shared/constants/auth'
 
 /**
  * E2E Tests for Rental System
@@ -1193,17 +1193,21 @@ test.describe('Multi-tenant Management Flow', () => {
     // スタッフが作成されるまで待機
     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
 
-    // スタッフのロール更新（オプション）
+    // スタッフのロール更新
     const row = page.locator('tr').filter({ hasText: staffName })
     const roleSwitch = row.locator('button[role="switch"]')
-    if (await roleSwitch.isVisible()) {
-      await roleSwitch.click()
+    await expect(roleSwitch).toBeVisible()
+    await roleSwitch.click()
 
-      // window.confirm ハンドラはクリック前に登録する
-      page.on('dialog', d => d.accept())
-    }
+    // RLS で拒否されても UPDATE はエラーにならないため、DB の値で確かめる
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    await expect.poll(async () => {
+      const { data } = await service.from('staff').select('role_id').eq('username', staffName).single()
+      return data?.role_id
+    }).toBe(ROLE_IDS.ADMIN)
 
-    // スタッフの削除
+    // スタッフの削除（window.confirm ハンドラはクリック前に登録する）
+    page.on('dialog', d => d.accept())
     const deleteButton = row.getByRole('button').last()
     await deleteButton.click()
 
@@ -1268,6 +1272,80 @@ test.describe('Super Admin without Store', () => {
     expect(await res.text()).toContain('store_id is required')
 
     await adminLogout(page)
+  })
+})
+
+// ============================================================
+// 12.5 Permissions: 権限外の操作が DB・API で拒否される
+// ============================================================
+test.describe('Permissions', () => {
+  const serviceClient = () => createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+  test('一般スタッフは自分を admin に昇格できず、店舗情報やスタッフも変更できない', async () => {
+    const service = serviceClient()
+    const branchAdmin = await signedInSupabase()
+    const { data: me } = await branchAdmin.from('staff').select('id, store_id').eq('id', (await branchAdmin.auth.getUser()).data.user!.id).single()
+    const { data: storeBefore } = await service.from('stores').select('name').eq('id', me!.store_id).single()
+
+    // 同じ店舗に一般スタッフを用意する
+    const username = `e2estaff${Date.now()}`
+    const password = 'password123'
+    const { data: created, error: createError } = await service.auth.admin.createUser({ email: toInternalEmail(username), password, email_confirm: true })
+    expect(createError).toBeNull()
+    const staffId = created.user!.id
+    await service.from('staff').upsert({ id: staffId, username, role_id: ROLE_IDS.STAFF, store_id: me!.store_id }, { onConflict: 'id' })
+
+    try {
+      const staffClient = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+      const { error: signInError } = await staffClient.auth.signInWithPassword({ email: toInternalEmail(username), password })
+      expect(signInError).toBeNull()
+
+      await staffClient.from('staff').update({ role_id: ROLE_IDS.ADMIN }).eq('id', staffId)
+      await staffClient.from('stores').update({ name: 'hacked' }).eq('id', me!.store_id)
+      // 削除の可否はテスト用ユーザー自身で確かめる（実在の admin を巻き込まない）
+      await staffClient.from('staff').delete().eq('id', staffId)
+
+      const { data: staffAfter } = await service.from('staff').select('role_id').eq('id', staffId).single()
+      expect(staffAfter!.role_id).toBe(ROLE_IDS.STAFF)
+      const { data: storeAfter } = await service.from('stores').select('name').eq('id', me!.store_id).single()
+      expect(storeAfter!.name).toBe(storeBefore!.name)
+      const { data: stillThere } = await service.from('staff').select('id').eq('id', staffId)
+      expect(stillThere).toHaveLength(1)
+    } finally {
+      // 防げなかった場合でも dev のデータを元に戻す
+      await service.from('stores').update({ name: storeBefore!.name }).eq('id', me!.store_id)
+      await service.from('staff').delete().eq('id', staffId)
+      await service.auth.admin.deleteUser(staffId)
+    }
+  })
+
+  test('店舗 admin は super_admin の作成や、他店舗・super_admin のアカウント削除ができない', async ({ page }) => {
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    const createRes = await page.request.post('/api/admin/users', {
+      data: { username: `e2esuper${Date.now()}`, password: 'password123', role_id: ROLE_IDS.SUPER_ADMIN }
+    })
+    expect(createRes.status()).toBe(403)
+
+    const { data: superAdmin } = await serviceClient().from('staff').select('id').eq('role_id', ROLE_IDS.SUPER_ADMIN).limit(1).single()
+    const deleteRes = await page.request.delete('/api/admin/users', { data: { id: superAdmin!.id } })
+    expect(deleteRes.status()).toBe(403)
+    const { data: stillThere } = await serviceClient().from('staff').select('id').eq('id', superAdmin!.id)
+    expect(stillThere).toHaveLength(1)
+  })
+
+  test('未ログインでは店舗情報を読めず、車両カテゴリ・予約を書き換えられない', async () => {
+    const anon = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+
+    const { data: stores } = await anon.from('stores').select('id')
+    expect(stores ?? []).toHaveLength(0)
+
+    const { error: categoryError } = await anon.from('vehicle_categories').insert({ name: 'e2e-hacked' })
+    expect(categoryError?.code).toBe('42501') // 権限エラー
+
+    const { error: reservationError } = await anon.from('reservations').insert({ store_id: '00000000-0000-0000-0000-000000000001' })
+    expect(reservationError?.code).toBe('42501')
   })
 })
 
