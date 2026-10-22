@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -178,7 +178,7 @@ export type Database = {
           email?: string | null
           id: string
           role_id: string
-          store_id: string | null
+          store_id?: string | null
           username?: string | null
         }
         Update: {
@@ -538,6 +538,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_lending: {
+        Args: {
+          p_customer_id: string
+          p_deposit?: string
+          p_end_at: string
+          p_helmet_lent?: boolean
+          p_key_handed_over?: boolean
+          p_price: number
+          p_staff_id: string
+          p_start_at: string
+          p_start_mileage: number
+          p_store_id: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
+      complete_return: {
+        Args: {
+          p_customer_id: string
+          p_end_at: string
+          p_transaction_id: string
+          p_vehicle_id: string
+        }
+        Returns: undefined
+      }
+      extend_rental: {
+        Args: {
+          p_additional_price: number
+          p_new_end_at: string
+          p_note?: string
+          p_transaction_id: string
+        }
+        Returns: string
+      }
       generate_random_alphanumeric: {
         Args: { length: number }
         Returns: string

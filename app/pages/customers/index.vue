@@ -509,8 +509,8 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6 flex-wrap">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton :label="t('cust.add.next')" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isAddModalOpen = false }" />
+            <UButton :label="t('cust.add.next')" variant="subtle" color="neutral" class="cursor-pointer" @click="() => { addStep = 2 }" />
             <UButton :label="t('cust.add.register')" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
@@ -530,7 +530,7 @@ const filteredCustomers = computed(() => {
               color="primary"
               size="xl"
               class="cursor-pointer font-bold"
-              @click="isCameraOpen = true"
+              @click="() => { isCameraOpen = true }"
             />
           </div>
 
@@ -574,7 +574,7 @@ const filteredCustomers = computed(() => {
                color="neutral"
                size="sm"
                class="cursor-pointer self-center"
-               @click="addStep = 1"
+               @click="() => { addStep = 1 }"
              />
           </div>
         </div>
@@ -590,7 +590,7 @@ const filteredCustomers = computed(() => {
             <p class="text-sm text-slate-500">{{ customerToDelete.email }}</p>
           </div>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isDeleteModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isDeleteModalOpen = false }" />
             <UButton :label="t('delete')" color="error" class="cursor-pointer" :loading="isDeleting" @click="handleDeleteCustomer" />
           </div>
         </div>
@@ -627,7 +627,7 @@ const filteredCustomers = computed(() => {
                   variant="subtle"
                   size="xs"
                   class="cursor-pointer"
-                  @click="isCameraOpen = true"
+                  @click="() => { isCameraOpen = true }"
                 />
              </div>
 
@@ -656,7 +656,7 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isUpdateModalOpen = false }" />
             <UButton :label="t('cust.upd.submit')" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
           </div>
         </UForm>

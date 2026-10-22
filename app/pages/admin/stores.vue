@@ -118,7 +118,7 @@ onMounted(() => {
         id="btn-add-store"
         icon="i-lucide-plus"
         label="Add Store"
-        @click="isAddingStore = true"
+        @click="() => { isAddingStore = true }"
         class="cursor-pointer"
       />
     </div>
@@ -173,7 +173,7 @@ onMounted(() => {
             <UInput v-model="newStore.address" placeholder="123 Street, City" />
           </UFormField>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" color="neutral" variant="ghost" @click="isAddingStore = false" />
+            <UButton label="Cancel" color="neutral" variant="ghost" @click="() => { isAddingStore = false }" />
             <UButton id="btn-create-store" type="submit" label="Create Store" color="primary" />
           </div>
         </form>
@@ -188,7 +188,7 @@ onMounted(() => {
           This action cannot be undone.
         </p>
         <div class="flex justify-end gap-3 mt-6">
-          <UButton label="Cancel" color="neutral" variant="ghost" @click="isDeletingStore = false" />
+          <UButton label="Cancel" color="neutral" variant="ghost" @click="() => { isDeletingStore = false }" />
           <UButton label="Delete" color="error" icon="i-lucide-trash-2" @click="handleDeleteStore" />
         </div>
       </template>
@@ -205,7 +205,7 @@ onMounted(() => {
             <UInput v-model="newAdmin.password" type="password" placeholder="••••••••" />
           </UFormField>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton label="Cancel" color="neutral" variant="ghost" @click="isAddingAdmin = false" />
+            <UButton label="Cancel" color="neutral" variant="ghost" @click="() => { isAddingAdmin = false }" />
             <UButton id="btn-create-admin" type="submit" label="Create Admin" color="primary" />
           </div>
         </form>

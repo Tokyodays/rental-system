@@ -74,6 +74,8 @@ async function identifyVehicleByCode(code: string) {
   try {
     await ensureLoaded()
     const statusId = vehicleStatusId('Available')
+    // ステータス一覧が取れていないと eq('status_id', undefined) で常に0件になるため、エラーとして扱う
+    if (!statusId) throw new Error('Vehicle status "Available" is not loaded')
 
     const { data, error } = await (supabase
       .from('vehicles')
@@ -99,6 +101,7 @@ async function identifyVehicleByCode(code: string) {
 async function fetchAnyAvailableVehicle(): Promise<{ code: string } | null> {
   await ensureLoaded()
   const statusId = vehicleStatusId('Available')
+  if (!statusId) return null
   const { data } = await (supabase
     .from('vehicles')
     .select('code')
@@ -420,7 +423,7 @@ onMounted(() => {
             block
             :disabled="isPastDate"
             class="cursor-pointer font-bold"
-            @click="currentStep = 4"
+            @click="() => { currentStep = 4 }"
           />
         </div>
       </UCard>
@@ -472,7 +475,7 @@ onMounted(() => {
             block
             :disabled="!isPriceValid"
             class="cursor-pointer font-bold"
-            @click="currentStep = 5"
+            @click="() => { currentStep = 5 }"
           />
         </div>
       </UCard>
@@ -529,7 +532,7 @@ onMounted(() => {
                 </p>
               </div>
             </div>
-            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 3" />
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="() => { currentStep = 3 }" />
           </div>
         </UCard>
 
@@ -545,7 +548,7 @@ onMounted(() => {
                 <p class="text-2xl font-black text-slate-900 dark:text-white">{{ formatPrice(price) }}</p>
               </div>
             </div>
-            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="() => { currentStep = 4 }" />
           </div>
         </UCard>
 
@@ -566,7 +569,7 @@ onMounted(() => {
                 <UBadge :label="keyHandedOver ? t('lend.s5.yes') : t('lend.s5.no')" :color="keyHandedOver ? 'success' : 'neutral'" variant="subtle" />
               </div>
             </div>
-            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="currentStep = 4" />
+            <UButton :label="t('rent.change')" variant="ghost" color="primary" class="cursor-pointer" @click="() => { currentStep = 4 }" />
           </div>
         </UCard>
       </div>
