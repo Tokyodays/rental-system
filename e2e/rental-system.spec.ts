@@ -372,6 +372,78 @@ test.describe('Vehicle List', () => {
 // ============================================================
 // 3. Add Vehicle Test
 // ============================================================
+test.describe('Delete Vehicle', () => {
+  test('車両を削除すると一覧から消え、取引履歴には残り、Deleted から復元できる', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const branchAdmin = await signedInSupabase()
+    const { data: me } = await branchAdmin.from('staff').select('store_id').eq('id', (await branchAdmin.auth.getUser()).data.user!.id).single()
+    const { data: lent } = await service.from('vehicle_statuses').select('id').eq('name', 'Lent').single()
+
+    // 今月の取引履歴があり、貸出中ではない車両を使う（取引履歴は今月分が既定で表示される）
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+    const { data: candidates } = await service
+      .from('transactions')
+      .select('vehicles!inner(id, code, name, status_id, deleted_at, store_id)')
+      .gte('start_at', monthStart)
+      .eq('vehicles.store_id', me!.store_id)
+      .is('vehicles.deleted_at', null)
+      .neq('vehicles.status_id', lent!.id)
+      .limit(1)
+    const target = (candidates?.[0] as any)?.vehicles as { id: string, code: string, name: string, status_id: string } | undefined
+    test.skip(!target, '今月の取引履歴がある車両がない')
+
+    try {
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByPlaceholder('Search vehicles...').fill(target!.code)
+      await page.locator('tbody tr').filter({ hasText: target!.code }).click()
+
+      await page.getByRole('button', { name: 'Delete Vehicle' }).click()
+      const modal = page.getByRole('dialog')
+      await expect(modal).toContainText(target!.name)
+      await modal.getByRole('button', { name: 'Delete', exact: true }).click()
+      await expect(page.locator('tbody tr').filter({ hasText: target!.code })).toHaveCount(0)
+
+      // 取引履歴には残っている
+      await page.goto('/history')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByPlaceholder(/search|Search/i).fill(target!.code)
+      await expect(page.locator('tbody tr').filter({ hasText: target!.name }).first()).toBeVisible()
+
+      // Deleted の絞り込みから復元すると一覧に戻る（ステータスは Unavailable のまま）
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByRole('button', { name: 'Deleted', exact: true }).click()
+      await page.getByPlaceholder('Search vehicles...').fill(target!.code)
+      await page.locator('tbody tr').filter({ hasText: target!.code }).click()
+      await expect(page.getByTestId('vehicle-deleted-banner')).toBeVisible()
+      await page.getByRole('button', { name: 'Restore' }).click()
+      const restoredRow = page.locator('tbody tr').filter({ hasText: target!.code })
+      await expect(restoredRow).toBeVisible()
+      await expect(restoredRow).toContainText('Unavailable')
+    } finally {
+      await service.from('vehicles').update({ deleted_at: null, status_id: target!.status_id }).eq('id', target!.id)
+    }
+  })
+
+  test('貸出中の車両は削除できない', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const { data: lent } = await service.from('vehicle_statuses').select('id').eq('name', 'Lent').single()
+    const { data: lentVehicle } = await service.from('vehicles').select('code').eq('status_id', lent!.id).is('deleted_at', null).limit(1).maybeSingle()
+    test.skip(!lentVehicle, '貸出中の車両がない')
+
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    await page.getByPlaceholder('Search vehicles...').fill(lentVehicle!.code)
+    await page.locator('tbody tr').filter({ hasText: lentVehicle!.code }).click()
+    await expect(page.getByRole('button', { name: 'Delete Vehicle' })).toBeDisabled()
+  })
+})
+
 test.describe('Add Vehicle', () => {
   test('新しい車両を正しく追加できる', async ({ page }) => {
     await page.goto('/vehicles')

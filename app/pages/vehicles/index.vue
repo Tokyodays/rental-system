@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  DELETED_VEHICLE_FILTER,
   VEHICLE_CATEGORY_FILTERS,
   VEHICLE_CATEGORY_NAMES,
   matchesVehicleFilter,
@@ -19,7 +20,8 @@ const { t, tName, dateLocale } = useI18n()
 const { ensureLoaded, vehicleStatuses, vehicleStatusId } = useStatusIds()
 const statusOptions = computed(() => [
   { label: t('all'), value: 'All' },
-  ...vehicleStatuses.value.map(s => ({ label: tName('status', s.name), value: s.name }))
+  ...vehicleStatuses.value.map(s => ({ label: tName('status', s.name), value: s.name })),
+  { label: t('veh.deleted'), value: DELETED_VEHICLE_FILTER }
 ])
 const categoryOptions = computed(() =>
   VEHICLE_CATEGORY_NAMES.map(name => ({ label: tName('category', name), value: name }))
@@ -105,7 +107,7 @@ async function createVehicle(categoryId: string, storeId: string, statusId: stri
 }
 
 /** vehicles を code で更新し、失敗時は throw する */
-type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; last_oil_change_on: string | null; image_urls: string[] }>
+type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; last_oil_change_on: string | null; image_urls: string[]; deleted_at: string | null }>
 
 async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
   const { error } = await client
@@ -268,6 +270,62 @@ async function handleSaveOilChange() {
   } finally {
     isUpdatingOilChange.value = false
     isEditingOilChange.value = false
+  }
+}
+
+// ---- 車両の削除（論理削除）・復元 ----
+// 取引履歴が車両を参照しているため行は消さず deleted_at を記録する。
+// 削除時は Unavailable にして、古い画面や QR から貸し出されないようにする
+const isDeleteModalOpen = ref(false)
+const isDeletingVehicle = ref(false)
+
+async function handleDeleteVehicle() {
+  if (!selectedVehicle.value) return
+  const unavailableId = vehicleStatusId('Unavailable')
+  const lentId = vehicleStatusId('Lent')
+  if (!unavailableId || !lentId) return
+
+  isDeletingVehicle.value = true
+  try {
+    // 貸出中なら削除しない（画面の表示が古くても、DB 上で貸出中なら 0 件更新になる）
+    const { data, error } = await client
+      .from('vehicles')
+      .update({ deleted_at: new Date().toISOString(), status_id: unavailableId })
+      .eq('code', selectedVehicle.value.code)
+      .neq('status_id', lentId)
+      .is('deleted_at', null)
+      .select('code')
+
+    if (error) throw error
+    isDeleteModalOpen.value = false
+    if (!data?.length) {
+      toast.add({ title: t('veh.toast.not_allowed'), description: t('veh.delete_lent_hint'), color: 'error' })
+      await refreshVehiclesKeepingSelection()
+      return
+    }
+
+    toast.add({ title: t('veh.toast.deleted'), color: 'success' })
+    selectedVehicle.value = null
+    await fetchVehicles()
+  } catch (e: any) {
+    console.error('Delete vehicle failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
+  } finally {
+    isDeletingVehicle.value = false
+  }
+}
+
+async function handleRestoreVehicle() {
+  if (!selectedVehicle.value) return
+  try {
+    await updateVehicleByCode(selectedVehicle.value.code, { deleted_at: null })
+    toast.add({ title: t('veh.toast.restored'), description: t('veh.restore_hint'), color: 'success' })
+    // 復元した車両は「Deleted」では表示されなくなるため、一覧の絞り込みを All に戻す
+    selectedStatus.value = 'All'
+    await refreshVehiclesKeepingSelection()
+  } catch (e: any) {
+    console.error('Restore vehicle failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
   }
 }
 
@@ -461,6 +519,17 @@ watch(selectedVehicle, () => {
           />
         </div>
 
+        <UAlert
+          v-if="selectedVehicle.deletedAt"
+          data-testid="vehicle-deleted-banner"
+          icon="i-lucide-archive"
+          color="neutral"
+          variant="subtle"
+          class="mb-6"
+          :title="t('veh.deleted_on', { date: new Date(selectedVehicle.deletedAt).toLocaleDateString(dateLocale) })"
+          :description="t('veh.restore_hint')"
+        />
+
         <div class="mb-6">
           <div v-if="!isEditingPhotos" class="space-y-4">
             <VehiclePhotoCarousel :images="selectedVehicle.imageUrls" />
@@ -529,7 +598,7 @@ watch(selectedVehicle, () => {
               </span>
             </div>
             <UButton
-              v-if="selectedVehicle.status !== 'Lent'"
+              v-if="selectedVehicle.status !== 'Lent' && !selectedVehicle.deletedAt"
               :label="selectedVehicle.status === 'Available' ? t('veh.set_unavailable') : t('veh.set_available')"
               :variant="selectedVehicle.status === 'Available' ? 'subtle' : 'solid'"
               :color="selectedVehicle.status === 'Available' ? 'error' : 'success'"
@@ -651,10 +720,47 @@ watch(selectedVehicle, () => {
               class="cursor-pointer"
               @click="openQR(selectedVehicle.code)"
             />
+            <UButton
+              v-if="selectedVehicle.deletedAt"
+              :label="t('veh.restore')"
+              icon="i-lucide-archive-restore"
+              block
+              color="primary"
+              variant="subtle"
+              class="cursor-pointer"
+              @click="handleRestoreVehicle"
+            />
+            <template v-else>
+              <UButton
+                :label="t('veh.delete')"
+                icon="i-lucide-trash-2"
+                block
+                color="error"
+                variant="ghost"
+                class="cursor-pointer"
+                :disabled="selectedVehicle.status === 'Lent'"
+                @click="() => { isDeleteModalOpen = true }"
+              />
+              <p v-if="selectedVehicle.status === 'Lent'" class="text-xs text-slate-500 text-center">{{ t('veh.delete_lent_hint') }}</p>
+            </template>
           </div>
         </div>
       </div>
     </aside>
+
+    <!-- Delete Vehicle Modal -->
+    <UModal
+      v-model:open="isDeleteModalOpen"
+      :title="t('veh.delete_confirm_title')"
+      :description="t('veh.delete_confirm_desc', { name: selectedVehicle?.name ?? '' })"
+    >
+      <template #footer>
+        <div class="flex justify-end gap-3 w-full">
+          <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isDeleteModalOpen = false }" />
+          <UButton :label="t('delete')" color="error" class="cursor-pointer" :loading="isDeletingVehicle" @click="handleDeleteVehicle" />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Add Vehicle Modal -->
     <UModal v-model:open="isAddModalOpen" :title="t('veh.modal.title')" :description="t('veh.modal.desc')">

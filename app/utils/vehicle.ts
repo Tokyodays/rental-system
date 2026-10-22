@@ -6,6 +6,9 @@ export const VEHICLE_CATEGORY_FILTERS = ['All', 'Bike', 'Car', 'Bicycle']
 
 /** 新規登録フォームのカテゴリ選択肢 */
 export const VEHICLE_CATEGORY_NAMES = ['Bike', 'Car', 'Bicycle'] as const
+
+/** 一覧のステータスフィルタで「削除済みの車両」を表す値。DB のステータス名とは別（削除済みは deleted_at で判定する） */
+export const DELETED_VEHICLE_FILTER = 'Deleted'
 export type VehicleCategoryName = typeof VEHICLE_CATEGORY_NAMES[number]
 
 /** 一覧・詳細サイドバーの表示モデル */
@@ -22,6 +25,8 @@ export interface Vehicle {
   lastMileage: number
   /** 最後にオイル交換した日付（YYYY-MM-DD）。未記録は null */
   lastOilChangeOn: string | null
+  /** 削除（論理削除）した日時。通常の車両は null */
+  deletedAt: string | null
   imageUrl: string | null
   imageUrls: string[]
 }
@@ -33,6 +38,7 @@ export interface VehicleRow {
   updated_at: string
   last_mileage: number | null
   last_oil_change_on: string | null
+  deleted_at: string | null
   image_url: string | null
   image_urls: string[] | null
   vehicle_categories: { name: string | null; icon: string | null } | null
@@ -56,6 +62,7 @@ export function toVehicle(v: VehicleRow): Vehicle {
     icon: v.vehicle_categories?.icon || 'i-lucide-package',
     lastMileage: v.last_mileage || 0,
     lastOilChangeOn: v.last_oil_change_on,
+    deletedAt: v.deleted_at,
     imageUrl: v.image_url || null,
     imageUrls: v.image_urls || []
   }
@@ -65,7 +72,10 @@ export function matchesVehicleFilter(v: Vehicle, filter: VehicleFilter): boolean
   const matchesSearch = (v.name || '').toLowerCase().includes(filter.search.toLowerCase()) ||
                        (v.code || '').toLowerCase().includes(filter.search.toLowerCase())
   const matchesCategory = filter.category === 'All' || v.category === filter.category
-  const matchesStatus = filter.status === 'All' || v.status === filter.status
+  // 削除済みの車両は「Deleted」を選んだときだけ表示する（All や各ステータスには含めない）
+  const matchesStatus = filter.status === DELETED_VEHICLE_FILTER
+    ? v.deletedAt !== null
+    : v.deletedAt === null && (filter.status === 'All' || v.status === filter.status)
   return !!(matchesSearch && matchesCategory && matchesStatus)
 }
 

@@ -477,6 +477,7 @@ export type Database = {
           category_id: string | null
           code: string
           created_at: string | null
+          deleted_at: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
@@ -491,6 +492,7 @@ export type Database = {
           category_id?: string | null
           code?: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
@@ -505,6 +507,7 @@ export type Database = {
           category_id?: string | null
           code?: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
