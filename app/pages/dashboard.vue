@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { selectReturnsDue } from '~/utils/rentalSchedule'
+
 const supabase = useSupabaseClient()
 const { ensureLoaded, vehicleStatusId } = useStatusIds()
 const { t, tName, dateLocale } = useI18n()
@@ -22,6 +24,18 @@ interface Transaction {
 
 const recentTransactions = ref<Transaction[]>([])
 const isLoading = ref(true)
+
+// 本日の返却予定（返却予定を過ぎた貸出も含む）
+interface ReturnDue {
+  id: string
+  vehicleName: string
+  vehicleCode: string
+  customerName: string
+  customerPhone: string
+  dueAt: Date
+  isOverdue: boolean
+}
+const returnsDue = ref<ReturnDue[]>([])
 
 async function fetchDashboardData() {
   try {
@@ -48,10 +62,20 @@ async function fetchDashboardData() {
     // Fetch Transactions to compute today's tx & recent tx
     const { data: transactionsData } = await (supabase
       .from('transactions')
-      .select('*, vehicles(name, code), customers(full_name)')
+      .select('*, vehicles(name, code), customers(full_name, phone)')
       .order('start_at', { ascending: false }) as any)
       
     const transactions = transactionsData || []
+
+    returnsDue.value = selectReturnsDue<any>(transactions, new Date()).map(({ transaction: r, isOverdue }) => ({
+      id: r.id,
+      vehicleName: r.vehicles?.name || '',
+      vehicleCode: r.vehicles?.code || '',
+      customerName: r.customers?.full_name || '',
+      customerPhone: r.customers?.phone || '',
+      dueAt: new Date(r.end_at),
+      isOverdue
+    }))
     
     let transactionCountToday = 0
     const events: any[] = []
@@ -106,6 +130,15 @@ async function fetchDashboardData() {
   } finally {
     isLoading.value = false
   }
+}
+
+// 本日の予定は時刻だけ、前日以前の延滞は日付も出す
+const formatDueTime = (d: Date) => {
+  const now = new Date()
+  const isToday = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  return isToday
+    ? d.toLocaleTimeString(dateLocale.value, { hour: '2-digit', minute: '2-digit' })
+    : formatTime(d)
 }
 
 // 時刻は表示言語に合わせて描画時に整形する（言語切替で再取得しない）
@@ -165,8 +198,123 @@ onMounted(() => {
       </UCard>
     </div>
 
+    <!-- Today's Returns -->
+    <UCard
+      data-testid="returns-due"
+      class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
+      :ui="{ body: 'p-0' }"
+    >
+      <template #header>
+        <div class="flex items-center gap-2 px-4 py-2">
+          <h3 class="text-lg font-bold">{{ t('dash.due.title') }}</h3>
+          <UBadge v-if="!isLoading" :label="String(returnsDue.length)" color="neutral" variant="subtle" />
+        </div>
+      </template>
+
+      <!-- スマホ: 1件ずつカードで表示（横スクロールせずに顧客と返却ボタンまで見える） -->
+      <div class="md:hidden divide-y divide-slate-200 dark:divide-slate-800">
+        <div v-if="isLoading" class="px-4 py-8 text-center text-slate-500">
+          <UIcon name="i-lucide-loader-2" class="animate-spin size-6 mx-auto" />
+        </div>
+        <div
+          v-else
+          v-for="due in returnsDue"
+          :key="due.id"
+          data-testid="return-due-card"
+          :class="['px-4 py-3 flex items-center gap-3', due.isOverdue ? 'bg-red-50/60 dark:bg-red-900/10' : '']"
+        >
+          <div class="flex-1 min-w-0 space-y-1">
+            <div class="flex items-center gap-2">
+              <span :class="['font-bold', due.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white']">{{ formatDueTime(due.dueAt) }}</span>
+              <UBadge
+                :label="due.isOverdue ? t('dash.due.overdue') : t('dash.due.today')"
+                :color="due.isOverdue ? 'error' : 'warning'"
+                variant="subtle"
+                size="sm"
+              />
+            </div>
+            <p class="text-sm font-medium truncate">{{ due.vehicleName || t('unknown') }} <span class="text-xs text-slate-500 font-mono">{{ due.vehicleCode }}</span></p>
+            <p class="text-sm text-slate-600 dark:text-slate-300 truncate">{{ due.customerName || t('unknown') }}<span v-if="due.customerPhone" class="text-xs text-slate-500"> · {{ due.customerPhone }}</span></p>
+          </div>
+          <UButton
+            :label="t('return')"
+            size="sm"
+            color="primary"
+            variant="soft"
+            :to="`/rentals/return?code=${due.vehicleCode}`"
+            class="cursor-pointer shrink-0"
+          />
+        </div>
+        <p v-if="!isLoading && returnsDue.length === 0" class="px-4 py-8 text-center text-slate-500">{{ t('dash.due.empty') }}</p>
+      </div>
+
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left whitespace-nowrap border-collapse">
+          <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm uppercase tracking-wider">
+            <tr>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.due.col.due') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.item') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('dash.col.user') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('status') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
+            <tr v-if="isLoading">
+              <td colspan="5" class="px-6 py-8 text-center text-slate-500">
+                <UIcon name="i-lucide-loader-2" class="animate-spin size-6 mx-auto" />
+              </td>
+            </tr>
+            <tr
+              v-else
+              v-for="due in returnsDue"
+              :key="due.id"
+              data-testid="return-due-row"
+              :class="due.isOverdue ? 'bg-red-50/60 dark:bg-red-900/10' : ''"
+            >
+              <td :class="['px-6 py-4 font-bold', due.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white']">
+                {{ formatDueTime(due.dueAt) }}
+              </td>
+              <td class="px-6 py-4">
+                <p class="font-medium">{{ due.vehicleName || t('unknown') }}</p>
+                <p class="text-xs text-slate-500 font-mono">{{ due.vehicleCode }}</p>
+              </td>
+              <td class="px-6 py-4">
+                <p class="font-bold text-slate-900 dark:text-white">{{ due.customerName || t('unknown') }}</p>
+                <p v-if="due.customerPhone" class="text-xs text-slate-500">{{ due.customerPhone }}</p>
+              </td>
+              <td class="px-6 py-4">
+                <UBadge
+                  :label="due.isOverdue ? t('dash.due.overdue') : t('dash.due.today')"
+                  :color="due.isOverdue ? 'error' : 'warning'"
+                  variant="subtle"
+                />
+              </td>
+              <td class="px-6 py-4 text-right">
+                <UButton
+                  :label="t('return')"
+                  icon="i-lucide-log-in"
+                  size="sm"
+                  color="primary"
+                  variant="soft"
+                  :to="`/rentals/return?code=${due.vehicleCode}`"
+                  class="cursor-pointer"
+                />
+              </td>
+            </tr>
+            <tr v-if="!isLoading && returnsDue.length === 0">
+              <td colspan="5" class="px-6 py-8 text-center text-slate-500">
+                {{ t('dash.due.empty') }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </UCard>
+
     <!-- Recent Transactions Table -->
     <UCard
+      data-testid="recent-transactions"
       class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
       :ui="{ body: 'p-0' }"
     >
