@@ -701,6 +701,32 @@ test.describe('Customers', () => {
       await deleteTestCustomer(page, testName)
       expect((await removePromise).ok()).toBeTruthy()
     })
+
+    test('他店舗のパスポート画像は読み書きできない', async () => {
+      const supabase = await signedInSupabase()
+      const admin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const bucket = 'customer-passports'
+      const otherStorePath = `${crypto.randomUUID()}/${crypto.randomUUID()}.jpg`
+      const image = new Blob(['x'], { type: 'image/jpeg' })
+
+      // 他店舗の画像を用意しておく（service role は RLS の対象外）
+      const { error: seedError } = await admin.storage.from(bucket).upload(otherStorePath, image)
+      expect(seedError).toBeNull()
+
+      try {
+        const { error: readError } = await supabase.storage.from(bucket).createSignedUrl(otherStorePath, 60)
+        expect(readError).not.toBeNull()
+
+        const { error: overwriteError } = await supabase.storage.from(bucket).upload(otherStorePath, image, { upsert: true })
+        expect(overwriteError).not.toBeNull()
+
+        await supabase.storage.from(bucket).remove([otherStorePath])
+        const { data: stillThere } = await admin.storage.from(bucket).list(otherStorePath.split('/')[0])
+        expect(stillThere).toHaveLength(1)
+      } finally {
+        await admin.storage.from(bucket).remove([otherStorePath])
+      }
+    })
   })
 })
 

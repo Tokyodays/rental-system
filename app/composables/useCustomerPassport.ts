@@ -1,16 +1,17 @@
 const PASSPORT_BUCKET = 'customer-passports'
 const PASSPORT_URL_TTL_SECONDS = 60 * 60
 
-function toPassportFilePath(customerId: string) {
-  return `passports/${customerId}-passport.jpg`
+// 先頭フォルダを店舗IDにする。ストレージの RLS がこのフォルダで店舗を判定する
+function toPassportFilePath(storeId: string, customerId: string) {
+  return `${storeId}/${customerId}.jpg`
 }
 
 export function useCustomerPassport() {
   const client = useSupabaseClient()
 
   /** パスポート画像をアップロード（上書き）し、保存先パスを返す */
-  async function uploadPassportImage(customerId: string, blob: Blob): Promise<string> {
-    const filePath = toPassportFilePath(customerId)
+  async function uploadPassportImage(storeId: string, customerId: string, blob: Blob): Promise<string> {
+    const filePath = toPassportFilePath(storeId, customerId)
 
     const { error: uploadError } = await client
       .storage

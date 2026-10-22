@@ -160,7 +160,7 @@ async function createCustomer(storeId: string) {
 
   // 2. Upload photo IF captured BEFORE inserting record
   if (capturedBlob.value) {
-    passportUrl = await uploadPassportImage(customerId, capturedBlob.value)
+    passportUrl = await uploadPassportImage(storeId, customerId, capturedBlob.value)
   }
 
   // 3. Get Status ID (Active)
@@ -277,7 +277,9 @@ async function updateCustomer() {
 
   // 1. Upload photo if captured (Overwrite)
   if (capturedBlob.value) {
-    passportUrl = await uploadPassportImage(customerToUpdate.id, capturedBlob.value)
+    const storeId = staff.value?.store_id
+    if (!storeId) throw new Error(t('cust.err.no_store'))
+    passportUrl = await uploadPassportImage(storeId, customerToUpdate.id, capturedBlob.value)
   }
 
   // 2. Update database

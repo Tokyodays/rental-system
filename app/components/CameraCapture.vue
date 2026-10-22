@@ -24,10 +24,8 @@ const startCamera = async () => {
       audio: false
     }
     stream.value = await navigator.mediaDevices.getUserMedia(constraints)
-    if (video.value) {
-      video.value.srcObject = stream.value
-      isPlaying.value = true
-    }
+    // isPlaying は映像の再生開始（@playing）で立てる。それ以前は videoWidth が 0 で撮影できない
+    if (video.value) video.value.srcObject = stream.value
   } catch (err: any) {
     console.error('Camera access error:', err)
     error.value = t('camera.denied')
@@ -93,6 +91,7 @@ onUnmounted(() => {
           playsinline
           muted
           class="w-full h-full object-cover"
+          @playing="isPlaying = true"
         ></video>
 
         <!-- ガイドライン -->
