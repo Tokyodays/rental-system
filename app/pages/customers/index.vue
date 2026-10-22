@@ -16,7 +16,7 @@ const search = ref('')
 const client = useSupabaseClient()
 const toast = useToast()
 const { staff } = useStaff()
-const { uploadPassportImage } = useCustomerPassport()
+const { uploadPassportImage, deletePassportImage } = useCustomerPassport()
 const { t, tName } = useI18n()
 
 const customers = ref<Customer[]>([])
@@ -177,8 +177,12 @@ async function createCustomer(storeId: string) {
       statusId,
       storeId
     }) as any)
-  
-  if (insertError) throw insertError
+
+  if (insertError) {
+    // 登録に失敗したら、先にアップロードしたパスポート画像を残さない
+    await deletePassportImage(passportUrl)
+    throw insertError
+  }
 }
 
 async function handleAddCustomer() {
@@ -216,13 +220,16 @@ function openDeleteModal(customer: Customer) {
   isDeleteModalOpen.value = true
 }
 
-async function deleteCustomer(customerId: string) {
+async function deleteCustomer(customer: Customer) {
   const { error } = await client
     .from('customers')
     .delete()
-    .eq('id', customerId)
-  
+    .eq('id', customer.id)
+
   if (error) throw error
+
+  // パスポート画像（個人情報）をストレージに残さない
+  await deletePassportImage(customer.passport_url)
 }
 
 async function handleDeleteCustomer() {
@@ -230,7 +237,7 @@ async function handleDeleteCustomer() {
   
   isDeleting.value = true
   try {
-    await deleteCustomer(customerToDelete.value.id)
+    await deleteCustomer(customerToDelete.value)
 
     isDeleteModalOpen.value = false
     customerToDelete.value = null

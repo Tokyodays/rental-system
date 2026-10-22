@@ -664,6 +664,44 @@ test.describe('Customers', () => {
     // 削除が完了するまで待機
     await expect(page.locator('tbody').getByText(testCustomerName)).not.toBeVisible({ timeout: 10_000 })
   })
+
+  test.describe('パスポート写真', () => {
+    // 疑似カメラは playwright.config.ts で有効化している
+    test('登録モーダルからカメラで撮影して保存し、詳細に表示される', async ({ page }) => {
+      await page.goto('/customers')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+
+      const testName = `E2E Passport ${Date.now()}`
+      await page.getByRole('button', { name: 'Add New Customer' }).click()
+      const modal = page.getByRole('dialog')
+      await modal.getByPlaceholder('e.g. John Doe').fill(testName)
+      await modal.getByRole('button', { name: 'Next: Passport Photo' }).click()
+      await modal.getByRole('button', { name: 'Open Camera' }).click()
+
+      // カメラは登録モーダルの上に別モーダルで開き、シャッターが押せること
+      const shutter = page.getByTestId('camera-shutter')
+      await expect(shutter).toBeEnabled({ timeout: 10_000 })
+      await shutter.click()
+      await expect(shutter).toBeHidden()
+
+      const uploadPromise = page.waitForResponse(r => r.url().includes('/storage/v1/object/customer-passports/') && r.request().method() === 'POST')
+      await page.getByRole('button', { name: 'Register Customer', exact: true }).click()
+      expect((await uploadPromise).ok()).toBeTruthy()
+      await expect(page.locator('tbody').getByText(testName)).toBeVisible({ timeout: 10_000 })
+
+      // 詳細パネルで画像が読み込めること（非公開バケットなので署名付きURL）
+      await page.locator('tbody').getByText(testName).click()
+      const img = page.locator('aside img').first()
+      await expect(img).toHaveAttribute('src', /\/object\/sign\/customer-passports\//)
+      await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+
+      // 顧客を削除すると画像も削除される
+      const removePromise = page.waitForResponse(r => r.url().includes('/storage/v1/object/customer-passports') && r.request().method() === 'DELETE')
+      await deleteTestCustomer(page, testName)
+      expect((await removePromise).ok()).toBeTruthy()
+    })
+  })
 })
 
 // ============================================================

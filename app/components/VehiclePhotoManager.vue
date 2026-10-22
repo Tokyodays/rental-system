@@ -41,7 +41,7 @@ const handleFileChange = async (event: Event) => {
  * カメラで撮影した画像を処理
  */
 const handleCapture = async (blob: Blob) => {
-  const file = new File([blob], 'captured-photo.webp', { type: 'image/webp' })
+  const file = new File([blob], 'captured-photo.jpg', { type: blob.type })
   await processAndUpload(file)
   isCameraOpen.value = false
 }
