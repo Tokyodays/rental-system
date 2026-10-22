@@ -39,6 +39,7 @@ const newVehicle = reactive({
   categoryName: 'Bike' as VehicleCategoryName,
   status: 'Available',
   lastMileage: 0,
+  lastOilChangeOn: '',
   imageUrls: [] as string[]
 })
 
@@ -52,7 +53,10 @@ async function fetchVehicles() {
     const { data, error } = await client
       .from('vehicles')
       .select('*, image_urls, vehicle_categories(name, icon), vehicle_statuses(name, color)')
-    
+      // 並び順を指定しないと、更新した車両が一覧の末尾へ移動してしまうため登録順に固定する
+      .order('created_at', { ascending: true })
+      .order('code', { ascending: true })
+
     if (error) {
       console.error('Supabase Error:', error)
       throw error
@@ -93,6 +97,7 @@ async function createVehicle(categoryId: string, storeId: string, statusId: stri
       store_id: storeId,
       status_id: statusId,
       last_mileage: newVehicle.lastMileage,
+      last_oil_change_on: newVehicle.lastOilChangeOn || null,
       image_urls: newVehicle.imageUrls
     } as any)
   
@@ -100,7 +105,7 @@ async function createVehicle(categoryId: string, storeId: string, statusId: stri
 }
 
 /** vehicles を code で更新し、失敗時は throw する */
-type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; image_urls: string[] }>
+type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; last_oil_change_on: string | null; image_urls: string[] }>
 
 async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
   const { error } = await client
@@ -115,6 +120,7 @@ async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
 function resetNewVehicleForm() {
   newVehicle.name = ''
   newVehicle.lastMileage = 0
+  newVehicle.lastOilChangeOn = ''
   newVehicle.imageUrls = []
 }
 
@@ -234,6 +240,37 @@ function handleCancelEditMileage() {
   isEditingMileage.value = false
 }
 
+// 最後にオイル交換した日付（未来日は選べない。編集開始時は「今日」を初期値にする）
+const isEditingOilChange = ref(false)
+const editOilChangeValue = ref('')
+const isUpdatingOilChange = ref(false)
+const todayDateOnly = computed(() => toDateOnlyString(new Date()))
+
+function handleStartEditOilChange() {
+  if (!selectedVehicle.value) return
+  editOilChangeValue.value = todayDateOnly.value
+  isEditingOilChange.value = true
+}
+
+async function handleSaveOilChange() {
+  if (!selectedVehicle.value) return
+  const value = editOilChangeValue.value || null
+  isUpdatingOilChange.value = true
+  try {
+    await updateVehicleByCode(selectedVehicle.value.code, { last_oil_change_on: value })
+
+    selectedVehicle.value.lastOilChangeOn = value
+    toast.add({ title: t('veh.toast.oil_change_updated'), color: 'success' })
+    await refreshVehiclesKeepingSelection()
+  } catch (e: any) {
+    console.error('Update oil change date failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
+  } finally {
+    isUpdatingOilChange.value = false
+    isEditingOilChange.value = false
+  }
+}
+
 // Photo editing in sidebar
 const isEditingPhotos = ref(false)
 const isUpdatingPhotos = ref(false)
@@ -258,6 +295,7 @@ async function handleSavePhotos(newUrls: string[]) {
 // Reset editing state when a different vehicle is selected
 watch(selectedVehicle, () => {
   isEditingMileage.value = false
+  isEditingOilChange.value = false
   isEditingPhotos.value = false
 })
 </script>
@@ -541,6 +579,55 @@ watch(selectedVehicle, () => {
             </div>
             <span v-else class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.lastMileage.toLocaleString() }} km</span>
           </div>
+          <div data-testid="oil-change">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">{{ t('veh.oil_change') }}</p>
+              <UButton
+                v-if="!isEditingOilChange"
+                icon="i-lucide-pencil"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                class="cursor-pointer"
+                :aria-label="t('veh.oil_change')"
+                @click="handleStartEditOilChange"
+              />
+            </div>
+            <div v-if="isEditingOilChange" class="flex items-center gap-2 mt-1">
+              <UInput
+                v-model="editOilChangeValue"
+                type="date"
+                :max="todayDateOnly"
+                size="sm"
+                class="w-full"
+              />
+              <UButton
+                icon="i-lucide-check"
+                color="success"
+                size="xs"
+                variant="subtle"
+                class="cursor-pointer shrink-0"
+                :aria-label="t('save')"
+                :loading="isUpdatingOilChange"
+                @click="handleSaveOilChange"
+              />
+              <UButton
+                icon="i-lucide-x"
+                color="neutral"
+                size="xs"
+                variant="ghost"
+                class="cursor-pointer shrink-0"
+                :aria-label="t('cancel')"
+                :disabled="isUpdatingOilChange"
+                @click="() => { isEditingOilChange = false }"
+              />
+            </div>
+            <span v-else-if="selectedVehicle.lastOilChangeOn" data-testid="oil-change-value" class="text-sm text-slate-900 dark:text-white font-medium">
+              {{ formatDateOnly(selectedVehicle.lastOilChangeOn, dateLocale) }}
+              <span class="text-slate-500 font-normal ml-1">({{ t('veh.oil_change_days_ago', { n: daysSinceDateOnly(selectedVehicle.lastOilChangeOn) }) }})</span>
+            </span>
+            <span v-else data-testid="oil-change-value" class="text-sm text-slate-400">{{ t('veh.oil_change_none') }}</span>
+          </div>
         </div>
 
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 mt-auto">
@@ -583,6 +670,10 @@ watch(selectedVehicle, () => {
 
           <UFormField :label="t('veh.modal.mileage')" name="lastMileage">
             <UInput v-model.number="newVehicle.lastMileage" type="number" />
+          </UFormField>
+
+          <UFormField :label="t('veh.modal.oil_change')" name="lastOilChangeOn">
+            <UInput v-model="newVehicle.lastOilChangeOn" type="date" :max="todayDateOnly" />
           </UFormField>
 
           <UFormField :label="t('veh.modal.photos')" name="imageUrls">

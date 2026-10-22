@@ -20,6 +20,8 @@ export interface Vehicle {
   lastUpdated: string
   icon: string
   lastMileage: number
+  /** 最後にオイル交換した日付（YYYY-MM-DD）。未記録は null */
+  lastOilChangeOn: string | null
   imageUrl: string | null
   imageUrls: string[]
 }
@@ -30,6 +32,7 @@ export interface VehicleRow {
   name: string
   updated_at: string
   last_mileage: number | null
+  last_oil_change_on: string | null
   image_url: string | null
   image_urls: string[] | null
   vehicle_categories: { name: string | null; icon: string | null } | null
@@ -52,6 +55,7 @@ export function toVehicle(v: VehicleRow): Vehicle {
     lastUpdated: v.updated_at,
     icon: v.vehicle_categories?.icon || 'i-lucide-package',
     lastMileage: v.last_mileage || 0,
+    lastOilChangeOn: v.last_oil_change_on,
     imageUrl: v.image_url || null,
     imageUrls: v.image_urls || []
   }
@@ -77,4 +81,32 @@ export function toStatusAccessLabel(status: string, t: TranslateFn): string {
 
 export function toVehicleQrUrl(code: string, size: number): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${code}`
+}
+
+// ---- 日付のみの値（YYYY-MM-DD）----
+// new Date('YYYY-MM-DD') は UTC 0 時として解釈され、タイムゾーンによって前日になるため、ローカル日付として扱う
+
+function parseDateOnly(value: string): Date {
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y!, m! - 1, d!)
+}
+
+/** ローカル日付を YYYY-MM-DD にする（date 入力の値・DB の DATE 列と同じ形式） */
+export function toDateOnlyString(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** YYYY-MM-DD から today までの経過日数（当日は 0） */
+export function daysSinceDateOnly(value: string, today: Date = new Date()): number {
+  const start = parseDateOnly(value)
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+}
+
+/** YYYY-MM-DD を表示言語に合わせて整形する */
+export function formatDateOnly(value: string, locale: string): string {
+  return parseDateOnly(value).toLocaleDateString(locale)
 }
