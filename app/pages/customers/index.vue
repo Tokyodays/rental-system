@@ -325,11 +325,11 @@ const filteredCustomers = computed(() => {
 <template>
   <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)]">
     <!-- Main Content: Customer List -->
-    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-[600px]">
+    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0">
       <!-- Header Area: Search & Filters -->
-      <div class="flex flex-col gap-4 p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex-1 relative">
+      <div class="flex flex-col gap-4 p-4 md:p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
+          <div class="relative w-full sm:w-auto sm:flex-1 sm:min-w-48">
             <UInput
               v-model="search"
               icon="i-lucide-search"
@@ -369,8 +369,8 @@ const filteredCustomers = computed(() => {
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
+      <div class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto text-sm">
           <div v-if="isLoading" class="p-12 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2 mx-auto" />
             <p>{{ t('cust.loading') }}</p>

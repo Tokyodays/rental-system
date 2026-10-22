@@ -299,7 +299,7 @@ watch(() => staff.value?.store_id, (newId) => {
           data-testid="language-select"
           @update:model-value="(v) => handleLocaleChange(v as Locale)"
           orientation="horizontal"
-          :ui="{ wrapper: 'flex flex-wrap gap-x-8 gap-y-4' }"
+          :ui="{ fieldset: 'flex-wrap gap-x-8 gap-y-4' }"
         >
           <template #label="{ item }">
             <div class="flex items-center gap-2">
