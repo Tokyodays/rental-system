@@ -82,6 +82,7 @@ async function identifyVehicleByCode(code: string) {
       .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
       .eq('code', code)
       .eq('status_id', statusId)
+      .is('deleted_at', null)
       .single() as any)
 
     if (data) {
@@ -106,6 +107,7 @@ async function fetchAnyAvailableVehicle(): Promise<{ code: string } | null> {
     .from('vehicles')
     .select('code')
     .eq('status_id', statusId)
+    .is('deleted_at', null)
     .limit(1)
     .single() as any)
   return data

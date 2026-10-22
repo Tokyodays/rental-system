@@ -29,7 +29,7 @@ async function fetchDashboardData() {
     
     // Fetch vehicle statuses for count
     await ensureLoaded()
-    const { data: vehicles } = await supabase.from('vehicles').select('status_id')
+    const { data: vehicles } = await supabase.from('vehicles').select('status_id').is('deleted_at', null)
 
     let lentCount = 0
     let availableCount = 0
