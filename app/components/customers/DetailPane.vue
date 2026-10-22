@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Customer, CustomerTransaction } from '~/utils/customer'
 
-defineProps<{
+const props = defineProps<{
   customer: Customer
   transactions: CustomerTransaction[]
   isLoadingTransactions: boolean
@@ -13,7 +13,15 @@ const emit = defineEmits<{
   delete: [customer: Customer]
 }>()
 
-const { getPassportPublicUrl } = useCustomerPassport()
+const { getPassportSignedUrl } = useCustomerPassport()
+
+const passportSrc = ref<string | null>(null)
+watch(() => props.customer.passport_url, async (path) => {
+  passportSrc.value = null
+  const url = await getPassportSignedUrl(path)
+  // 取得中に別の顧客へ切り替わっていたら反映しない
+  if (props.customer.passport_url === path) passportSrc.value = url
+}, { immediate: true })
 const { t, tName, dateLocale } = useI18n()
 </script>
 
@@ -37,8 +45,9 @@ const { t, tName, dateLocale } = useI18n()
       <div class="flex flex-col items-center">
         <div class="w-full aspect-[4/3] bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 mb-4 border border-slate-200 dark:border-slate-800 overflow-hidden relative shadow-sm">
           <template v-if="customer.passport_url">
-            <img 
-              :src="getPassportPublicUrl(customer.passport_url)" 
+            <img
+              v-if="passportSrc"
+              :src="passportSrc"
               class="w-full h-full object-cover" 
               @error="(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Load+Error'"
             />

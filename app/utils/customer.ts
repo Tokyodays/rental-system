@@ -43,14 +43,17 @@ export interface CustomerUpdateForm extends NewCustomerForm {
   status_id: string
 }
 
-export interface CustomerInsertPayload extends NewCustomerForm {
+// email は UNIQUE 制約があるため、未入力は空文字ではなく NULL で保存する
+export interface CustomerInsertPayload extends Omit<NewCustomerForm, 'email'> {
+  email: string | null
   id: string
   passport_url: string
   status_id: string | null
   store_id: string
 }
 
-export interface CustomerUpdatePayload extends NewCustomerForm {
+export interface CustomerUpdatePayload extends Omit<NewCustomerForm, 'email'> {
+  email: string | null
   status_id: string
   passport_url?: string
 }
@@ -75,6 +78,10 @@ export function matchesCustomerStatusFilter(customer: Customer, statusFilter: st
   return statusFilter === 'all' || customer.status_id === statusFilter
 }
 
+function toNullableEmail(email: string): string | null {
+  return email.trim() || null
+}
+
 export function toCustomerInsertPayload(params: {
   id: string
   form: NewCustomerForm
@@ -86,7 +93,7 @@ export function toCustomerInsertPayload(params: {
   return {
     id, // Explicitly provide the generated ID
     full_name: form.full_name,
-    email: form.email,
+    email: toNullableEmail(form.email),
     phone: form.phone,
     passport_number: form.passport_number,
     passport_url: passportUrl,
@@ -98,7 +105,7 @@ export function toCustomerInsertPayload(params: {
 export function toCustomerUpdatePayload(form: CustomerUpdateForm, passportUrl: string): CustomerUpdatePayload {
   const payload: CustomerUpdatePayload = {
     full_name: form.full_name,
-    email: form.email,
+    email: toNullableEmail(form.email),
     phone: form.phone,
     passport_number: form.passport_number,
     status_id: form.status_id

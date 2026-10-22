@@ -26,7 +26,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { browserName: 'chromium' }
+      use: {
+        browserName: 'chromium',
+        // カメラ撮影のテスト用に疑似カメラを使う
+        launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] },
+        permissions: ['camera']
+      }
     }
   ]
 })
