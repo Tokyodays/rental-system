@@ -6,6 +6,7 @@ export const VEHICLE_CATEGORY_FILTERS = ['All', 'Bike', 'Car', 'Bicycle']
 
 /** 新規登録フォームのカテゴリ選択肢 */
 export const VEHICLE_CATEGORY_NAMES = ['Bike', 'Car', 'Bicycle'] as const
+export type VehicleCategoryName = typeof VEHICLE_CATEGORY_NAMES[number]
 
 /** 一覧・詳細サイドバーの表示モデル */
 export interface Vehicle {

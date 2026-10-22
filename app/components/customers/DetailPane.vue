@@ -104,7 +104,7 @@ const { t, tName, dateLocale } = useI18n()
           </div>
           <div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('cust.pane.registered') }}</p>
-            <p class="text-sm text-slate-900 dark:text-white font-medium">{{ new Date(customer.created_at).toLocaleDateString(dateLocale) }}</p>
+            <p class="text-sm text-slate-900 dark:text-white font-medium">{{ customer.created_at ? new Date(customer.created_at).toLocaleDateString(dateLocale) : t('n_a') }}</p>
           </div>
           <div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('cust.pane.id') }}</p>
@@ -141,7 +141,7 @@ const { t, tName, dateLocale } = useI18n()
                   </span>
                 </div>
                 <div class="flex items-center justify-between text-[10px]">
-                  <p class="text-slate-500">{{ new Date(t.start_at).toLocaleDateString(dateLocale) }}</p>
+                  <p class="text-slate-500">{{ t.start_at ? new Date(t.start_at).toLocaleDateString(dateLocale) : '-' }}</p>
                   <p class="font-bold text-blue-600 dark:text-blue-400">{{ t.price }}</p>
                 </div>
              </div>

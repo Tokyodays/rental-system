@@ -158,7 +158,7 @@ const isAddModalOpen = ref(false)
 const newStaff = reactive({
   username: '',
   password: '',
-  role_id: ROLE_IDS.STAFF as string // user role as default
+  role_id: ROLE_IDS.STAFF as typeof ROLE_IDS.STAFF | typeof ROLE_IDS.ADMIN // user role as default
 })
 
 function openAddModal() {
@@ -350,7 +350,7 @@ watch(() => staff.value?.store_id, (newId) => {
               :color="storeCurrency === c.id ? 'primary' : 'neutral'"
               :variant="storeCurrency === c.id ? 'solid' : 'outline'"
               class="min-w-16 justify-center font-bold"
-              @click="storeCurrency = c.id"
+              @click="() => { storeCurrency = c.id }"
             />
           </div>
           <template #help>

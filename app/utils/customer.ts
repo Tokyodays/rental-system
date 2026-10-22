@@ -5,12 +5,13 @@ export interface Customer {
   phone: string | null
   passport_number?: string | null
   passport_url?: string | null
+  // DB 上は NULL になり得る列（database.types.ts に合わせる）
   customer_statuses: {
     name: string
-    color: string
-  }
-  status_id?: string
-  created_at: string
+    color: string | null
+  } | null
+  status_id?: string | null
+  created_at: string | null
 }
 
 /** customers テーブルの行（レガシー列 passport_image_url を含み得る） */
@@ -21,8 +22,8 @@ export interface CustomerRow extends Omit<Customer, 'passport_url'> {
 
 export interface CustomerTransaction {
   id: string
-  status: string
-  start_at: string
+  status: string | null
+  start_at: string | null
   price: number | string | null
   vehicles: {
     name: string

@@ -36,7 +36,7 @@ const isAddModalOpen = ref(false)
 const isSubmitting = ref(false)
 const newVehicle = reactive({
   name: '',
-  categoryName: 'Bike',
+  categoryName: 'Bike' as VehicleCategoryName,
   status: 'Available',
   lastMileage: 0,
   imageUrls: [] as string[]
@@ -322,7 +322,7 @@ watch(selectedVehicle, () => {
             color="primary"
             size="md"
             class="cursor-pointer"
-            @click="isAddModalOpen = true"
+            @click="() => { isAddModalOpen = true }"
           />
         </div>
       </div>
@@ -419,7 +419,7 @@ watch(selectedVehicle, () => {
             variant="ghost"
             color="neutral"
             class="cursor-pointer"
-            @click="selectedVehicle = null"
+            @click="() => { selectedVehicle = null }"
           />
         </div>
 
@@ -434,7 +434,7 @@ watch(selectedVehicle, () => {
                 variant="ghost"
                 color="neutral"
                 class="cursor-pointer"
-                @click="isEditingPhotos = true"
+                @click="() => { isEditingPhotos = true }"
               />
             </div>
           </div>
@@ -451,7 +451,7 @@ watch(selectedVehicle, () => {
               color="neutral"
               variant="soft"
               class="mt-4 cursor-pointer"
-              @click="isEditingPhotos = false"
+              @click="() => { isEditingPhotos = false }"
             />
           </div>
           
@@ -553,7 +553,7 @@ watch(selectedVehicle, () => {
               color="primary"
               variant="solid"
               class="cursor-pointer"
-              @click="navigateTo(`/rentals/return?code=${selectedVehicle.code}`)"
+              @click="() => { if (selectedVehicle) navigateTo(`/rentals/return?code=${selectedVehicle.code}`) }"
             />
             <UButton
               :label="t('veh.print_qr')"
@@ -590,7 +590,7 @@ watch(selectedVehicle, () => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isAddModalOpen = false }" />
             <UButton :label="t('veh.modal.save')" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
           </div>
         </UForm>

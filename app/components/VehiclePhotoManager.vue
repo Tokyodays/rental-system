@@ -21,7 +21,8 @@ const isCameraOpen = ref(false)
  */
 const handleFileChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
-  if (!input.files || input.files.length === 0) return
+  const file = input.files?.[0]
+  if (!file) return
 
   if (props.modelValue.length >= 5) {
     toast.add({
@@ -32,7 +33,6 @@ const handleFileChange = async (event: Event) => {
     return
   }
 
-  const file = input.files[0]
   await processAndUpload(file)
   input.value = ''
 }
@@ -64,6 +64,7 @@ const processAndUpload = async (file: File) => {
  */
 const removePhoto = async (index: number) => {
   const url = props.modelValue[index]
+  if (!url) return
   const newUrls = [...props.modelValue]
   newUrls.splice(index, 1)
   
@@ -93,7 +94,7 @@ const openFilePicker = () => {
           icon="i-lucide-camera"
           :label="t('photo.take')"
           :loading="isUploading"
-          @click="isCameraOpen = true"
+          @click="() => { isCameraOpen = true }"
         />
         <UButton
           v-if="modelValue.length < 5"

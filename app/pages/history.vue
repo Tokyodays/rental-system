@@ -5,16 +5,16 @@ const { t, dateLocale } = useI18n()
 const search = ref('')
 
 const { data, pending } = await useAsyncData('transactions-history', async () => {
-  const { data } = await (supabase
+  const { data } = await supabase
     .from('transactions')
     .select('*, vehicles(name, code), customers(full_name), transaction_extensions(additional_price)')
-    .order('start_at', { ascending: false }) as any)
+    .order('start_at', { ascending: false })
   return data || []
 })
 
 const rentals = computed(() => data.value || [])
 
-function calculateDurationText(startStr: string, endStr: string) {
+function calculateDurationText(startStr: string | null, endStr: string | null) {
   if (!startStr || !endStr) return ''
   const start = new Date(startStr)
   const end = new Date(endStr)
@@ -45,7 +45,7 @@ const transactionEvents = computed(() => {
     extensionTotal: sumExtensionPrice(r.transaction_extensions || []),
     status: r.status,
     expectedReturnTime: r.end_at // end_at は返却予定日時（返却後も上書きされない）
-  })).sort((a, b) => new Date(b.lendingTime).getTime() - new Date(a.lendingTime).getTime())
+  })).sort((a, b) => new Date(b.lendingTime ?? 0).getTime() - new Date(a.lendingTime ?? 0).getTime())
 })
 
 const statusFilter = ref('All')
@@ -129,6 +129,7 @@ function downloadExport() {
   end.setHours(23, 59, 59, 999) // Include the end date entirely
 
   const dataToExport = transactionEvents.value.filter(t => {
+    if (!t.lendingTime) return false
     const d = new Date(t.lendingTime)
     return d >= start && d <= end
   })
@@ -202,7 +203,7 @@ function formatDate(date: string | null) {
         </div>
       </div>
       
-      <UButton :label="t('hist.export')" icon="i-lucide-download" variant="outline" color="neutral" class="cursor-pointer w-full sm:w-auto" @click="isExportModalOpen = true" />
+      <UButton :label="t('hist.export')" icon="i-lucide-download" variant="outline" color="neutral" class="cursor-pointer w-full sm:w-auto" @click="() => { isExportModalOpen = true }" />
     </div>
 
     <UCard class="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden" :ui="{ body: 'p-0' }">
@@ -289,7 +290,7 @@ function formatDate(date: string | null) {
             <UInput type="date" v-model="exportEndDate" class="w-full" />
           </UFormField>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" @click="isExportModalOpen = false" class="cursor-pointer" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" @click="() => { isExportModalOpen = false }" class="cursor-pointer" />
             <UButton :label="t('hist.export.download')" icon="i-lucide-download" color="primary" @click="downloadExport" class="cursor-pointer" />
           </div>
         </div>
