@@ -140,8 +140,8 @@ async function handleSaveStore() {
       store.value.currency_id = storeCurrency.value
     }
     
-    // キャッシュを更新
-    await fetchStaff()
+    // 他画面が参照する staff.stores（通貨など）を最新にする
+    await fetchStaff({ force: true })
     toast.add({ title: t('set.saved'), description: t('set.saved_desc'), color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : t('set.unknown_error')
