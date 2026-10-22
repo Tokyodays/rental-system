@@ -29,6 +29,8 @@ export const useStaff = () => {
     username: string | null
     store_id: string | null
     role_id: string
+    /** 本人が選んだ表示言語。NULL なら店舗のデフォルト言語に従う */
+    locale: string | null
     staff_roles: { name: string } | null
     stores: StoreRecord | null
   }
@@ -64,7 +66,7 @@ export const useStaff = () => {
     try {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, username, store_id, role_id, staff_roles(name), stores(id, name, address, currency_id, default_locale, currency(id, currency_text, currency_symbol))')
+        .select('id, username, store_id, role_id, locale, staff_roles(name), stores(id, name, address, currency_id, default_locale, currency(id, currency_text, currency_symbol))')
         .eq('id', uid)
         .maybeSingle()
 
@@ -76,6 +78,7 @@ export const useStaff = () => {
           username: user.value?.email?.split('@')[0] || 'Unknown',
           store_id: null,
           role_id: '',
+          locale: null,
           staff_roles: { name: 'user' },
           stores: null
         }

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { toLocale, type Locale } from '~/locales'
+
 defineProps<{
   title: string
 }>()
@@ -13,7 +15,39 @@ const toast = useToast()
 
 const user = useSupabaseUser()
 const { staff, isLoading } = useStaff()
-const { t } = useI18n()
+const { t, setLocale, availableLocales } = useI18n()
+
+const changeLocale = async (value: Locale | null) => {
+  try {
+    await setLocale(value)
+  } catch (err: any) {
+    toast.add({ title: t('error'), description: err.message, color: 'error' })
+  }
+}
+
+// 自分の言語（staff.locale）を選ぶメニュー。未選択なら店舗のデフォルトに従う
+const languageMenu = computed(() => {
+  const personal = staff.value?.locale ?? null
+  const storeDefault = availableLocales.find(l => l.value === toLocale(staff.value?.stores?.default_locale)) ?? availableLocales[0]!
+  return {
+    label: t('language'),
+    icon: 'i-lucide-languages',
+    children: [
+      [{
+        label: t('lang.store_default', { lang: storeDefault.label }),
+        type: 'checkbox' as const,
+        checked: personal === null,
+        onSelect: () => changeLocale(null)
+      }],
+      availableLocales.map(l => ({
+        label: l.label,
+        type: 'checkbox' as const,
+        checked: personal === l.value,
+        onSelect: () => changeLocale(l.value)
+      }))
+    ]
+  }
+})
 
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
@@ -26,6 +60,7 @@ const handleLogout = async () => {
 }
 
 const userMenuItems = computed(() => [
+  [languageMenu.value],
   [
     { label: t('profile'), icon: 'i-lucide-user' },
     { label: t('logout'), icon: 'i-lucide-log-out', color: 'error' as any, onSelect: handleLogout }

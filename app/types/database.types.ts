@@ -168,6 +168,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          locale: string | null
           role_id: string
           store_id: string | null
           username: string | null
@@ -177,6 +178,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          locale?: string | null
           role_id: string
           store_id?: string | null
           username?: string | null
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          locale?: string | null
           role_id?: string
           store_id?: string | null
           username?: string | null
@@ -579,6 +582,7 @@ export type Database = {
       generate_unique_vehicle_code: { Args: never; Returns: string }
       get_auth_store_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      set_my_locale: { Args: { p_locale: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

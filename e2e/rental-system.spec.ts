@@ -1493,4 +1493,47 @@ test.describe('Internationalization', () => {
       await expect(page.locator('aside').first()).toContainText('Dashboard')
     }
   })
+
+  test('ユーザーメニューで選んだ言語は本人だけに保存され、店舗のデフォルトより優先される', async ({ page, browser }) => {
+    const chooseLanguage = async (p: Page, menuLabel: string, option: string) => {
+      await p.getByTestId('user-menu').click()
+      await p.getByRole('menuitem', { name: menuLabel }).hover()
+      await p.getByRole('menuitemcheckbox', { name: option }).click()
+    }
+    const firstNav = (p: Page) => p.locator('aside nav a').first()
+
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    try {
+      await chooseLanguage(page, 'Language', 'Bahasa Melayu')
+      await expect(firstNav(page)).toHaveText('Papan Pemuka')
+
+      // 別の端末（Cookie なし）でログインしても本人の言語になる
+      const otherDevice = await browser.newContext()
+      const otherPage = await otherDevice.newPage()
+      await login(otherPage, TEST_USERNAME, TEST_PASSWORD)
+      await expect(firstNav(otherPage)).toHaveText('Papan Pemuka')
+      await otherDevice.close()
+
+      // 店舗のデフォルトを変えても、本人の言語は変わらない
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await page.getByText('ภาษาไทย').click()
+      await expect(page.getByText('Bahasa dikemas kini').first()).toBeVisible()
+      await expect(firstNav(page)).toHaveText('Papan Pemuka')
+
+      // 「店舗のデフォルト」に戻すと店舗の言語（タイ語）になる
+      await chooseLanguage(page, 'Bahasa', 'Lalai kedai (ภาษาไทย)')
+      await expect(firstNav(page)).toHaveText('แดชบอร์ด')
+    } finally {
+      // 本人の言語を未選択に、店舗のデフォルトを English に戻す
+      const supabase = await signedInSupabase()
+      await supabase.rpc('set_my_locale', { p_locale: '' })
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await page.getByText('English').click()
+      await expect(firstNav(page)).toHaveText('Dashboard')
+    }
+  })
 })
