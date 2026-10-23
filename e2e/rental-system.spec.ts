@@ -1,6 +1,7 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test'
-import { createClient } from '@supabase/supabase-js'
+import { test, expect, type Browser, type Page, type BrowserContext } from '@playwright/test'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { ROLE_IDS, toInternalEmail } from '../shared/constants/auth'
+import { STAFF_STORAGE_STATE, completeMfa, prepareMfa, signInWithMfa } from './mfa'
 
 /**
  * E2E Tests for Rental System
@@ -40,19 +41,30 @@ async function login(page: Page, username: string = TEST_USERNAME, password: str
   await page.goto('/login')
   await page.waitForLoadState('networkidle')
 
+  // パスワードだけ済んでいるセッションは二段階認証の画面へ送られる
+  if (page.url().includes('/mfa/')) {
+    await completeMfa(page, username)
+    await page.waitForLoadState('networkidle')
+    return
+  }
   // 既にログイン済みならスキップ
   if (!page.url().includes('/login')) return
 
   // ユーザー名・パスワードを入力
+  await prepareMfa(username)
   await page.getByPlaceholder('admin').fill(username)
   await page.getByPlaceholder('••••••••').fill(password)
 
-  // Sign In ボタンをクリック
+  // Sign In ボタンをクリック → 二段階認証（登録または確認）
   await page.getByRole('button', { name: 'Sign In' }).click()
+  await completeMfa(page, username)
 
   // ダッシュボードへリダイレクトされるまで待つ
   await page.waitForURL('/dashboard', { timeout: 15_000 })
   await page.waitForLoadState('networkidle')
+
+  // ログアウトなどで保存済みのセッションが無効になっていた場合に備え、以降のテスト用に保存し直す
+  if (username === TEST_USERNAME) await page.context().storageState({ path: STAFF_STORAGE_STATE })
 }
 
 /** ローディングスピナーが消えるまで待つ（改善版） */
@@ -65,8 +77,19 @@ async function waitForLoadingComplete(page: Page, timeout: number = 5000) {
 }
 
 /** テストユーザーでログインした Supabase クライアント（DB の中身を検証する用） */
+// 別の端末（何もログインしていない状態）を作るとき用。設定の storageState を引き継がないよう明示する
+const LOGGED_OUT = { cookies: [], origins: [] }
+
+// 二段階認証まで済ませた接続は1回作って使い回す（コードは30秒ごとに1回しか使えないため）
+let mfaClient: Promise<SupabaseClient> | null = null
 async function signedInSupabase() {
-  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+  mfaClient ??= signInWithMfa(toInternalEmail(TEST_USERNAME), TEST_USERNAME, TEST_PASSWORD)
+  return mfaClient
+}
+
+/** パスワードだけでログインした接続（二段階認証の前の状態を確かめる用） */
+async function passwordOnlySupabase() {
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!, { auth: { persistSession: false } })
   const { error } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
   expect(error).toBeNull()
   return supabase
@@ -94,11 +117,18 @@ async function adminLogin(page: Page, username: string = SUPER_ADMIN_USERNAME, p
   await page.goto('/admin/login')
   await page.waitForLoadState('networkidle')
 
+  if (page.url().includes('/mfa/')) {
+    await completeMfa(page, username)
+    await page.waitForLoadState('networkidle')
+    return
+  }
   if (!page.url().includes('/admin/login')) return
 
+  await prepareMfa(username)
   await page.getByPlaceholder('admin').fill(username)
   await page.getByPlaceholder('••••••••').fill(password)
   await page.getByRole('button', { name: 'Sign In' }).click()
+  await completeMfa(page, username)
 
   await page.waitForURL('**/admin/stores', { timeout: 15_000 })
   await page.waitForLoadState('networkidle')
@@ -478,15 +508,27 @@ test.describe('Delete Vehicle', () => {
   test('貸出中の車両は削除できない', async ({ page }) => {
     const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { data: lent } = await service.from('vehicle_statuses').select('id').eq('name', 'Lent').single()
-    const { data: lentVehicle } = await service.from('vehicles').select('code').eq('status_id', lent!.id).is('deleted_at', null).limit(1).maybeSingle()
-    test.skip(!lentVehicle, '貸出中の車両がない')
+    // 貸出中の車両がなければ、1台を一時的に貸出中にする（テスト後に元のステータスへ戻す）
+    let lentVehicle = (await service.from('vehicles').select('id, code, status_id').eq('status_id', lent!.id).is('deleted_at', null).limit(1).maybeSingle()).data
+    let restore: { id: string, status_id: string | null } | null = null
+    if (!lentVehicle) {
+      const { data: me } = await (await signedInSupabase()).from('staff').select('store_id').eq('id', (await (await signedInSupabase()).auth.getUser()).data.user!.id).single()
+      const { data: v } = await service.from('vehicles').select('id, code, status_id').eq('store_id', me!.store_id).is('deleted_at', null).limit(1).single()
+      restore = { id: v!.id, status_id: v!.status_id }
+      await service.from('vehicles').update({ status_id: lent!.id }).eq('id', v!.id)
+      lentVehicle = v
+    }
 
-    await page.goto('/vehicles')
-    await page.waitForLoadState('networkidle')
-    await waitForLoadingComplete(page)
-    await page.getByPlaceholder('Search vehicles...').fill(lentVehicle!.code)
-    await page.locator('tbody tr').filter({ hasText: lentVehicle!.code }).click()
-    await expect(page.getByRole('button', { name: 'Delete Vehicle' })).toBeDisabled()
+    try {
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByPlaceholder('Search vehicles...').fill(lentVehicle!.code)
+      await page.locator('tbody tr').filter({ hasText: lentVehicle!.code }).click()
+      await expect(page.getByRole('button', { name: 'Delete Vehicle' })).toBeDisabled()
+    } finally {
+      if (restore) await service.from('vehicles').update({ status_id: restore.status_id }).eq('id', restore.id)
+    }
   })
 })
 
@@ -1630,6 +1672,102 @@ test.describe('Authentication & Security', () => {
 })
 
 // ============================================================
+// 13.5 Two-step verification (TOTP, 全員必須)
+// ============================================================
+test.describe('Two-step verification', () => {
+  /** 新しいセッションでパスワードだけ入力し、二段階認証の画面で止める */
+  async function passwordOnly(browser: Browser, username = TEST_USERNAME, password = TEST_PASSWORD) {
+    await prepareMfa(username)
+    const context = await browser.newContext({ storageState: LOGGED_OUT })
+    const page = await context.newPage()
+    await page.goto('/login')
+    await page.waitForLoadState('networkidle')
+    await page.getByPlaceholder('admin').fill(username)
+    await page.getByPlaceholder('••••••••').fill(password)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL(/\/mfa\/(setup|verify)/)
+    await page.waitForLoadState('networkidle')
+    return { context, page }
+  }
+
+  test('パスワードだけでは、画面・API・DB のどこからも店舗のデータを取れない', async ({ browser }) => {
+    const { context, page } = await passwordOnly(browser)
+    try {
+      // 画面: 他のページを開いても二段階認証の画面へ戻される
+      await page.goto('/customers')
+      await expect(page).toHaveURL(/\/mfa\/verify/)
+      // API: 管理系の API は拒否される
+      const res = await page.request.get('/api/admin/store-staff')
+      expect(res.status()).toBe(403)
+    } finally {
+      await context.close()
+    }
+
+    // DB: パスワードだけのセッション（aal1）では顧客を読めず、登録もできない
+    const supabase = await passwordOnlySupabase()
+    const { data: me } = await supabase.from('staff').select('store_id').eq('id', (await supabase.auth.getUser()).data.user!.id).single()
+    const { count } = await supabase.from('customers').select('id', { count: 'exact', head: true })
+    expect(count).toBe(0)
+    const { error } = await supabase.from('customers').insert({ full_name: 'e2e-mfa-denied', store_id: me!.store_id })
+    expect(error).not.toBeNull()
+  })
+
+  test('コードを間違えるとエラーになり、先へ進めない', async ({ browser }) => {
+    const { context, page } = await passwordOnly(browser)
+    try {
+      await page.getByTestId('mfa-code').fill('000000')
+      await expect(page.getByText('The code is incorrect or has expired')).toBeVisible()
+      await expect(page).toHaveURL(/\/mfa\/verify/)
+    } finally {
+      await context.close()
+    }
+  })
+
+  test('店舗 admin はスタッフの二段階認証をリセットでき、そのスタッフは次のログインで登録し直す', async ({ page, browser }) => {
+    const username = `e2emfa${Date.now()}`
+    const password = 'password123'
+    const created = await page.request.post('/api/admin/users', { data: { username, password, role_id: ROLE_IDS.STAFF } })
+    expect(created.ok()).toBeTruthy()
+    const userId = (await created.json()).user.id as string
+
+    try {
+      // スタッフが初回ログインで認証アプリを登録する
+      const first = await browser.newContext({ storageState: LOGGED_OUT })
+      await login(await first.newPage(), username, password)
+      await first.close()
+
+      // admin の設定画面: 登録済み（On）→ リセット → 未設定（Not set up）
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      const mfaCell = page.locator('tr').filter({ hasText: `@${username}` }).getByTestId('staff-mfa')
+      await expect(mfaCell).toContainText('On')
+      page.once('dialog', d => d.accept())
+      await mfaCell.getByRole('button', { name: 'Reset' }).click()
+      await expect(mfaCell).toContainText('Not set up')
+
+      // 次のログインでは登録画面になる
+      const { context } = await passwordOnly(browser, username, password)
+      await expect(context.pages()[0]!).toHaveURL(/\/mfa\/setup/)
+      await context.close()
+    } finally {
+      await page.request.delete('/api/admin/users', { data: { id: userId } })
+    }
+  })
+
+  test('オーナーの管理画面で、店舗スタッフの二段階認証の状態を確認できる', async ({ page, context }) => {
+    await clearSession(page, context)
+    await adminLogin(page)
+    const row = page.locator('tr').filter({ hasText: 'Main Store' })
+    await row.getByRole('button', { name: 'Staff / 2FA' }).click()
+    const list = page.getByTestId('store-staff-list')
+    await expect(list.locator('li').filter({ hasText: `@${TEST_USERNAME}` })).toContainText('2FA on')
+    await page.keyboard.press('Escape')
+    await expect(list).toBeHidden()
+    await adminLogout(page)
+  })
+})
+
+// ============================================================
 // 14. User Management & Data Integrity (改善: スタッフ管理テスト強化)
 // ============================================================
 test.describe('User Management & Data Integrity', () => {
@@ -1827,7 +1965,7 @@ test.describe('Internationalization', () => {
       await expect(firstNav(page)).toHaveText('Papan Pemuka')
 
       // 別の端末（Cookie なし）でログインしても本人の言語になる
-      const otherDevice = await browser.newContext()
+      const otherDevice = await browser.newContext({ storageState: LOGGED_OUT })
       const otherPage = await otherDevice.newPage()
       await login(otherPage, TEST_USERNAME, TEST_PASSWORD)
       await expect(firstNav(otherPage)).toHaveText('Papan Pemuka')

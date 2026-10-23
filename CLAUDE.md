@@ -13,10 +13,12 @@ Multi-tenant vehicle rental SaaS built with **Nuxt 4** + **Supabase**.
 | File | Role |
 |------|------|
 | `app/composables/useStaff.ts` | Auth state composable (single source of truth) |
+| `app/composables/useMfa.ts` | Two-step verification (TOTP) — required for every user |
 | `app/middleware/auth.global.ts` | Global routing middleware |
 | `app/layouts/admin.vue` | Admin console layout (no sidebar) |
 | `app/layouts/default.vue` | Staff interface layout (with sidebar) |
-| `e2e/rental-system.spec.ts` | All E2E tests (60 tests) |
+| `e2e/rental-system.spec.ts` | All E2E tests (64 tests) |
+| `e2e/mfa.ts` | E2E TOTP helpers (secrets in `e2e/.auth/`, gitignored) |
 | `server/api/admin/` | Admin-only API routes |
 | `supabase/migrations/` | DB schema migrations |
 
@@ -34,6 +36,13 @@ Multi-tenant vehicle rental SaaS built with **Nuxt 4** + **Supabase**.
 |----------|----------|------|-------|
 | `admin` | `password123` | super_admin | Owner / admin console |
 | `branchadmin` | `password123` | admin | E2E test user (Main Store) |
+
+Two-step verification (TOTP) is required for every user. After the password, the app sends you to
+`/mfa/setup` (first time: scan the QR or use the shown key) or `/mfa/verify` (6-digit code).
+Without it (JWT `aal` ≠ `aal2`) the DB returns no store data (`get_auth_store_id()` is NULL) and admin APIs return 403.
+E2E handles this automatically: `e2e/mfa.ts` saves each test user's TOTP secret to `e2e/.auth/totp.json`
+and generates codes; if a secret is unknown it deletes the user's factors (service role) so they re-enroll.
+To use a test user by hand, register its key in an authenticator app, or reset it from Settings / the admin console.
 
 ## Sub-agent guidelines
 
@@ -68,4 +77,6 @@ Multi-tenant vehicle rental SaaS built with **Nuxt 4** + **Supabase**.
 - `onAuthStateChange` is guarded by `useState('staff-auth-listener')` — do not add more listeners
 - Page middleware order: `auth.global.ts` runs first, then page-level middleware
 - All new admin pages: `definePageMeta({ layout: 'admin', middleware: 'super-admin-only' })`
-- E2E test helpers: `login()` for staff/branch-admin, `adminLogin()` for super_admin
+- E2E test helpers: `login()` for staff/branch-admin, `adminLogin()` for super_admin (both complete two-step verification)
+- E2E tests start from the saved, already-verified session (`e2e/.auth/staff.json`); use `browser.newContext({ storageState: LOGGED_OUT })` for a fresh device
+- `onAuthStateChange` callbacks run while the auth lock is held — never `await` Supabase calls inside them (defer with `setTimeout`)

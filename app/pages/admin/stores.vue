@@ -17,6 +17,46 @@ const isAddingAdmin = ref(false)
 const isDeletingStore = ref(false)
 const selectedStore = ref<any>(null)
 
+// ---- 店舗スタッフの二段階認証（スマホの紛失・機種変更のときにリセットする） ----
+interface StoreStaffMfa { id: string, username: string | null, role: string | null, mfaEnabled: boolean }
+const isMfaModalOpen = ref(false)
+const storeStaff = ref<StoreStaffMfa[]>([])
+const isLoadingStoreStaff = ref(false)
+const resettingMfaId = ref<string | null>(null)
+
+async function loadStoreStaff() {
+  if (!selectedStore.value) return
+  isLoadingStoreStaff.value = true
+  try {
+    storeStaff.value = await $fetch<StoreStaffMfa[]>('/api/admin/store-staff', { query: { storeId: selectedStore.value.id } })
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.data?.message || err.message, color: 'error' })
+  } finally {
+    isLoadingStoreStaff.value = false
+  }
+}
+
+function openMfaModal(store: any) {
+  selectedStore.value = store
+  storeStaff.value = []
+  isMfaModalOpen.value = true
+  loadStoreStaff()
+}
+
+async function handleResetMfa(member: StoreStaffMfa) {
+  if (!confirm(`Reset two-step verification for @${member.username}? They will set it up again at their next sign-in.`)) return
+  resettingMfaId.value = member.id
+  try {
+    await $fetch('/api/admin/mfa-reset', { method: 'POST', body: { id: member.id } })
+    toast.add({ title: '2FA Reset', description: `@${member.username} will set up two-step verification at next sign-in.`, color: 'success' })
+    await loadStoreStaff()
+  } catch (err: any) {
+    toast.add({ title: 'Error', description: err.data?.message || err.message, color: 'error' })
+  } finally {
+    resettingMfaId.value = null
+  }
+}
+
 const newStore = reactive({
   name: '',
   address: '',
@@ -148,6 +188,14 @@ onMounted(() => {
                 @click="openAdminModal(store)"
               />
               <UButton
+                icon="i-lucide-shield-check"
+                label="Staff / 2FA"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                @click="openMfaModal(store)"
+              />
+              <UButton
                 icon="i-lucide-trash-2"
                 label="Delete"
                 size="xs"
@@ -163,6 +211,36 @@ onMounted(() => {
     </UCard>
 
     <!-- Add Store Modal -->
+    <UModal v-model:open="isMfaModalOpen" :title="'Staff of ' + (selectedStore?.name ?? '')" description="Reset two-step verification when a staff member loses or changes their phone.">
+      <template #body>
+        <div v-if="isLoadingStoreStaff" class="flex justify-center py-8">
+          <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-slate-400" />
+        </div>
+        <p v-else-if="storeStaff.length === 0" class="py-6 text-center text-sm text-slate-500">No staff yet.</p>
+        <ul v-else class="divide-y divide-slate-100 dark:divide-slate-800" data-testid="store-staff-list">
+          <li v-for="member in storeStaff" :key="member.id" class="flex items-center justify-between gap-3 py-3">
+            <div class="min-w-0">
+              <p class="font-medium truncate">@{{ member.username }}</p>
+              <p class="text-xs text-slate-500">{{ member.role }}</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <UBadge :label="member.mfaEnabled ? '2FA on' : '2FA not set up'" :color="member.mfaEnabled ? 'success' : 'neutral'" variant="subtle" />
+              <UButton
+                v-if="member.mfaEnabled"
+                label="Reset 2FA"
+                icon="i-lucide-rotate-ccw"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                :loading="resettingMfaId === member.id"
+                @click="handleResetMfa(member)"
+              />
+            </div>
+          </li>
+        </ul>
+      </template>
+    </UModal>
+
     <UModal v-model:open="isAddingStore" title="Add New Store">
       <template #body>
         <form @submit.prevent="handleAddStore" class="space-y-4">

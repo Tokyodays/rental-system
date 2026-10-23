@@ -1,4 +1,7 @@
 import { chromium, type FullConfig } from '@playwright/test'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
+import { STAFF_STORAGE_STATE, completeMfa, prepareMfa } from './mfa'
 
 /**
  * テスト開始前に主要なページを一度開き、開発サーバー（Vite）にコンパイルさせておく。
@@ -13,6 +16,9 @@ export default async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use.baseURL
   const username = (process.env.E2E_USER_EMAIL || '').split('@')[0]
   const password = process.env.E2E_USER_PASSWORD || ''
+  // 設定がこのファイルを参照するため、準備をしない・失敗した場合も空のログイン状態を用意しておく
+  mkdirSync(dirname(STAFF_STORAGE_STATE), { recursive: true })
+  writeFileSync(STAFF_STORAGE_STATE, JSON.stringify({ cookies: [], origins: [] }))
   if (!baseURL || !username || !password) return
 
   const startedAt = Date.now()
@@ -26,12 +32,16 @@ export default async function globalSetup(config: FullConfig) {
       await page.waitForLoadState('networkidle')
     }
 
+    await prepareMfa(username)
     await page.goto('/login')
     await page.waitForLoadState('networkidle')
     await page.getByPlaceholder('admin').fill(username)
     await page.getByPlaceholder('••••••••').fill(password)
     await page.getByRole('button', { name: 'Sign In' }).click()
+    await completeMfa(page, username)
     await page.waitForURL('**/dashboard')
+    // 二段階認証まで済んだログイン状態を保存し、各テストはここから始める（毎回コードを入力しない）
+    await page.context().storageState({ path: STAFF_STORAGE_STATE })
 
     for (const path of STAFF_PAGES) {
       await page.goto(path)

@@ -40,3 +40,6 @@ playwright-report/
 playwright-video/
 .vercel
 .env*
+
+# E2E: 二段階認証のテスト用の鍵（テストユーザーの TOTP シークレット）
+e2e/.auth/

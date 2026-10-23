@@ -16,6 +16,7 @@ const isDev = appEnv === 'development'
 const supabase = useSupabaseClient()
 const toast = useToast()
 const { syncUser, isSuperAdmin } = useStaff()
+const { pendingMfaStep } = useMfa()
 
 async function handleLogin() {
   if (!/^[a-zA-Z0-9]+$/.test(state.username)) {
@@ -51,7 +52,9 @@ async function handleLogin() {
     }
 
     toast.add({ title: 'Welcome', description: 'Admin console へようこそ。', color: 'success' })
-    setTimeout(() => { window.location.href = '/admin/stores' }, 100)
+    // パスワードの次は二段階認証（全員必須）
+    const mfaStep = await pendingMfaStep()
+    setTimeout(() => { window.location.href = mfaStep ? MFA_PATHS[mfaStep] : '/admin/stores' }, 100)
   } catch (error: any) {
     console.error('Admin login error:', error)
     const errorMsg = error.message === 'Invalid login credentials'
