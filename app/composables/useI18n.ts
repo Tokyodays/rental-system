@@ -6,10 +6,13 @@ export type TranslateFn = (key: string, params?: Record<string, string | number>
 /**
  * 表示言語の優先順位
  * - ログイン中: 本人が選んだ言語（staff.locale）> 店舗のデフォルト言語（stores.default_locale）> en
- * - ログイン前・スタッフ情報の取得前: この端末で選んだ言語（Cookie）> en
+ * - ログイン前の画面（ランディング・ログイン）とスタッフ情報の取得前: この端末で選んだ言語（Cookie）> en
+ *   （ランディングの言語切替は端末の設定。ログイン中に開いても本人の言語は書き換えない）
  * Cookie にはログイン中に決まった言語も書き戻すので、再読み込み直後（スタッフ情報の取得前）も同じ言語で描画される。
  * 辞書は app/locales/ に 1 キー 5 言語の形で置く。未定義キーは英語 → キー名の順にフォールバック。
  */
+const PRE_LOGIN_PATHS = ['/', '/login', '/admin/login']
+
 export const useI18n = () => {
   const cookie = useCookie<string | null>('locale', {
     maxAge: 60 * 60 * 24 * 365,
@@ -18,9 +21,11 @@ export const useI18n = () => {
   })
   const { staff } = useStaff()
   const supabase = useSupabaseClient()
+  const route = useRoute()
+  const usesStaffLocale = computed(() => !!staff.value && !PRE_LOGIN_PATHS.includes(route.path))
 
   const locale = computed<Locale>(() => {
-    if (staff.value) {
+    if (usesStaffLocale.value && staff.value) {
       return toLocale(staff.value.locale) ?? toLocale(staff.value.stores?.default_locale) ?? DEFAULT_LOCALE
     }
     return toLocale(cookie.value) ?? DEFAULT_LOCALE
@@ -28,7 +33,7 @@ export const useI18n = () => {
 
   if (import.meta.client) {
     watch(locale, (value) => {
-      if (staff.value) cookie.value = value
+      if (usesStaffLocale.value) cookie.value = value
     })
   }
 
@@ -50,7 +55,7 @@ export const useI18n = () => {
    * null は「店舗のデフォルトに従う」（ログイン中のみ意味がある）。
    */
   const setLocale = async (value: Locale | null) => {
-    if (!staff.value) {
+    if (!usesStaffLocale.value || !staff.value) {
       if (value) cookie.value = value
       return
     }

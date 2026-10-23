@@ -1056,6 +1056,52 @@ test.describe('Navigation & Layout', () => {
     expect(clipped).toBe(0)
   })
 
+  test('久しぶりに開いた（アクセストークン期限切れ）状態でも、ダッシュボードのデータがすぐ表示される', async ({ page, context }) => {
+    // 旧実装: 起動時の認証イベント（ロック保持中）で staff を読みに行きデッドロックし、データが出なかった
+    // 保存されたセッションのアクセストークンを期限切れにして、久しぶりに開いた状態を再現する
+    const parts = (await context.cookies()).filter(c => /sb-.*-auth-token/.test(c.name))
+    const session = JSON.parse(Buffer.from(parts.map(c => c.value).join('').replace(/^base64-/, ''), 'base64url').toString())
+    session.expires_at = Math.floor(Date.now() / 1000) - 3600
+    await context.clearCookies({ name: /sb-.*-auth-token/ })
+    await context.addCookies([{ ...parts[0]!, name: parts[0]!.name.replace(/\.\d+$/, ''), value: 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64url') }])
+
+    const fresh = await context.newPage()
+    await page.close()
+    await fresh.goto('/')
+    await fresh.waitForLoadState('networkidle')
+    await fresh.locator('a[href="/login"]').first().click()
+    await fresh.waitForURL('**/dashboard')
+    // 読み込み中のスピナー行ではなく、実データ（Lend / Return のバッジ）が出るまで待つ
+    await expect(fresh.getByTestId('recent-transactions').getByText(/^(Lend|Return)$/).first()).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('ページ表示時のログイン確認（/auth/v1/user）は重複せずまとめて行われる', async ({ page }) => {
+    let userChecks = 0
+    page.on('request', r => { if (r.url().includes('/auth/v1/user')) userChecks++ })
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    // 旧実装ではコンポーネントごとに確認して 8〜9 回送っていた
+    expect(userChecks).toBeLessThanOrEqual(2)
+  })
+
+  test('データの読み込みが長引くと画面中央にローディングが表示され、終わると消える', async ({ page }) => {
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    // Supabase からの読み込みを 1.5 秒遅らせる
+    await page.route(/supabase\.co\/rest\/v1\//, async (route) => {
+      await new Promise(r => setTimeout(r, 1500))
+      await route.continue()
+    })
+    await page.locator('aside a[href="/vehicles"]').click()
+    const overlay = page.getByTestId('loading-overlay')
+    await expect(overlay).toBeVisible()
+    await expect(overlay).toContainText('Loading')
+    await expect(overlay).toBeHidden({ timeout: 15_000 })
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+  })
+
   test('スマホ幅でメニューのリンクを押すとドロワーが閉じる', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/dashboard')
