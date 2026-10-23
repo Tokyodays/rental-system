@@ -11,6 +11,7 @@ export default {
   'settings': { en: 'Settings', th: 'ตั้งค่า', lo: 'ຕັ້ງຄ່າ', vi: 'Cài đặt', ms: 'Tetapan' },
   'howtouse': { en: 'How to use', th: 'วิธีใช้งาน', lo: 'ວິທີນຳໃຊ້', vi: 'Hướng dẫn sử dụng', ms: 'Cara menggunakan' },
   'currency_converter': { en: 'Currency Converter', th: 'แปลงสกุลเงิน', lo: 'ແປງສະກຸນເງິນ', vi: 'Quy đổi tiền tệ', ms: 'Penukar Mata Wang' },
+  'print': { en: 'Print', th: 'พิมพ์', lo: 'ພິມ', vi: 'In', ms: 'Cetak' },
   'store_management': { en: 'Store Management', th: 'จัดการร้านค้า', lo: 'ຈັດການຮ້ານ', vi: 'Quản lý cửa hàng', ms: 'Pengurusan Kedai' },
   'logout': { en: 'Logout', th: 'ออกจากระบบ', lo: 'ອອກຈາກລະບົບ', vi: 'Đăng xuất', ms: 'Log Keluar' },
   'profile': { en: 'Profile', th: 'โปรไฟล์', lo: 'ໂປຣໄຟລ໌', vi: 'Hồ sơ', ms: 'Profil' },

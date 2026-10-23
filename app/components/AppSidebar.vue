@@ -22,7 +22,8 @@ const settingItem = computed(() => ({ label: t('settings'), icon: 'i-lucide-sett
 </script>
 
 <template>
-  <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col hidden md:flex sticky top-0 h-screen overflow-hidden">
+  <!-- 左カラムのメニューは印刷しない -->
+  <aside class="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col hidden md:flex sticky top-0 h-screen overflow-hidden print:hidden">
     <!-- Logo Section -->
     <div class="p-6 flex items-center gap-3 border-b border-slate-200 dark:border-slate-800">
       <div class="size-8 bg-blue-600 rounded flex items-center justify-center text-white">

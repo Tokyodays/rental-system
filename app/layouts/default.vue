@@ -28,7 +28,7 @@ const pageTitle = computed(() => {
 <template>
   <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-[sans-serif]">
     <!-- Dev environment banner -->
-    <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide shrink-0">
+    <div v-if="isDev" class="w-full bg-amber-400 text-amber-950 text-xs font-bold text-center py-1 tracking-wide shrink-0 print:hidden">
       {{ t('dev_banner') }}
     </div>
     <div class="flex flex-1 min-h-0">
@@ -48,7 +48,7 @@ const pageTitle = computed(() => {
     <div class="flex-1 flex flex-col min-w-0">
       <AppTopbar :title="pageTitle" @toggle-sidebar="isSidebarOpen = true" />
 
-      <main class="flex-1 p-6 overflow-y-auto">
+      <main class="flex-1 p-6 overflow-y-auto print:p-0 print:overflow-visible">
         <slot />
       </main>
     </div>

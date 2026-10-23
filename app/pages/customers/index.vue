@@ -332,9 +332,10 @@ const filteredCustomers = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)]">
+  <!-- 印刷時は画面の高さ・スクロールの制限を外し、一覧を最後まで出す -->
+  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)] print:m-0 print:h-auto print:overflow-visible">
     <!-- Main Content: Customer List -->
-    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0">
+    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0 print:overflow-visible">
       <!-- Header Area: Search & Filters -->
       <div class="flex flex-col gap-4 p-4 md:p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
@@ -378,7 +379,7 @@ const filteredCustomers = computed(() => {
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto p-4 md:p-6">
+      <div class="flex-1 overflow-auto p-4 md:p-6 print:overflow-visible">
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto text-sm">
           <div v-if="isLoading" class="p-12 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2 mx-auto" />

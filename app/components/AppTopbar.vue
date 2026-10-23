@@ -49,6 +49,8 @@ const languageMenu = computed(() => {
   }
 })
 
+const printPage = () => window.print()
+
 const handleLogout = async () => {
   const { error } = await supabase.auth.signOut()
   if (error) {
@@ -69,19 +71,31 @@ const userMenuItems = computed(() => [
 </script>
 
 <template>
-  <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 px-4 md:px-6 sticky top-0 z-10">
+  <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 px-4 md:px-6 sticky top-0 z-10 print:static print:px-0">
     <div class="flex items-center gap-2 md:gap-4 min-w-0">
       <UButton
         icon="i-lucide-menu"
         variant="ghost"
         color="neutral"
-        class="md:hidden cursor-pointer"
+        class="md:hidden cursor-pointer print:hidden"
         @click="emit('toggle-sidebar')"
       />
       <h2 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">{{ title }}</h2>
     </div>
 
-    <div class="flex items-center gap-1 sm:gap-4 shrink-0">
+    <!-- 右上のボタン類は印刷しない（ページタイトルだけ残す） -->
+    <div class="flex items-center gap-1 sm:gap-4 shrink-0 print:hidden">
+      <UButton
+        icon="i-lucide-printer"
+        :label="t('print')"
+        :aria-label="t('print')"
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        :ui="{ label: 'hidden sm:inline' }"
+        class="cursor-pointer"
+        @click="printPage"
+      />
       <UButton
         :to="CURRENCY_CONVERTER_URL"
         target="_blank"
