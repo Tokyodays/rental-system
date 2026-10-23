@@ -1,6 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
-import { toInternalEmail } from '../shared/constants/auth'
+import { ROLE_IDS, toInternalEmail } from '../shared/constants/auth'
 
 /**
  * E2E Tests for Rental System
@@ -70,6 +70,11 @@ async function signedInSupabase() {
   const { error } = await supabase.auth.signInWithPassword({ email: toInternalEmail(TEST_USERNAME), password: TEST_PASSWORD })
   expect(error).toBeNull()
   return supabase
+}
+
+/** 設定画面の店舗情報が読み込まれ、言語のラジオボタンが押せるようになるまで待つ */
+async function waitForStoreSettings(page: Page) {
+  await expect(page.getByTestId('language-select').getByRole('radio').first()).toBeEnabled({ timeout: 10_000 })
 }
 
 /** ログアウトする（スタッフ/ブランチ管理者用） */
@@ -195,12 +200,13 @@ test.describe('Dashboard', () => {
 
     await expect(page.getByText('Recent Transactions')).toBeVisible()
 
-    // テーブルヘッダーが存在する
-    await expect(page.getByRole('columnheader', { name: 'Item' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'User' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Action' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Time' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible()
+    // テーブルヘッダーが存在する（Today's Returns にも同名の列があるため Recent Transactions の中で探す）
+    const recent = page.getByTestId('recent-transactions')
+    await expect(recent.getByRole('columnheader', { name: 'Item' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'User' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Action' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Time' })).toBeVisible()
+    await expect(recent.getByRole('columnheader', { name: 'Status' })).toBeVisible()
   })
 
   test('Lending ボタンが /rentals/new へ遷移する', async ({ page }) => {
@@ -224,6 +230,51 @@ test.describe('Dashboard', () => {
     await viewAll.click()
     await page.waitForLoadState('networkidle')
     await expect(page).toHaveURL('/history')
+  })
+})
+
+test.describe('Dashboard: Today\'s Returns', () => {
+  test('本日の返却予定と延滞中の貸出が、返却予定の早い順に表示される', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const branchAdmin = await signedInSupabase()
+    const userId = (await branchAdmin.auth.getUser()).data.user!.id
+    const { data: me } = await branchAdmin.from('staff').select('store_id').eq('id', userId).single()
+    const { data: customer } = await service.from('customers').select('id, full_name').eq('store_id', me!.store_id).limit(1).single()
+    const { data: vehicles } = await service.from('vehicles').select('id, code').eq('store_id', me!.store_id).is('deleted_at', null).limit(2)
+
+    // テスト用の貸出（車両のステータスは変えないので、返却フローなど他のテストには影響しない）
+    const now = new Date()
+    const laterToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 58)
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0)
+    const base = { customer_id: customer!.id, staff_id: userId, store_id: me!.store_id, status: 'Active', price: 1, start_at: new Date(now.getTime() - 3 * 86_400_000).toISOString() }
+    const { data: inserted, error } = await service.from('transactions').insert([
+      { ...base, vehicle_id: vehicles![0]!.id, end_at: laterToday.toISOString() },
+      { ...base, vehicle_id: vehicles![1]!.id, end_at: yesterday.toISOString() }
+    ]).select('id')
+    expect(error).toBeNull()
+
+    try {
+      await page.goto('/dashboard')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+
+      const rows = page.getByTestId('returns-due').getByTestId('return-due-row')
+      const overdueRow = rows.filter({ hasText: vehicles![1]!.code })
+      const todayRow = rows.filter({ hasText: vehicles![0]!.code })
+      await expect(overdueRow).toContainText('Overdue')
+      await expect(overdueRow).toContainText(customer!.full_name)
+      await expect(todayRow).toContainText('Due today')
+
+      // 延滞（昨日）が本日の予定より先に並ぶ
+      const codes = await rows.locator('td:nth-child(2) p.font-mono').allInnerTexts()
+      expect(codes.indexOf(vehicles![1]!.code)).toBeLessThan(codes.indexOf(vehicles![0]!.code))
+
+      // 返却ボタンでその車両の返却画面へ
+      await todayRow.getByRole('link', { name: 'Return' }).click()
+      await expect(page).toHaveURL(new RegExp(`/rentals/return\\?code=${vehicles![0]!.code}`))
+    } finally {
+      await service.from('transactions').delete().in('id', inserted!.map(r => r.id))
+    }
   })
 })
 
@@ -325,11 +376,120 @@ test.describe('Vehicle List', () => {
     await expect(sidebar.getByText(/Status|status/i)).toBeVisible()
     await expect(sidebar.getByText(/Mileage|mileage/i)).toBeVisible()
   })
+
+  test('最後にオイル交換した日付を記録でき、再読み込み後も残る', async ({ page }) => {
+    const testDate = '2020-01-15' // 他のデータと区別できる日付。後始末でこの日付の車両を未記録に戻す
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    try {
+      const firstName = (await page.locator('tbody tr').first().locator('td').first().innerText()).split('\n')[0]!
+      await page.locator('tbody tr').first().click()
+      const oil = page.getByTestId('oil-change')
+
+      // 編集を始めると今日の日付が入っている
+      await oil.getByRole('button', { name: 'Last Oil Change' }).click()
+      const input = oil.locator('input[type="date"]')
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+      await expect(input).toHaveValue(today)
+
+      await input.fill(testDate)
+      await oil.getByRole('button', { name: 'Save' }).click()
+      await expect(page.getByTestId('oil-change-value')).toContainText('1/15/2020')
+      await expect(page.getByTestId('oil-change-value')).toContainText('days ago')
+
+      // 再読み込みしても同じ車両に残っている（更新しても一覧の並び順が変わらない）
+      await page.reload()
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await expect(page.locator('tbody tr').first().locator('td').first()).toContainText(firstName)
+      await page.locator('tbody tr').first().click()
+      await expect(page.getByTestId('oil-change-value')).toContainText('1/15/2020')
+    } finally {
+      await service.from('vehicles').update({ last_oil_change_on: null }).eq('last_oil_change_on', testDate)
+    }
+  })
 })
 
 // ============================================================
 // 3. Add Vehicle Test
 // ============================================================
+test.describe('Delete Vehicle', () => {
+  test('車両を削除すると一覧から消え、取引履歴には残り、Deleted から復元できる', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const branchAdmin = await signedInSupabase()
+    const { data: me } = await branchAdmin.from('staff').select('store_id').eq('id', (await branchAdmin.auth.getUser()).data.user!.id).single()
+    const { data: lent } = await service.from('vehicle_statuses').select('id').eq('name', 'Lent').single()
+
+    // 今月の取引履歴があり、貸出中ではない車両を使う（取引履歴は今月分が既定で表示される）
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+    const { data: candidates } = await service
+      .from('transactions')
+      .select('vehicles!inner(id, code, name, status_id, deleted_at, store_id)')
+      .gte('start_at', monthStart)
+      .eq('vehicles.store_id', me!.store_id)
+      .is('vehicles.deleted_at', null)
+      .neq('vehicles.status_id', lent!.id)
+      .limit(1)
+    const target = (candidates?.[0] as any)?.vehicles as { id: string, code: string, name: string, status_id: string } | undefined
+    test.skip(!target, '今月の取引履歴がある車両がない')
+
+    try {
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByPlaceholder('Search vehicles...').fill(target!.code)
+      await page.locator('tbody tr').filter({ hasText: target!.code }).click()
+
+      await page.getByRole('button', { name: 'Delete Vehicle' }).click()
+      const modal = page.getByRole('dialog')
+      await expect(modal).toContainText(target!.name)
+      await modal.getByRole('button', { name: 'Delete', exact: true }).click()
+      await expect(page.locator('tbody tr').filter({ hasText: target!.code })).toHaveCount(0)
+
+      // 取引履歴には残っている
+      await page.goto('/history')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByPlaceholder(/search|Search/i).fill(target!.code)
+      await expect(page.locator('tbody tr').filter({ hasText: target!.name }).first()).toBeVisible()
+
+      // Deleted の絞り込みから復元すると一覧に戻る（ステータスは Unavailable のまま）
+      await page.goto('/vehicles')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await page.getByRole('button', { name: 'Deleted', exact: true }).click()
+      await page.getByPlaceholder('Search vehicles...').fill(target!.code)
+      await page.locator('tbody tr').filter({ hasText: target!.code }).click()
+      await expect(page.getByTestId('vehicle-deleted-banner')).toBeVisible()
+      await page.getByRole('button', { name: 'Restore' }).click()
+      const restoredRow = page.locator('tbody tr').filter({ hasText: target!.code })
+      await expect(restoredRow).toBeVisible()
+      await expect(restoredRow).toContainText('Unavailable')
+    } finally {
+      await service.from('vehicles').update({ deleted_at: null, status_id: target!.status_id }).eq('id', target!.id)
+    }
+  })
+
+  test('貸出中の車両は削除できない', async ({ page }) => {
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const { data: lent } = await service.from('vehicle_statuses').select('id').eq('name', 'Lent').single()
+    const { data: lentVehicle } = await service.from('vehicles').select('code').eq('status_id', lent!.id).is('deleted_at', null).limit(1).maybeSingle()
+    test.skip(!lentVehicle, '貸出中の車両がない')
+
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    await page.getByPlaceholder('Search vehicles...').fill(lentVehicle!.code)
+    await page.locator('tbody tr').filter({ hasText: lentVehicle!.code }).click()
+    await expect(page.getByRole('button', { name: 'Delete Vehicle' })).toBeDisabled()
+  })
+})
+
 test.describe('Add Vehicle', () => {
   test('新しい車両を正しく追加できる', async ({ page }) => {
     await page.goto('/vehicles')
@@ -664,6 +824,70 @@ test.describe('Customers', () => {
     // 削除が完了するまで待機
     await expect(page.locator('tbody').getByText(testCustomerName)).not.toBeVisible({ timeout: 10_000 })
   })
+
+  test.describe('パスポート写真', () => {
+    // 疑似カメラは playwright.config.ts で有効化している
+    test('登録モーダルからカメラで撮影して保存し、詳細に表示される', async ({ page }) => {
+      await page.goto('/customers')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+
+      const testName = `E2E Passport ${Date.now()}`
+      await page.getByRole('button', { name: 'Add New Customer' }).click()
+      const modal = page.getByRole('dialog')
+      await modal.getByPlaceholder('e.g. John Doe').fill(testName)
+      await modal.getByRole('button', { name: 'Next: Passport Photo' }).click()
+      await modal.getByRole('button', { name: 'Open Camera' }).click()
+
+      // カメラは登録モーダルの上に別モーダルで開き、シャッターが押せること
+      const shutter = page.getByTestId('camera-shutter')
+      await expect(shutter).toBeEnabled({ timeout: 10_000 })
+      await shutter.click()
+      await expect(shutter).toBeHidden()
+
+      const uploadPromise = page.waitForResponse(r => r.url().includes('/storage/v1/object/customer-passports/') && r.request().method() === 'POST')
+      await page.getByRole('button', { name: 'Register Customer', exact: true }).click()
+      expect((await uploadPromise).ok()).toBeTruthy()
+      await expect(page.locator('tbody').getByText(testName)).toBeVisible({ timeout: 10_000 })
+
+      // 詳細パネルで画像が読み込めること（非公開バケットなので署名付きURL）
+      await page.locator('tbody').getByText(testName).click()
+      const img = page.locator('aside img').first()
+      await expect(img).toHaveAttribute('src', /\/object\/sign\/customer-passports\//)
+      await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true)
+
+      // 顧客を削除すると画像も削除される
+      const removePromise = page.waitForResponse(r => r.url().includes('/storage/v1/object/customer-passports') && r.request().method() === 'DELETE')
+      await deleteTestCustomer(page, testName)
+      expect((await removePromise).ok()).toBeTruthy()
+    })
+
+    test('他店舗のパスポート画像は読み書きできない', async () => {
+      const supabase = await signedInSupabase()
+      const admin = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      const bucket = 'customer-passports'
+      const otherStorePath = `${crypto.randomUUID()}/${crypto.randomUUID()}.jpg`
+      const image = new Blob(['x'], { type: 'image/jpeg' })
+
+      // 他店舗の画像を用意しておく（service role は RLS の対象外）
+      const { error: seedError } = await admin.storage.from(bucket).upload(otherStorePath, image)
+      expect(seedError).toBeNull()
+
+      try {
+        const { error: readError } = await supabase.storage.from(bucket).createSignedUrl(otherStorePath, 60)
+        expect(readError).not.toBeNull()
+
+        const { error: overwriteError } = await supabase.storage.from(bucket).upload(otherStorePath, image, { upsert: true })
+        expect(overwriteError).not.toBeNull()
+
+        await supabase.storage.from(bucket).remove([otherStorePath])
+        const { data: stillThere } = await admin.storage.from(bucket).list(otherStorePath.split('/')[0])
+        expect(stillThere).toHaveLength(1)
+      } finally {
+        await admin.storage.from(bucket).remove([otherStorePath])
+      }
+    })
+  })
 })
 
 // ============================================================
@@ -800,6 +1024,114 @@ test.describe('Navigation & Layout', () => {
     const popup = await popupPromise
     await expect(popup).toHaveURL('https://www.oanda.com/currency-converter/')
     await expect(page).toHaveURL('/dashboard')
+  })
+
+  test('右上の Print ボタンで印刷でき、印刷時は左メニューが出ず一覧も切れない', async ({ page }) => {
+    await page.goto('/vehicles')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+
+    // 実際の印刷ダイアログは開かず、window.print が呼ばれたかを確かめる
+    await page.evaluate(() => {
+      (window as any).__printed = 0
+      window.print = () => { (window as any).__printed++ }
+    })
+    await page.getByRole('banner').getByRole('button', { name: 'Print' }).click()
+    expect(await page.evaluate(() => (window as any).__printed)).toBe(1)
+
+    // A4 の幅で印刷用の表示にする
+    await page.setViewportSize({ width: 794, height: 1123 })
+    await page.emulateMedia({ media: 'print' })
+    await expect(page.locator('aside').filter({ hasText: 'Dashboard' })).toBeHidden()
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Print' })).toBeHidden()
+    await expect(page.getByRole('banner')).toContainText('Vehicle List')
+
+    // 車両一覧が画面の高さで切れず、表も横にはみ出さない
+    const clipped = await page.evaluate(() => [...document.querySelectorAll('main *')].filter((el) => {
+      const s = getComputedStyle(el)
+      if (el.clientHeight <= 1) return false
+      return (/(auto|scroll|hidden|clip)/.test(s.overflowY) && el.scrollHeight - el.clientHeight > 4) ||
+        (/(auto|scroll|hidden|clip)/.test(s.overflowX) && el.scrollWidth - el.clientWidth > 4)
+    }).length)
+    expect(clipped).toBe(0)
+  })
+
+  test('久しぶりに開いた（アクセストークン期限切れ）状態でも、ダッシュボードのデータがすぐ表示される', async ({ page, context }) => {
+    // 旧実装: 起動時の認証イベント（ロック保持中）で staff を読みに行きデッドロックし、データが出なかった
+    // 保存されたセッションのアクセストークンを期限切れにして、久しぶりに開いた状態を再現する
+    const parts = (await context.cookies()).filter(c => /sb-.*-auth-token/.test(c.name))
+    const session = JSON.parse(Buffer.from(parts.map(c => c.value).join('').replace(/^base64-/, ''), 'base64url').toString())
+    session.expires_at = Math.floor(Date.now() / 1000) - 3600
+    await context.clearCookies({ name: /sb-.*-auth-token/ })
+    await context.addCookies([{ ...parts[0]!, name: parts[0]!.name.replace(/\.\d+$/, ''), value: 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64url') }])
+
+    const fresh = await context.newPage()
+    await page.close()
+    await fresh.goto('/')
+    await fresh.waitForLoadState('networkidle')
+    await fresh.locator('a[href="/login"]').first().click()
+    await fresh.waitForURL('**/dashboard')
+    // 読み込み中のスピナー行ではなく、実データ（Lend / Return のバッジ）が出るまで待つ
+    await expect(fresh.getByTestId('recent-transactions').getByText(/^(Lend|Return)$/).first()).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('ページ表示時のログイン確認（/auth/v1/user）は重複せずまとめて行われる', async ({ page }) => {
+    let userChecks = 0
+    page.on('request', r => { if (r.url().includes('/auth/v1/user')) userChecks++ })
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    // 旧実装ではコンポーネントごとに確認して 8〜9 回送っていた
+    expect(userChecks).toBeLessThanOrEqual(2)
+  })
+
+  test('データの読み込みが長引くと画面中央にローディングが表示され、終わると消える', async ({ page }) => {
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    // Supabase からの読み込みを 1.5 秒遅らせる
+    await page.route(/supabase\.co\/rest\/v1\//, async (route) => {
+      await new Promise(r => setTimeout(r, 1500))
+      await route.continue()
+    })
+    await page.locator('aside a[href="/vehicles"]').click()
+    const overlay = page.getByTestId('loading-overlay')
+    await expect(overlay).toBeVisible()
+    await expect(overlay).toContainText('Loading')
+    await expect(overlay).toBeHidden({ timeout: 15_000 })
+    await expect(page.locator('tbody tr').first()).toBeVisible()
+  })
+
+  test('スマホ幅でメニューのリンクを押すとドロワーが閉じる', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    await page.getByRole('banner').getByRole('button').first().click()
+    const drawer = page.getByRole('dialog')
+    await expect(drawer).toBeVisible()
+
+    await drawer.locator('a[href="/vehicles"]').click()
+    await expect(page).toHaveURL('/vehicles')
+    await expect(drawer).toBeHidden()
+  })
+
+  test('スマホ幅で各ページが横にはみ出さない', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    for (const path of ['/dashboard', '/vehicles', '/rentals/new', '/rentals/return', '/customers', '/history', '/settings']) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+      expect(scrollWidth, path).toBeLessThanOrEqual(375)
+    }
+
+    // overflow-hidden で切られて押せなくなっていないか（scrollWidth では検出できない）
+    for (const [path, name] of [['/vehicles', 'Add Vehicle'], ['/customers', 'Add New Customer']]) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      const box = await page.getByRole('button', { name }).boundingBox()
+      expect(box && box.x + box.width, path).toBeLessThanOrEqual(375)
+    }
   })
 })
 
@@ -942,6 +1274,7 @@ test.describe('Settings & User Management', () => {
     await waitForLoadingComplete(page)
 
     // Bahasa Melayu を選択
+    await waitForStoreSettings(page)
     const malayOption = page.getByText('Bahasa Melayu')
     await expect(malayOption).toBeVisible()
     await malayOption.click()
@@ -955,6 +1288,37 @@ test.describe('Settings & User Management', () => {
     await page.getByText('English').click()
     await page.getByRole('button', { name: /^(Save|Simpan)$/ }).click()
     await expect(page.locator('aside').first()).toContainText('Dashboard', { timeout: 5000 })
+  })
+
+  test('通貨を保存すると、再読み込みなしで貸出画面の料金欄に反映される', async ({ page }) => {
+    const saveCurrency = async (code: string) => {
+      await page.getByRole('button', { name: code, exact: true }).click()
+      const saved = page.waitForResponse(r => r.url().includes('/rest/v1/stores') && r.request().method() === 'PATCH')
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      expect((await saved).ok()).toBeTruthy()
+    }
+
+    await page.goto('/settings')
+    await page.waitForLoadState('networkidle')
+    await waitForLoadingComplete(page)
+    await saveCurrency('JPY')
+
+    try {
+      // page.goto だと再読み込みになるため、サイドバーから画面遷移する
+      await page.locator('aside a[href="/rentals/new"]').click()
+      await page.locator('.grid .cursor-pointer').first().click()
+      await expect(page.getByText('Step 2: Select Vehicle')).toBeVisible({ timeout: 10_000 })
+      await waitForLoadingComplete(page)
+      await page.locator('.space-y-4 .grid .cursor-pointer').first().click()
+      await page.getByRole('button', { name: 'Continue to Price Input' }).click()
+      await expect(page.getByTestId('price-currency')).toHaveText('¥ JPY')
+    } finally {
+      // 他のテストに影響しないよう THB に戻す
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await waitForLoadingComplete(page)
+      await saveCurrency('THB')
+    }
   })
 
   test('スタッフを新規追加および削除できる', async ({ page }) => {
@@ -1066,17 +1430,21 @@ test.describe('Multi-tenant Management Flow', () => {
     // スタッフが作成されるまで待機
     await expect(page.locator('tbody').getByText(staffName)).toBeVisible({ timeout: 10_000 })
 
-    // スタッフのロール更新（オプション）
+    // スタッフのロール更新
     const row = page.locator('tr').filter({ hasText: staffName })
     const roleSwitch = row.locator('button[role="switch"]')
-    if (await roleSwitch.isVisible()) {
-      await roleSwitch.click()
+    await expect(roleSwitch).toBeVisible()
+    await roleSwitch.click()
 
-      // window.confirm ハンドラはクリック前に登録する
-      page.on('dialog', d => d.accept())
-    }
+    // RLS で拒否されても UPDATE はエラーにならないため、DB の値で確かめる
+    const service = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    await expect.poll(async () => {
+      const { data } = await service.from('staff').select('role_id').eq('username', staffName).single()
+      return data?.role_id
+    }).toBe(ROLE_IDS.ADMIN)
 
-    // スタッフの削除
+    // スタッフの削除（window.confirm ハンドラはクリック前に登録する）
+    page.on('dialog', d => d.accept())
     const deleteButton = row.getByRole('button').last()
     await deleteButton.click()
 
@@ -1141,6 +1509,80 @@ test.describe('Super Admin without Store', () => {
     expect(await res.text()).toContain('store_id is required')
 
     await adminLogout(page)
+  })
+})
+
+// ============================================================
+// 12.5 Permissions: 権限外の操作が DB・API で拒否される
+// ============================================================
+test.describe('Permissions', () => {
+  const serviceClient = () => createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+  test('一般スタッフは自分を admin に昇格できず、店舗情報やスタッフも変更できない', async () => {
+    const service = serviceClient()
+    const branchAdmin = await signedInSupabase()
+    const { data: me } = await branchAdmin.from('staff').select('id, store_id').eq('id', (await branchAdmin.auth.getUser()).data.user!.id).single()
+    const { data: storeBefore } = await service.from('stores').select('name').eq('id', me!.store_id).single()
+
+    // 同じ店舗に一般スタッフを用意する
+    const username = `e2estaff${Date.now()}`
+    const password = 'password123'
+    const { data: created, error: createError } = await service.auth.admin.createUser({ email: toInternalEmail(username), password, email_confirm: true })
+    expect(createError).toBeNull()
+    const staffId = created.user!.id
+    await service.from('staff').upsert({ id: staffId, username, role_id: ROLE_IDS.STAFF, store_id: me!.store_id }, { onConflict: 'id' })
+
+    try {
+      const staffClient = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+      const { error: signInError } = await staffClient.auth.signInWithPassword({ email: toInternalEmail(username), password })
+      expect(signInError).toBeNull()
+
+      await staffClient.from('staff').update({ role_id: ROLE_IDS.ADMIN }).eq('id', staffId)
+      await staffClient.from('stores').update({ name: 'hacked' }).eq('id', me!.store_id)
+      // 削除の可否はテスト用ユーザー自身で確かめる（実在の admin を巻き込まない）
+      await staffClient.from('staff').delete().eq('id', staffId)
+
+      const { data: staffAfter } = await service.from('staff').select('role_id').eq('id', staffId).single()
+      expect(staffAfter!.role_id).toBe(ROLE_IDS.STAFF)
+      const { data: storeAfter } = await service.from('stores').select('name').eq('id', me!.store_id).single()
+      expect(storeAfter!.name).toBe(storeBefore!.name)
+      const { data: stillThere } = await service.from('staff').select('id').eq('id', staffId)
+      expect(stillThere).toHaveLength(1)
+    } finally {
+      // 防げなかった場合でも dev のデータを元に戻す
+      await service.from('stores').update({ name: storeBefore!.name }).eq('id', me!.store_id)
+      await service.from('staff').delete().eq('id', staffId)
+      await service.auth.admin.deleteUser(staffId)
+    }
+  })
+
+  test('店舗 admin は super_admin の作成や、他店舗・super_admin のアカウント削除ができない', async ({ page }) => {
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    const createRes = await page.request.post('/api/admin/users', {
+      data: { username: `e2esuper${Date.now()}`, password: 'password123', role_id: ROLE_IDS.SUPER_ADMIN }
+    })
+    expect(createRes.status()).toBe(403)
+
+    const { data: superAdmin } = await serviceClient().from('staff').select('id').eq('role_id', ROLE_IDS.SUPER_ADMIN).limit(1).single()
+    const deleteRes = await page.request.delete('/api/admin/users', { data: { id: superAdmin!.id } })
+    expect(deleteRes.status()).toBe(403)
+    const { data: stillThere } = await serviceClient().from('staff').select('id').eq('id', superAdmin!.id)
+    expect(stillThere).toHaveLength(1)
+  })
+
+  test('未ログインでは店舗情報を読めず、車両カテゴリ・予約を書き換えられない', async () => {
+    const anon = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!)
+
+    const { data: stores } = await anon.from('stores').select('id')
+    expect(stores ?? []).toHaveLength(0)
+
+    const { error: categoryError } = await anon.from('vehicle_categories').insert({ name: 'e2e-hacked' })
+    expect(categoryError?.code).toBe('42501') // 権限エラー
+
+    const { error: reservationError } = await anon.from('reservations').insert({ store_id: '00000000-0000-0000-0000-000000000001' })
+    expect(reservationError?.code).toBe('42501')
   })
 })
 
@@ -1347,6 +1789,7 @@ test.describe('Internationalization', () => {
     await waitForLoadingComplete(page)
 
     try {
+      await waitForStoreSettings(page)
       await page.getByText('ພາສາລາວ').click()
       await expect(page.locator('aside').first()).toContainText('ແດຊບອດ')
       await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toContainText('ຕັ້ງຄ່າ')
@@ -1362,8 +1805,54 @@ test.describe('Internationalization', () => {
       // 店舗のデフォルト言語が他のテストに影響しないよう必ず English に戻す
       await page.goto('/settings')
       await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
       await page.getByText('English').click()
       await expect(page.locator('aside').first()).toContainText('Dashboard')
+    }
+  })
+
+  test('ユーザーメニューで選んだ言語は本人だけに保存され、店舗のデフォルトより優先される', async ({ page, browser }) => {
+    const chooseLanguage = async (p: Page, menuLabel: string, option: string) => {
+      await p.getByTestId('user-menu').click()
+      await p.getByRole('menuitem', { name: menuLabel }).hover()
+      await p.getByRole('menuitemcheckbox', { name: option }).click()
+    }
+    const firstNav = (p: Page) => p.locator('aside nav a').first()
+
+    await page.goto('/dashboard')
+    await page.waitForLoadState('networkidle')
+
+    try {
+      await chooseLanguage(page, 'Language', 'Bahasa Melayu')
+      await expect(firstNav(page)).toHaveText('Papan Pemuka')
+
+      // 別の端末（Cookie なし）でログインしても本人の言語になる
+      const otherDevice = await browser.newContext()
+      const otherPage = await otherDevice.newPage()
+      await login(otherPage, TEST_USERNAME, TEST_PASSWORD)
+      await expect(firstNav(otherPage)).toHaveText('Papan Pemuka')
+      await otherDevice.close()
+
+      // 店舗のデフォルトを変えても、本人の言語は変わらない
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
+      await page.getByText('ภาษาไทย').click()
+      await expect(page.getByText('Bahasa dikemas kini').first()).toBeVisible()
+      await expect(firstNav(page)).toHaveText('Papan Pemuka')
+
+      // 「店舗のデフォルト」に戻すと店舗の言語（タイ語）になる
+      await chooseLanguage(page, 'Bahasa', 'Lalai kedai (ภาษาไทย)')
+      await expect(firstNav(page)).toHaveText('แดชบอร์ด')
+    } finally {
+      // 本人の言語を未選択に、店舗のデフォルトを English に戻す
+      const supabase = await signedInSupabase()
+      await supabase.rpc('set_my_locale', { p_locale: '' })
+      await page.goto('/settings')
+      await page.waitForLoadState('networkidle')
+      await waitForStoreSettings(page)
+      await page.getByText('English').click()
+      await expect(firstNav(page)).toHaveText('Dashboard')
     }
   })
 })

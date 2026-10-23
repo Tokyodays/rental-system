@@ -7,6 +7,11 @@ import { ROLE_IDS } from '#shared/constants/auth'
  */
 export const useStaff = () => {
   const supabase = useSupabaseClient()
+  // 実行中の取得を共有するための置き場所。サーバーではリクエストごと、ブラウザではアプリで1つ
+  const nuxtApp = useNuxtApp() as ReturnType<typeof useNuxtApp> & {
+    _staffSyncing?: Promise<void> | null
+    _staffFetching?: Promise<void> | null
+  }
   
   // 独自にユーザー状態を管理（モジュールのステートに依存しない）
   const user = useState<any>('verified-supabase-user', () => null)
@@ -29,6 +34,8 @@ export const useStaff = () => {
     username: string | null
     store_id: string | null
     role_id: string
+    /** 本人が選んだ表示言語。NULL なら店舗のデフォルト言語に従う */
+    locale: string | null
     staff_roles: { name: string } | null
     stores: StoreRecord | null
   }
@@ -52,18 +59,31 @@ export const useStaff = () => {
 
   /**
    * スタッフ情報を取得する
+   * 取得済みなら何もしない。店舗設定の保存後など、最新の値が必要なときは force: true で取り直す
    */
-  const fetchStaff = async () => {
+  const fetchStaff = async ({ force = false }: { force?: boolean } = {}) => {
     const uid = user.value?.id
     if (!uid) return
 
-    if (staff.value && staff.value.id === uid) return 
+    if (!force && staff.value && staff.value.id === uid) return
 
+    // 複数のコンポーネントから同時に呼ばれても、取得は1回にまとめる
+    if (!force && nuxtApp._staffFetching) return nuxtApp._staffFetching
+    const fetching = loadStaff(uid)
+    nuxtApp._staffFetching = fetching
+    try {
+      await fetching
+    } finally {
+      if (nuxtApp._staffFetching === fetching) nuxtApp._staffFetching = null
+    }
+  }
+
+  const loadStaff = async (uid: string) => {
     isLoading.value = true
     try {
       const { data, error } = await supabase
         .from('staff')
-        .select('id, username, store_id, role_id, staff_roles(name), stores(id, name, address, currency_id, default_locale, currency(id, currency_text, currency_symbol))')
+        .select('id, username, store_id, role_id, locale, staff_roles(name), stores(id, name, address, currency_id, default_locale, currency(id, currency_text, currency_symbol))')
         .eq('id', uid)
         .maybeSingle()
 
@@ -75,6 +95,7 @@ export const useStaff = () => {
           username: user.value?.email?.split('@')[0] || 'Unknown',
           store_id: null,
           role_id: '',
+          locale: null,
           staff_roles: { name: 'user' },
           stores: null
         }
@@ -92,6 +113,19 @@ export const useStaff = () => {
    * セッションの強制的な同期
    */
   const syncUser = async () => {
+    // 各コンポーネントの onMounted から同時に呼ばれるため、実行中の確認があればそれを待つ
+    // （getUser は認証ロックを取って1件ずつ処理されるので、重複すると待ち時間が積み重なる）
+    if (nuxtApp._staffSyncing) return nuxtApp._staffSyncing
+    const syncing = verifyUser()
+    nuxtApp._staffSyncing = syncing
+    try {
+      await syncing
+    } finally {
+      nuxtApp._staffSyncing = null
+    }
+  }
+
+  const verifyUser = async () => {
     const { data: { user: supabaseUser } } = await supabase.auth.getUser()
     if (supabaseUser) {
       user.value = supabaseUser
@@ -115,10 +149,13 @@ export const useStaff = () => {
     const listenerRegistered = useState<boolean>('staff-auth-listener', () => false)
     if (!listenerRegistered.value) {
       listenerRegistered.value = true
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      // コールバックは認証ロックを持ったまま呼ばれることがある（トークン更新時など）。
+      // ここで Supabase の読み込みを await すると、その読み込みがロックの解放を待ってデッドロックするため、
+      // 読み込みはコールバックが終わってから実行する（Supabase のドキュメントの推奨どおり）
+      supabase.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
           user.value = session.user
-          await fetchStaff()
+          setTimeout(() => { fetchStaff() }, 0)
         } else {
           user.value = null
           staff.value = null

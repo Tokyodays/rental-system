@@ -1,7 +1,7 @@
 export default defineEventHandler(async (event) => {
   // 1-2. 認証・権限チェック（スタッフ削除は admin のみ許可。super_admin 不可は現行仕様）
   const adminClient = useSupabaseAdmin()
-  const { userId } = await requireStaffRole(event, ['admin'])
+  const { userId, staff: adminStaff } = await requireStaffRole(event, ['admin'])
 
   // 3. IDの取得
   const body = await readBody(event)
@@ -14,6 +14,16 @@ export default defineEventHandler(async (event) => {
   // 自分自身は削除できないようにする
   if (id === userId) {
     throw createError({ statusCode: 400, message: 'Cannot delete your own account' })
+  }
+
+  // 自店舗のスタッフだけ削除できる（他店舗のスタッフや super_admin は不可）
+  const { data: target } = await adminClient
+    .from('staff')
+    .select('store_id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!target || target.store_id !== adminStaff.store_id) {
+    throw createError({ statusCode: 403, message: 'Forbidden' })
   }
 
   // 4. public.staff を先に削除（staff.id → auth.users.id FK が NO ACTION のため子を先に消す）

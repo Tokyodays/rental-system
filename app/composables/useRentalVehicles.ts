@@ -25,6 +25,7 @@ export const useRentalVehicles = (statusName: 'Available' | 'Lent', loadErrorDes
         .from('vehicles')
         .select('*, vehicle_categories(name, icon), vehicle_statuses(name)')
         .eq('status_id', statusId)
+        .is('deleted_at', null)
         .order('name') as any)
 
       if (!error) vehicles.value = data || []

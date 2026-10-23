@@ -16,7 +16,7 @@ const search = ref('')
 const client = useSupabaseClient()
 const toast = useToast()
 const { staff } = useStaff()
-const { uploadPassportImage } = useCustomerPassport()
+const { uploadPassportImage, deletePassportImage } = useCustomerPassport()
 const { t, tName } = useI18n()
 
 const customers = ref<Customer[]>([])
@@ -160,7 +160,7 @@ async function createCustomer(storeId: string) {
 
   // 2. Upload photo IF captured BEFORE inserting record
   if (capturedBlob.value) {
-    passportUrl = await uploadPassportImage(customerId, capturedBlob.value)
+    passportUrl = await uploadPassportImage(storeId, customerId, capturedBlob.value)
   }
 
   // 3. Get Status ID (Active)
@@ -177,8 +177,12 @@ async function createCustomer(storeId: string) {
       statusId,
       storeId
     }) as any)
-  
-  if (insertError) throw insertError
+
+  if (insertError) {
+    // 登録に失敗したら、先にアップロードしたパスポート画像を残さない
+    await deletePassportImage(passportUrl)
+    throw insertError
+  }
 }
 
 async function handleAddCustomer() {
@@ -216,13 +220,16 @@ function openDeleteModal(customer: Customer) {
   isDeleteModalOpen.value = true
 }
 
-async function deleteCustomer(customerId: string) {
+async function deleteCustomer(customer: Customer) {
   const { error } = await client
     .from('customers')
     .delete()
-    .eq('id', customerId)
-  
+    .eq('id', customer.id)
+
   if (error) throw error
+
+  // パスポート画像（個人情報）をストレージに残さない
+  await deletePassportImage(customer.passport_url)
 }
 
 async function handleDeleteCustomer() {
@@ -230,7 +237,7 @@ async function handleDeleteCustomer() {
   
   isDeleting.value = true
   try {
-    await deleteCustomer(customerToDelete.value.id)
+    await deleteCustomer(customerToDelete.value)
 
     isDeleteModalOpen.value = false
     customerToDelete.value = null
@@ -270,7 +277,9 @@ async function updateCustomer() {
 
   // 1. Upload photo if captured (Overwrite)
   if (capturedBlob.value) {
-    passportUrl = await uploadPassportImage(customerToUpdate.id, capturedBlob.value)
+    const storeId = staff.value?.store_id
+    if (!storeId) throw new Error(t('cust.err.no_store'))
+    passportUrl = await uploadPassportImage(storeId, customerToUpdate.id, capturedBlob.value)
   }
 
   // 2. Update database
@@ -323,13 +332,14 @@ const filteredCustomers = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)]">
+  <!-- 印刷時は画面の高さ・スクロールの制限を外し、一覧を最後まで出す -->
+  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)] print:m-0 print:h-auto print:overflow-visible">
     <!-- Main Content: Customer List -->
-    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-[600px]">
+    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0 print:overflow-visible">
       <!-- Header Area: Search & Filters -->
-      <div class="flex flex-col gap-4 p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex-1 relative">
+      <div class="flex flex-col gap-4 p-4 md:p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
+          <div class="relative w-full sm:w-auto sm:flex-1 sm:min-w-48">
             <UInput
               v-model="search"
               icon="i-lucide-search"
@@ -369,8 +379,8 @@ const filteredCustomers = computed(() => {
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
+      <div class="flex-1 overflow-auto p-4 md:p-6 print:overflow-visible">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto text-sm">
           <div v-if="isLoading" class="p-12 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2 mx-auto" />
             <p>{{ t('cust.loading') }}</p>
@@ -500,8 +510,8 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6 flex-wrap">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
-            <UButton :label="t('cust.add.next')" variant="subtle" color="neutral" class="cursor-pointer" @click="addStep = 2" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isAddModalOpen = false }" />
+            <UButton :label="t('cust.add.next')" variant="subtle" color="neutral" class="cursor-pointer" @click="() => { addStep = 2 }" />
             <UButton :label="t('cust.add.register')" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" @click="handleAddCustomer" />
           </div>
         </div>
@@ -521,7 +531,7 @@ const filteredCustomers = computed(() => {
               color="primary"
               size="xl"
               class="cursor-pointer font-bold"
-              @click="isCameraOpen = true"
+              @click="() => { isCameraOpen = true }"
             />
           </div>
 
@@ -565,7 +575,7 @@ const filteredCustomers = computed(() => {
                color="neutral"
                size="sm"
                class="cursor-pointer self-center"
-               @click="addStep = 1"
+               @click="() => { addStep = 1 }"
              />
           </div>
         </div>
@@ -581,7 +591,7 @@ const filteredCustomers = computed(() => {
             <p class="text-sm text-slate-500">{{ customerToDelete.email }}</p>
           </div>
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isDeleteModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isDeleteModalOpen = false }" />
             <UButton :label="t('delete')" color="error" class="cursor-pointer" :loading="isDeleting" @click="handleDeleteCustomer" />
           </div>
         </div>
@@ -618,7 +628,7 @@ const filteredCustomers = computed(() => {
                   variant="subtle"
                   size="xs"
                   class="cursor-pointer"
-                  @click="isCameraOpen = true"
+                  @click="() => { isCameraOpen = true }"
                 />
              </div>
 
@@ -647,7 +657,7 @@ const filteredCustomers = computed(() => {
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isUpdateModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isUpdateModalOpen = false }" />
             <UButton :label="t('cust.upd.submit')" type="submit" color="primary" class="cursor-pointer font-bold" :loading="isSubmitting" />
           </div>
         </UForm>

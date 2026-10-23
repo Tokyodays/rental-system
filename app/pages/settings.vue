@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Database } from '../types/database.types'
 import { ROLE_IDS } from '#shared/constants/auth'
-import type { Locale } from '~/locales'
+import { DEFAULT_LOCALE, toLocale, type Locale } from '~/locales'
 
 definePageMeta({
   middleware: ['settings-only-admin']
@@ -39,14 +39,13 @@ const staffList = ref<StaffMember[]>([])
 const isLoadingStaff = ref(true)
 
 // ---- 言語設定 ----
-const { locale, t, setLocale, availableLocales } = useI18n()
+const { t, availableLocales } = useI18n()
 
 /**
- * 言語を即時に切り替え、この店舗のデフォルト言語（stores.default_locale）としても保存する。
- * 保存したデフォルトは、言語を明示的に選んでいない端末（Cookie なし）で使われる。
+ * 店舗のデフォルト言語（stores.default_locale）を保存する。
+ * 自分の言語を選んでいないスタッフ（staff.locale が NULL）の表示言語になる。各自の言語はユーザーメニューから変える。
  */
-async function handleLocaleChange(value: Locale) {
-  setLocale(value)
+async function handleStoreLocaleChange(value: Locale) {
   if (!store.value) return
   try {
     const { error } = await supabase
@@ -55,7 +54,7 @@ async function handleLocaleChange(value: Locale) {
       .eq('id', store.value.id)
     if (error) throw error
     store.value.default_locale = value
-    // staff キャッシュの stores.default_locale も更新する（fetchStaff は取得済みなら何もしないため直接書き換える）
+    // 自分の言語を選んでいなければ表示言語も変わるよう、staff キャッシュの stores.default_locale も更新する
     if (staff.value?.stores) staff.value.stores.default_locale = value
     toast.add({ title: t('set.lang_saved'), description: t('set.lang_saved_desc'), color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
@@ -140,8 +139,8 @@ async function handleSaveStore() {
       store.value.currency_id = storeCurrency.value
     }
     
-    // キャッシュを更新
-    await fetchStaff()
+    // 他画面が参照する staff.stores（通貨など）を最新にする
+    await fetchStaff({ force: true })
     toast.add({ title: t('set.saved'), description: t('set.saved_desc'), color: 'success', icon: 'i-lucide-check' })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : t('set.unknown_error')
@@ -158,7 +157,7 @@ const isAddModalOpen = ref(false)
 const newStaff = reactive({
   username: '',
   password: '',
-  role_id: ROLE_IDS.STAFF as string // user role as default
+  role_id: ROLE_IDS.STAFF as typeof ROLE_IDS.STAFF | typeof ROLE_IDS.ADMIN // user role as default
 })
 
 function openAddModal() {
@@ -288,18 +287,19 @@ watch(() => staff.value?.store_id, (newId) => {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-lucide-languages" class="size-5 text-blue-600" />
-          <h2 class="font-semibold text-base">{{ t('language') }}</h2>
+          <h2 class="font-semibold text-base">{{ t('set.store_lang') }}</h2>
         </div>
       </template>
       <div class="space-y-4">
-        <p class="text-sm text-slate-500">{{ t('set.lang_desc') }}</p>
+        <p class="text-sm text-slate-500">{{ t('set.store_lang_desc') }}</p>
         <URadioGroup
-          :model-value="locale"
+          :model-value="toLocale(store?.default_locale) ?? DEFAULT_LOCALE"
           :items="availableLocales"
           data-testid="language-select"
-          @update:model-value="(v) => handleLocaleChange(v as Locale)"
+          :disabled="!store"
+          @update:model-value="(v) => handleStoreLocaleChange(v as Locale)"
           orientation="horizontal"
-          :ui="{ wrapper: 'flex flex-wrap gap-x-8 gap-y-4' }"
+          :ui="{ fieldset: 'flex-wrap gap-x-8 gap-y-4' }"
         >
           <template #label="{ item }">
             <div class="flex items-center gap-2">
@@ -350,7 +350,7 @@ watch(() => staff.value?.store_id, (newId) => {
               :color="storeCurrency === c.id ? 'primary' : 'neutral'"
               :variant="storeCurrency === c.id ? 'solid' : 'outline'"
               class="min-w-16 justify-center font-bold"
-              @click="storeCurrency = c.id"
+              @click="() => { storeCurrency = c.id }"
             />
           </div>
           <template #help>

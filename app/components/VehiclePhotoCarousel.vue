@@ -78,7 +78,7 @@ const openImage = (url: string) => {
             variant="ghost"
             icon="i-lucide-x"
             class="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-full z-20"
-            @click="isOpen = false"
+            @click="() => { isOpen = false }"
           />
         </div>
       </template>
