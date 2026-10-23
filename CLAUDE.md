@@ -35,6 +35,12 @@ Multi-tenant vehicle rental SaaS built with **Nuxt 4** + **Supabase**.
 | `admin` | `password123` | super_admin | Owner / admin console |
 | `branchadmin` | `password123` | admin | E2E test user (Main Store) |
 
+## Deploy
+
+`main` deploys nothing. Push `main` to `deployment/development` (→ https://rental-system-dev.vercel.app, dev Supabase)
+or `deployment/production` (→ https://rental-system-chi-lac.vercel.app, prod Supabase); GitHub Actions deploys it.
+Vercel's Git auto-deploy is off (`vercel.json`). Details: `.claude/skills/deploy/SKILL.md`.
+
 ## Sub-agent guidelines
 
 ### When to use the Explore agent

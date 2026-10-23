@@ -1,9 +1,17 @@
+# 開発環境へのデプロイ: deployment/development ブランチへの push（または手動実行）で、
+# Vercel の Preview 環境（開発用の Supabase）としてデプロイし、rental-system-dev.vercel.app に割り当てる。
+# main への push では何もデプロイしない（vercel.json で Vercel の Git 連携による自動デプロイを止めている）
 name: Deploy to Development
 
 on:
   push:
     branches:
       - deployment/development
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-development
+  cancel-in-progress: false
 
 jobs:
   deploy:
