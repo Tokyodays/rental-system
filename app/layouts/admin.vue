@@ -50,5 +50,6 @@ const handleLogout = async () => {
     <main class="p-4 md:p-6">
       <slot />
     </main>
+    <AppLoadingOverlay />
   </div>
 </template>

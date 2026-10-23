@@ -51,6 +51,7 @@ const pageTitle = computed(() => {
       <main class="flex-1 p-6 overflow-y-auto print:p-0 print:overflow-visible">
         <slot />
       </main>
+      <AppLoadingOverlay />
     </div>
     </div>
   </div>

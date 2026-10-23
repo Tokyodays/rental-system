@@ -8,6 +8,15 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false
   },
+  nitro: {
+    // Vercel のサーバー関数を Supabase（ap-northeast-1 / 東京）と同じ地域で動かす。
+    // 既定の iad1（米国東部）だと、ページを描画するたびに Supabase との往復が太平洋を横断する
+    vercel: {
+      functions: {
+        regions: ['hnd1']
+      }
+    }
+  },
   css: ['~/assets/css/main.css'],
   fonts: {
     families: [
