@@ -42,5 +42,12 @@ export default {
   'set.toast.role_updated': { en: 'Role Updated', th: 'อัปเดตบทบาทแล้ว', lo: 'ອັບເດດບົດບາດແລ້ວ', vi: 'Đã cập nhật vai trò', ms: 'Peranan dikemas kini' },
   'set.toast.role_admin': { en: '{name} is now an Admin.', th: '{name} เป็นผู้ดูแลแล้ว', lo: '{name} ເປັນຜູ້ດູແລແລ້ວ', vi: '{name} hiện là Quản trị viên.', ms: '{name} kini seorang Pentadbir.' },
   'set.toast.role_user': { en: '{name} is now a User.', th: '{name} เป็นผู้ใช้ทั่วไปแล้ว', lo: '{name} ເປັນຜູ້ໃຊ້ທົ່ວໄປແລ້ວ', vi: '{name} hiện là Người dùng.', ms: '{name} kini seorang Pengguna.' },
-  'set.staff_fallback': { en: 'Staff', th: 'พนักงาน', lo: 'ພະນັກງານ', vi: 'Nhân viên', ms: 'Kakitangan' }
+  'set.staff_fallback': { en: 'Staff', th: 'พนักงาน', lo: 'ພະນັກງານ', vi: 'Nhân viên', ms: 'Kakitangan' },
+  'set.mfa.col': { en: '2-Step Verification', th: 'ยืนยันสองขั้นตอน', lo: 'ຢືນຢັນສອງຂັ້ນຕອນ', vi: 'Xác minh 2 bước', ms: 'Pengesahan 2 Langkah' },
+  'set.mfa.on': { en: 'On', th: 'เปิดใช้งาน', lo: 'ເປີດໃຊ້ງານ', vi: 'Đã bật', ms: 'Aktif' },
+  'set.mfa.off': { en: 'Not set up', th: 'ยังไม่ได้ตั้งค่า', lo: 'ຍັງບໍ່ໄດ້ຕັ້ງຄ່າ', vi: 'Chưa thiết lập', ms: 'Belum disediakan' },
+  'set.mfa.reset': { en: 'Reset', th: 'รีเซ็ต', lo: 'ຣີເຊັດ', vi: 'Đặt lại', ms: 'Tetapkan semula' },
+  'set.mfa.reset_confirm': { en: 'Reset two-step verification for @{name}? They will set it up again at their next sign-in.', th: 'รีเซ็ตการยืนยันตัวตนสองขั้นตอนของ @{name} หรือไม่? ผู้ใช้จะต้องตั้งค่าใหม่เมื่อเข้าสู่ระบบครั้งถัดไป', lo: 'ຣີເຊັດການຢືນຢັນຕົວຕົນສອງຂັ້ນຕອນຂອງ @{name} ບໍ? ຜູ້ໃຊ້ຈະຕ້ອງຕັ້ງຄ່າໃໝ່ເມື່ອເຂົ້າສູ່ລະບົບຄັ້ງຕໍ່ໄປ.', vi: 'Đặt lại xác minh hai bước cho @{name}? Người này sẽ thiết lập lại ở lần đăng nhập tiếp theo.', ms: 'Tetapkan semula pengesahan dua langkah untuk @{name}? Mereka akan menyediakannya semula semasa log masuk seterusnya.' },
+  'set.mfa.reset_done': { en: 'Two-step verification reset', th: 'รีเซ็ตการยืนยันตัวตนสองขั้นตอนแล้ว', lo: 'ຣີເຊັດການຢືນຢັນຕົວຕົນສອງຂັ້ນຕອນແລ້ວ', vi: 'Đã đặt lại xác minh hai bước', ms: 'Pengesahan dua langkah ditetapkan semula' },
+  'set.mfa.reset_done_desc': { en: '@{name} will set it up again at the next sign-in.', th: '@{name} จะตั้งค่าใหม่เมื่อเข้าสู่ระบบครั้งถัดไป', lo: '@{name} ຈະຕັ້ງຄ່າໃໝ່ເມື່ອເຂົ້າສູ່ລະບົບຄັ້ງຕໍ່ໄປ', vi: '@{name} sẽ thiết lập lại ở lần đăng nhập tiếp theo.', ms: '@{name} akan menyediakannya semula semasa log masuk seterusnya.' },
 } satisfies MessageCatalog
