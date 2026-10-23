@@ -26,6 +26,7 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
+      # チーム（tokyodays-projects）は環境変数 VERCEL_ORG_ID で指定する（--scope を付けるとユーザー情報を読みに行き失敗する）
       - name: Deploy to Vercel (Production)
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
