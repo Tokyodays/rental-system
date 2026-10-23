@@ -44,6 +44,12 @@ E2E handles this automatically: `e2e/mfa.ts` saves each test user's TOTP secret 
 and generates codes; if a secret is unknown it deletes the user's factors (service role) so they re-enroll.
 To use a test user by hand, register its key in an authenticator app, or reset it from Settings / the admin console.
 
+## Deploy
+
+`main` deploys nothing. Push `main` to `deployment/development` (→ https://rental-system-dev.vercel.app, dev Supabase)
+or `deployment/production` (→ https://rental-system-chi-lac.vercel.app, prod Supabase); GitHub Actions deploys it.
+Vercel's Git auto-deploy is off (`vercel.json`). Details: `.claude/skills/deploy/SKILL.md`.
+
 ## Sub-agent guidelines
 
 ### When to use the Explore agent

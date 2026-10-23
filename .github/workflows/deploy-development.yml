@@ -1,9 +1,17 @@
+# 開発環境へのデプロイ: deployment/development ブランチへの push（または手動実行）で、
+# Vercel の Preview 環境（開発用の Supabase）としてデプロイし、rental-system-dev.vercel.app に割り当てる。
+# main への push では何もデプロイしない（vercel.json で Vercel の Git 連携による自動デプロイを止めている）
 name: Deploy to Development
 
 on:
   push:
     branches:
       - deployment/development
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-development
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -18,10 +26,19 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
+      # トークンはチーム（tokyodays-projects）のスコープで発行している。
+      # vercel alias set（と --scope 指定）はユーザー情報を読みに行き "User not found" で失敗するため、
+      # 開発用 URL の割り当ては REST API でチーム ID を指定して行う
       - name: Deploy to Vercel (Preview)
         run: |
-          DEPLOY_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes)
-          vercel alias set $DEPLOY_URL rental-system-dev.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
+          DEPLOY_URL=$(vercel deploy --token="$VERCEL_TOKEN" --yes)
+          DEPLOYMENT_ID=$(curl -fsS "https://api.vercel.com/v13/deployments/${DEPLOY_URL#https://}?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r .id)
+          curl -fsS -X POST "https://api.vercel.com/v2/deployments/$DEPLOYMENT_ID/aliases?teamId=$VERCEL_ORG_ID" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" -H "Content-Type: application/json" \
+            -d '{"alias":"rental-system-dev.vercel.app"}'
+          echo "Deployed $DEPLOY_URL → https://rental-system-dev.vercel.app"
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -67,5 +67,5 @@ Then run the E2E suite (see e2e-testing skill) to catch regressions.
 ## Rules
 
 - Never run `seed.sql` or ad-hoc `psql` with inline passwords against dev/prod. Credentials stay in environment variables or the CLI's login, never in tracked files.
-- Apply migrations to dev and prod before merging the corresponding PR to `main` (production deploys from `main` expect the schema to already exist).
+- Apply a migration to each environment before deploying the code that needs it: dev before pushing to `deployment/development`, prod before pushing to `deployment/production` (merging to `main` deploys nothing; see the deploy skill). If the migration would break the code that is currently deployed, deploy first and migrate right after, and say so in the PR.
 - For query/index/RLS performance guidance, consult the supabase-postgres-best-practices skill.
