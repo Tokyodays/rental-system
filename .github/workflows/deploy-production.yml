@@ -1,9 +1,17 @@
+# 本番環境へのデプロイ: deployment/production ブランチへの push（または手動実行）で、
+# Vercel の Production 環境（本番用の Supabase）としてデプロイする（rental-system-chi-lac.vercel.app）。
+# main への push では何もデプロイしない（vercel.json で Vercel の Git 連携による自動デプロイを止めている）
 name: Deploy to Production
 
 on:
   push:
     branches:
       - deployment/production
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
