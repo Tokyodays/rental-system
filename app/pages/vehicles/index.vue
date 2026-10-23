@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  DELETED_VEHICLE_FILTER,
   VEHICLE_CATEGORY_FILTERS,
   VEHICLE_CATEGORY_NAMES,
   matchesVehicleFilter,
@@ -19,7 +20,8 @@ const { t, tName, dateLocale } = useI18n()
 const { ensureLoaded, vehicleStatuses, vehicleStatusId } = useStatusIds()
 const statusOptions = computed(() => [
   { label: t('all'), value: 'All' },
-  ...vehicleStatuses.value.map(s => ({ label: tName('status', s.name), value: s.name }))
+  ...vehicleStatuses.value.map(s => ({ label: tName('status', s.name), value: s.name })),
+  { label: t('veh.deleted'), value: DELETED_VEHICLE_FILTER }
 ])
 const categoryOptions = computed(() =>
   VEHICLE_CATEGORY_NAMES.map(name => ({ label: tName('category', name), value: name }))
@@ -36,9 +38,10 @@ const isAddModalOpen = ref(false)
 const isSubmitting = ref(false)
 const newVehicle = reactive({
   name: '',
-  categoryName: 'Bike',
+  categoryName: 'Bike' as VehicleCategoryName,
   status: 'Available',
   lastMileage: 0,
+  lastOilChangeOn: '',
   imageUrls: [] as string[]
 })
 
@@ -52,7 +55,10 @@ async function fetchVehicles() {
     const { data, error } = await client
       .from('vehicles')
       .select('*, image_urls, vehicle_categories(name, icon), vehicle_statuses(name, color)')
-    
+      // 並び順を指定しないと、更新した車両が一覧の末尾へ移動してしまうため登録順に固定する
+      .order('created_at', { ascending: true })
+      .order('code', { ascending: true })
+
     if (error) {
       console.error('Supabase Error:', error)
       throw error
@@ -93,6 +99,7 @@ async function createVehicle(categoryId: string, storeId: string, statusId: stri
       store_id: storeId,
       status_id: statusId,
       last_mileage: newVehicle.lastMileage,
+      last_oil_change_on: newVehicle.lastOilChangeOn || null,
       image_urls: newVehicle.imageUrls
     } as any)
   
@@ -100,7 +107,7 @@ async function createVehicle(categoryId: string, storeId: string, statusId: stri
 }
 
 /** vehicles を code で更新し、失敗時は throw する */
-type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; image_urls: string[] }>
+type VehicleUpdateValues = Partial<{ status_id: string; last_mileage: number; last_oil_change_on: string | null; image_urls: string[]; deleted_at: string | null }>
 
 async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
   const { error } = await client
@@ -115,6 +122,7 @@ async function updateVehicleByCode(code: string, values: VehicleUpdateValues) {
 function resetNewVehicleForm() {
   newVehicle.name = ''
   newVehicle.lastMileage = 0
+  newVehicle.lastOilChangeOn = ''
   newVehicle.imageUrls = []
 }
 
@@ -234,6 +242,93 @@ function handleCancelEditMileage() {
   isEditingMileage.value = false
 }
 
+// 最後にオイル交換した日付（未来日は選べない。編集開始時は「今日」を初期値にする）
+const isEditingOilChange = ref(false)
+const editOilChangeValue = ref('')
+const isUpdatingOilChange = ref(false)
+const todayDateOnly = computed(() => toDateOnlyString(new Date()))
+
+function handleStartEditOilChange() {
+  if (!selectedVehicle.value) return
+  editOilChangeValue.value = todayDateOnly.value
+  isEditingOilChange.value = true
+}
+
+async function handleSaveOilChange() {
+  if (!selectedVehicle.value) return
+  const value = editOilChangeValue.value || null
+  isUpdatingOilChange.value = true
+  try {
+    await updateVehicleByCode(selectedVehicle.value.code, { last_oil_change_on: value })
+
+    selectedVehicle.value.lastOilChangeOn = value
+    toast.add({ title: t('veh.toast.oil_change_updated'), color: 'success' })
+    await refreshVehiclesKeepingSelection()
+  } catch (e: any) {
+    console.error('Update oil change date failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
+  } finally {
+    isUpdatingOilChange.value = false
+    isEditingOilChange.value = false
+  }
+}
+
+// ---- 車両の削除（論理削除）・復元 ----
+// 取引履歴が車両を参照しているため行は消さず deleted_at を記録する。
+// 削除時は Unavailable にして、古い画面や QR から貸し出されないようにする
+const isDeleteModalOpen = ref(false)
+const isDeletingVehicle = ref(false)
+
+async function handleDeleteVehicle() {
+  if (!selectedVehicle.value) return
+  const unavailableId = vehicleStatusId('Unavailable')
+  const lentId = vehicleStatusId('Lent')
+  if (!unavailableId || !lentId) return
+
+  isDeletingVehicle.value = true
+  try {
+    // 貸出中なら削除しない（画面の表示が古くても、DB 上で貸出中なら 0 件更新になる）
+    const { data, error } = await client
+      .from('vehicles')
+      .update({ deleted_at: new Date().toISOString(), status_id: unavailableId })
+      .eq('code', selectedVehicle.value.code)
+      .neq('status_id', lentId)
+      .is('deleted_at', null)
+      .select('code')
+
+    if (error) throw error
+    isDeleteModalOpen.value = false
+    if (!data?.length) {
+      toast.add({ title: t('veh.toast.not_allowed'), description: t('veh.delete_lent_hint'), color: 'error' })
+      await refreshVehiclesKeepingSelection()
+      return
+    }
+
+    toast.add({ title: t('veh.toast.deleted'), color: 'success' })
+    selectedVehicle.value = null
+    await fetchVehicles()
+  } catch (e: any) {
+    console.error('Delete vehicle failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
+  } finally {
+    isDeletingVehicle.value = false
+  }
+}
+
+async function handleRestoreVehicle() {
+  if (!selectedVehicle.value) return
+  try {
+    await updateVehicleByCode(selectedVehicle.value.code, { deleted_at: null })
+    toast.add({ title: t('veh.toast.restored'), description: t('veh.restore_hint'), color: 'success' })
+    // 復元した車両は「Deleted」では表示されなくなるため、一覧の絞り込みを All に戻す
+    selectedStatus.value = 'All'
+    await refreshVehiclesKeepingSelection()
+  } catch (e: any) {
+    console.error('Restore vehicle failed:', e)
+    toast.add({ title: t('update_failed'), description: e.message, color: 'error' })
+  }
+}
+
 // Photo editing in sidebar
 const isEditingPhotos = ref(false)
 const isUpdatingPhotos = ref(false)
@@ -258,17 +353,19 @@ async function handleSavePhotos(newUrls: string[]) {
 // Reset editing state when a different vehicle is selected
 watch(selectedVehicle, () => {
   isEditingMileage.value = false
+  isEditingOilChange.value = false
   isEditingPhotos.value = false
 })
 </script>
 
 <template>
-  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)]">
-    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-[600px]">
+  <!-- 印刷時は画面の高さ・スクロールの制限を外し、一覧を最後まで出す -->
+  <div class="flex flex-1 overflow-hidden -m-6 h-[calc(100vh-64px)] print:m-0 print:h-auto print:overflow-visible">
+    <main class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden min-w-0 print:overflow-visible">
       <!-- Sub Header / Filters -->
-      <div class="flex flex-col gap-4 p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div class="flex items-center gap-4 mt-2">
-          <div class="flex-1 relative">
+      <div class="flex flex-col gap-4 p-4 md:p-6 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center gap-3 md:gap-4 mt-2">
+          <div class="relative w-full sm:w-auto sm:flex-1 sm:min-w-48">
             <UInput
               v-model="search"
               icon="i-lucide-search"
@@ -280,7 +377,7 @@ watch(selectedVehicle, () => {
           <div class="flex flex-wrap items-center gap-4">
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('veh.category') }}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-1">
                 <button
                   v-for="cat in VEHICLE_CATEGORY_FILTERS"
                   :key="cat"
@@ -299,7 +396,7 @@ watch(selectedVehicle, () => {
 
             <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-800">
               <span class="text-[10px] font-bold text-slate-400 px-2 uppercase">{{ t('status') }}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex flex-wrap items-center gap-1">
                 <button
                   v-for="s in statusOptions"
                   :key="s.value"
@@ -322,14 +419,14 @@ watch(selectedVehicle, () => {
             color="primary"
             size="md"
             class="cursor-pointer"
-            @click="isAddModalOpen = true"
+            @click="() => { isAddModalOpen = true }"
           />
         </div>
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden text-sm">
+      <div class="flex-1 overflow-auto p-4 md:p-6 print:overflow-visible">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-x-auto text-sm">
           <div v-if="isLoadingVehicles" class="p-8 text-center text-slate-500">
             <UIcon name="i-lucide-loader-2" class="animate-spin size-8 mb-2" />
             <p>{{ t('veh.loading') }}</p>
@@ -409,7 +506,7 @@ watch(selectedVehicle, () => {
     <!-- Details Sidebar -->
     <aside
       v-if="selectedVehicle"
-      class="w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
+      class="fixed inset-0 z-40 w-full lg:static lg:z-auto lg:w-80 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto"
     >
       <div class="p-6 flex flex-col h-full">
         <div class="flex items-start justify-between mb-6">
@@ -419,9 +516,20 @@ watch(selectedVehicle, () => {
             variant="ghost"
             color="neutral"
             class="cursor-pointer"
-            @click="selectedVehicle = null"
+            @click="() => { selectedVehicle = null }"
           />
         </div>
+
+        <UAlert
+          v-if="selectedVehicle.deletedAt"
+          data-testid="vehicle-deleted-banner"
+          icon="i-lucide-archive"
+          color="neutral"
+          variant="subtle"
+          class="mb-6"
+          :title="t('veh.deleted_on', { date: new Date(selectedVehicle.deletedAt).toLocaleDateString(dateLocale) })"
+          :description="t('veh.restore_hint')"
+        />
 
         <div class="mb-6">
           <div v-if="!isEditingPhotos" class="space-y-4">
@@ -434,7 +542,7 @@ watch(selectedVehicle, () => {
                 variant="ghost"
                 color="neutral"
                 class="cursor-pointer"
-                @click="isEditingPhotos = true"
+                @click="() => { isEditingPhotos = true }"
               />
             </div>
           </div>
@@ -451,7 +559,7 @@ watch(selectedVehicle, () => {
               color="neutral"
               variant="soft"
               class="mt-4 cursor-pointer"
-              @click="isEditingPhotos = false"
+              @click="() => { isEditingPhotos = false }"
             />
           </div>
           
@@ -491,7 +599,7 @@ watch(selectedVehicle, () => {
               </span>
             </div>
             <UButton
-              v-if="selectedVehicle.status !== 'Lent'"
+              v-if="selectedVehicle.status !== 'Lent' && !selectedVehicle.deletedAt"
               :label="selectedVehicle.status === 'Available' ? t('veh.set_unavailable') : t('veh.set_available')"
               :variant="selectedVehicle.status === 'Available' ? 'subtle' : 'solid'"
               :color="selectedVehicle.status === 'Available' ? 'error' : 'success'"
@@ -541,6 +649,55 @@ watch(selectedVehicle, () => {
             </div>
             <span v-else class="text-sm text-slate-900 dark:text-white font-medium">{{ selectedVehicle.lastMileage.toLocaleString() }} km</span>
           </div>
+          <div data-testid="oil-change">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">{{ t('veh.oil_change') }}</p>
+              <UButton
+                v-if="!isEditingOilChange"
+                icon="i-lucide-pencil"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                class="cursor-pointer"
+                :aria-label="t('veh.oil_change')"
+                @click="handleStartEditOilChange"
+              />
+            </div>
+            <div v-if="isEditingOilChange" class="flex items-center gap-2 mt-1">
+              <UInput
+                v-model="editOilChangeValue"
+                type="date"
+                :max="todayDateOnly"
+                size="sm"
+                class="w-full"
+              />
+              <UButton
+                icon="i-lucide-check"
+                color="success"
+                size="xs"
+                variant="subtle"
+                class="cursor-pointer shrink-0"
+                :aria-label="t('save')"
+                :loading="isUpdatingOilChange"
+                @click="handleSaveOilChange"
+              />
+              <UButton
+                icon="i-lucide-x"
+                color="neutral"
+                size="xs"
+                variant="ghost"
+                class="cursor-pointer shrink-0"
+                :aria-label="t('cancel')"
+                :disabled="isUpdatingOilChange"
+                @click="() => { isEditingOilChange = false }"
+              />
+            </div>
+            <span v-else-if="selectedVehicle.lastOilChangeOn" data-testid="oil-change-value" class="text-sm text-slate-900 dark:text-white font-medium">
+              {{ formatDateOnly(selectedVehicle.lastOilChangeOn, dateLocale) }}
+              <span class="text-slate-500 font-normal ml-1">({{ t('veh.oil_change_days_ago', { n: daysSinceDateOnly(selectedVehicle.lastOilChangeOn) }) }})</span>
+            </span>
+            <span v-else data-testid="oil-change-value" class="text-sm text-slate-400">{{ t('veh.oil_change_none') }}</span>
+          </div>
         </div>
 
         <div class="border-t border-slate-200 dark:border-slate-800 py-4 mt-auto">
@@ -553,7 +710,7 @@ watch(selectedVehicle, () => {
               color="primary"
               variant="solid"
               class="cursor-pointer"
-              @click="navigateTo(`/rentals/return?code=${selectedVehicle.code}`)"
+              @click="() => { if (selectedVehicle) navigateTo(`/rentals/return?code=${selectedVehicle.code}`) }"
             />
             <UButton
               :label="t('veh.print_qr')"
@@ -564,10 +721,47 @@ watch(selectedVehicle, () => {
               class="cursor-pointer"
               @click="openQR(selectedVehicle.code)"
             />
+            <UButton
+              v-if="selectedVehicle.deletedAt"
+              :label="t('veh.restore')"
+              icon="i-lucide-archive-restore"
+              block
+              color="primary"
+              variant="subtle"
+              class="cursor-pointer"
+              @click="handleRestoreVehicle"
+            />
+            <template v-else>
+              <UButton
+                :label="t('veh.delete')"
+                icon="i-lucide-trash-2"
+                block
+                color="error"
+                variant="ghost"
+                class="cursor-pointer"
+                :disabled="selectedVehicle.status === 'Lent'"
+                @click="() => { isDeleteModalOpen = true }"
+              />
+              <p v-if="selectedVehicle.status === 'Lent'" class="text-xs text-slate-500 text-center">{{ t('veh.delete_lent_hint') }}</p>
+            </template>
           </div>
         </div>
       </div>
     </aside>
+
+    <!-- Delete Vehicle Modal -->
+    <UModal
+      v-model:open="isDeleteModalOpen"
+      :title="t('veh.delete_confirm_title')"
+      :description="t('veh.delete_confirm_desc', { name: selectedVehicle?.name ?? '' })"
+    >
+      <template #footer>
+        <div class="flex justify-end gap-3 w-full">
+          <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isDeleteModalOpen = false }" />
+          <UButton :label="t('delete')" color="error" class="cursor-pointer" :loading="isDeletingVehicle" @click="handleDeleteVehicle" />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Add Vehicle Modal -->
     <UModal v-model:open="isAddModalOpen" :title="t('veh.modal.title')" :description="t('veh.modal.desc')">
@@ -585,12 +779,16 @@ watch(selectedVehicle, () => {
             <UInput v-model.number="newVehicle.lastMileage" type="number" />
           </UFormField>
 
+          <UFormField :label="t('veh.modal.oil_change')" name="lastOilChangeOn">
+            <UInput v-model="newVehicle.lastOilChangeOn" type="date" :max="todayDateOnly" />
+          </UFormField>
+
           <UFormField :label="t('veh.modal.photos')" name="imageUrls">
             <VehiclePhotoManager v-model="newVehicle.imageUrls" />
           </UFormField>
 
           <div class="flex justify-end gap-3 mt-6">
-            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="isAddModalOpen = false" />
+            <UButton :label="t('cancel')" variant="ghost" color="neutral" class="cursor-pointer" @click="() => { isAddModalOpen = false }" />
             <UButton :label="t('veh.modal.save')" type="submit" color="primary" class="cursor-pointer" :loading="isSubmitting" />
           </div>
         </UForm>

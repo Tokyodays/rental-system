@@ -4,7 +4,7 @@ export const useSupabaseAdmin = () => {
   const config = useRuntimeConfig()
   
   // サービスロールキーが必要
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabase?.serviceRoleKey
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabase?.serviceKey
   
   if (!serviceRoleKey) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')

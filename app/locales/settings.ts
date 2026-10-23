@@ -2,7 +2,8 @@ import type { MessageCatalog } from './types'
 
 export default {
   'set.subtitle': { en: 'Manage your store and account preferences.', th: 'จัดการร้านค้าและการตั้งค่าบัญชีของคุณ', lo: 'ຈັດການຮ້ານ ແລະ ການຕັ້ງຄ່າບັນຊີຂອງທ່ານ', vi: 'Quản lý cửa hàng và tùy chọn tài khoản của bạn.', ms: 'Urus kedai dan keutamaan akaun anda.' },
-  'set.lang_desc': { en: 'Select your preferred display language.', th: 'เลือกภาษาที่ต้องการใช้แสดงผล', lo: 'ເລືອກພາສາທີ່ຕ້ອງການໃຊ້ສະແດງຜົນ', vi: 'Chọn ngôn ngữ hiển thị bạn muốn dùng.', ms: 'Pilih bahasa paparan pilihan anda.' },
+  'set.store_lang': { en: 'Store Default Language', th: 'ภาษาเริ่มต้นของร้าน', lo: 'ພາສາເລີ່ມຕົ້ນຂອງຮ້ານ', vi: 'Ngôn ngữ mặc định của cửa hàng', ms: 'Bahasa Lalai Kedai' },
+  'set.store_lang_desc': { en: "Used for staff who haven't chosen their own language. Each staff member can change their language from the user menu at the top right.", th: 'ใช้กับพนักงานที่ยังไม่ได้เลือกภาษาของตนเอง พนักงานแต่ละคนเปลี่ยนภาษาได้จากเมนูผู้ใช้ที่มุมขวาบน', lo: 'ໃຊ້ກັບພະນັກງານທີ່ຍັງບໍ່ໄດ້ເລືອກພາສາຂອງຕົນເອງ. ພະນັກງານແຕ່ລະຄົນປ່ຽນພາສາໄດ້ຈາກເມນູຜູ້ໃຊ້ຢູ່ມຸມຂວາເທິງ.', vi: 'Dùng cho nhân viên chưa tự chọn ngôn ngữ. Mỗi nhân viên có thể đổi ngôn ngữ từ menu người dùng ở góc trên bên phải.', ms: 'Digunakan untuk kakitangan yang belum memilih bahasa sendiri. Setiap kakitangan boleh menukar bahasa daripada menu pengguna di bahagian atas kanan.' },
   'set.lang_saved': { en: 'Language updated', th: 'เปลี่ยนภาษาแล้ว', lo: 'ປ່ຽນພາສາແລ້ວ', vi: 'Đã đổi ngôn ngữ', ms: 'Bahasa dikemas kini' },
   'set.lang_saved_desc': { en: 'Saved as the default language for this store.', th: 'บันทึกเป็นภาษาเริ่มต้นของร้านนี้แล้ว', lo: 'ບັນທຶກເປັນພາສາເລີ່ມຕົ້ນຂອງຮ້ານນີ້ແລ້ວ', vi: 'Đã lưu làm ngôn ngữ mặc định của cửa hàng này.', ms: 'Disimpan sebagai bahasa lalai untuk kedai ini.' },
   'set.store_info': { en: 'Store Info', th: 'ข้อมูลร้าน', lo: 'ຂໍ້ມູນຮ້ານ', vi: 'Thông tin cửa hàng', ms: 'Maklumat Kedai' },

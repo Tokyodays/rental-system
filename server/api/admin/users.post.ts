@@ -13,11 +13,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Username and password are required' })
   }
 
+  // 店舗 admin は自店舗の staff / admin だけを作成できる（body の store_id は無視し、super_admin は作れない）
+  const isStoreAdmin = (adminStaff.staff_roles as any)?.name?.toLowerCase() === 'admin'
+  const targetRoleId = role_id || ROLE_IDS.STAFF
+  if (isStoreAdmin && targetRoleId !== ROLE_IDS.STAFF && targetRoleId !== ROLE_IDS.ADMIN) {
+    throw createError({ statusCode: 403, message: 'Forbidden' })
+  }
+
   // super_admin は店舗を持たない。それ以外のロールは必ず店舗に所属させる
   //   - super_admin が作成する場合: body の store_id が必須
   //   - admin が作成する場合: 自身の店舗を使う
-  const targetStoreId = store_id || adminStaff!.store_id
-  if ((role_id || ROLE_IDS.STAFF) !== ROLE_IDS.SUPER_ADMIN && !targetStoreId) {
+  const targetStoreId = isStoreAdmin ? adminStaff.store_id : store_id
+  if (targetRoleId !== ROLE_IDS.SUPER_ADMIN && !targetStoreId) {
     throw createError({ statusCode: 400, message: 'store_id is required' })
   }
 
@@ -45,7 +52,7 @@ export default defineEventHandler(async (event) => {
       .from('staff')
       .upsert({
         id: authData.user.id,
-        role_id: role_id || ROLE_IDS.STAFF,
+        role_id: targetRoleId,
         store_id: targetStoreId,
         username: username.toLowerCase()
       }, { onConflict: 'id' })

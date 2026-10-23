@@ -8,6 +8,8 @@ const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
+  // 開発サーバーに主要ページを先にコンパイルさせ、最初のテストがコンパイル待ちで時間切れになるのを防ぐ
+  globalSetup: './e2e/global-setup.ts',
   timeout: 60_000,
   expect: {
     timeout: 10_000
@@ -26,7 +28,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { browserName: 'chromium' }
+      use: {
+        browserName: 'chromium',
+        // カメラ撮影のテスト用に疑似カメラを使う
+        launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] },
+        permissions: ['camera']
+      }
     }
   ]
 })

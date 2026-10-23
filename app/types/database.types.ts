@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -168,6 +168,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          locale: string | null
           role_id: string
           store_id: string | null
           username: string | null
@@ -177,8 +178,9 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          locale?: string | null
           role_id: string
-          store_id: string | null
+          store_id?: string | null
           username?: string | null
         }
         Update: {
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          locale?: string | null
           role_id?: string
           store_id?: string | null
           username?: string | null
@@ -474,10 +477,12 @@ export type Database = {
           category_id: string | null
           code: string
           created_at: string | null
+          deleted_at: string | null
           id: string
           image_url: string | null
           image_urls: string[] | null
           last_mileage: number | null
+          last_oil_change_on: string | null
           name: string
           status_id: string | null
           store_id: string
@@ -487,10 +492,12 @@ export type Database = {
           category_id?: string | null
           code?: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           last_mileage?: number | null
+          last_oil_change_on?: string | null
           name: string
           status_id?: string | null
           store_id: string
@@ -500,10 +507,12 @@ export type Database = {
           category_id?: string | null
           code?: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
           last_mileage?: number | null
+          last_oil_change_on?: string | null
           name?: string
           status_id?: string | null
           store_id?: string
@@ -538,6 +547,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_lending: {
+        Args: {
+          p_customer_id: string
+          p_deposit?: string
+          p_end_at: string
+          p_helmet_lent?: boolean
+          p_key_handed_over?: boolean
+          p_price: number
+          p_staff_id: string
+          p_start_at: string
+          p_start_mileage: number
+          p_store_id: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
+      complete_return: {
+        Args: {
+          p_customer_id: string
+          p_end_at: string
+          p_transaction_id: string
+          p_vehicle_id: string
+        }
+        Returns: undefined
+      }
+      extend_rental: {
+        Args: {
+          p_additional_price: number
+          p_new_end_at: string
+          p_note?: string
+          p_transaction_id: string
+        }
+        Returns: string
+      }
       generate_random_alphanumeric: {
         Args: { length: number }
         Returns: string
@@ -545,6 +588,8 @@ export type Database = {
       generate_unique_vehicle_code: { Args: never; Returns: string }
       get_auth_store_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      set_my_locale: { Args: { p_locale: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

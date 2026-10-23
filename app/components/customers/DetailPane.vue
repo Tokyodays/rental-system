@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Customer, CustomerTransaction } from '~/utils/customer'
 
-defineProps<{
+const props = defineProps<{
   customer: Customer
   transactions: CustomerTransaction[]
   isLoadingTransactions: boolean
@@ -13,13 +13,21 @@ const emit = defineEmits<{
   delete: [customer: Customer]
 }>()
 
-const { getPassportPublicUrl } = useCustomerPassport()
+const { getPassportSignedUrl } = useCustomerPassport()
+
+const passportSrc = ref<string | null>(null)
+watch(() => props.customer.passport_url, async (path) => {
+  passportSrc.value = null
+  const url = await getPassportSignedUrl(path)
+  // 取得中に別の顧客へ切り替わっていたら反映しない
+  if (props.customer.passport_url === path) passportSrc.value = url
+}, { immediate: true })
 const { t, tName, dateLocale } = useI18n()
 </script>
 
 <template>
   <aside
-    class="w-96 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto hidden lg:flex"
+    class="fixed inset-0 z-40 w-full lg:static lg:z-auto lg:w-96 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shrink-0 overflow-y-auto"
   >
     <div class="p-6 flex flex-col h-full space-y-6">
       <div class="flex items-start justify-between">
@@ -37,8 +45,9 @@ const { t, tName, dateLocale } = useI18n()
       <div class="flex flex-col items-center">
         <div class="w-full aspect-[4/3] bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 mb-4 border border-slate-200 dark:border-slate-800 overflow-hidden relative shadow-sm">
           <template v-if="customer.passport_url">
-            <img 
-              :src="getPassportPublicUrl(customer.passport_url)" 
+            <img
+              v-if="passportSrc"
+              :src="passportSrc"
               class="w-full h-full object-cover" 
               @error="(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Load+Error'"
             />
@@ -95,7 +104,7 @@ const { t, tName, dateLocale } = useI18n()
           </div>
           <div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('cust.pane.registered') }}</p>
-            <p class="text-sm text-slate-900 dark:text-white font-medium">{{ new Date(customer.created_at).toLocaleDateString(dateLocale) }}</p>
+            <p class="text-sm text-slate-900 dark:text-white font-medium">{{ customer.created_at ? new Date(customer.created_at).toLocaleDateString(dateLocale) : t('n_a') }}</p>
           </div>
           <div>
             <p class="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-1">{{ t('cust.pane.id') }}</p>
@@ -132,7 +141,7 @@ const { t, tName, dateLocale } = useI18n()
                   </span>
                 </div>
                 <div class="flex items-center justify-between text-[10px]">
-                  <p class="text-slate-500">{{ new Date(t.start_at).toLocaleDateString(dateLocale) }}</p>
+                  <p class="text-slate-500">{{ t.start_at ? new Date(t.start_at).toLocaleDateString(dateLocale) : '-' }}</p>
                   <p class="font-bold text-blue-600 dark:text-blue-400">{{ t.price }}</p>
                 </div>
              </div>

@@ -42,3 +42,12 @@
   --font-body: "Plus Jakarta Sans", "Noto Sans Thai", "Noto Sans Lao", system-ui, sans-serif;
 }
 
+
+/* 印刷時: 表のセルの左右余白を詰め、A4 の幅に収める（画面用の px-6 のままだと右端の列が切れる） */
+@media print {
+  table th,
+  table td {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
