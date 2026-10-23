@@ -23,6 +23,8 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 10_000,
+    // global-setup で保存した二段階認証済みのログイン状態から始める（e2e/mfa.ts の STAFF_STORAGE_STATE）
+    storageState: 'e2e/.auth/staff.json',
     navigationTimeout: 15_000
   },
   projects: [

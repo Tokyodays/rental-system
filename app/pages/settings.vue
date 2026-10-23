@@ -91,6 +91,35 @@ async function fetchStaffList(storeId: string) {
   if (staffData) {
     staffList.value = staffData as StaffMember[]
   }
+  await fetchMfaStatus()
+}
+
+// ---- 二段階認証の状態とリセット（スマホの紛失・機種変更のとき） ----
+const mfaEnabled = ref<Record<string, boolean>>({})
+const isResettingMfa = ref<Record<string, boolean>>({})
+
+async function fetchMfaStatus() {
+  try {
+    const members = await $fetch<{ id: string, mfaEnabled: boolean }[]>('/api/admin/store-staff')
+    mfaEnabled.value = Object.fromEntries(members.map(m => [m.id, m.mfaEnabled]))
+  } catch (err) {
+    console.error('[Settings] MFA status fetch error:', err)
+  }
+}
+
+async function handleResetMfa(member: StaffMember) {
+  if (!confirm(t('set.mfa.reset_confirm', { name: member.username ?? '' }))) return
+
+  isResettingMfa.value[member.id] = true
+  try {
+    await $fetch('/api/admin/mfa-reset', { method: 'POST', body: { id: member.id } })
+    toast.add({ title: t('set.mfa.reset_done'), description: t('set.mfa.reset_done_desc', { name: member.username ?? '' }), color: 'success' })
+    await fetchMfaStatus()
+  } catch (err: any) {
+    toast.add({ title: t('update_failed'), description: toFetchErrorMessage(err), color: 'error' })
+  } finally {
+    isResettingMfa.value[member.id] = false
+  }
 }
 
 // Store 情報 → Staff 一覧の順に取得（Store 取得で例外が出たら Staff 取得はしない）
@@ -398,13 +427,14 @@ watch(() => staff.value?.store_id, (newId) => {
             <tr>
               <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('username') }}</th>
               <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('role') }}</th>
+              <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800">{{ t('set.mfa.col') }}</th>
               <th class="px-6 py-3 font-medium border-b border-slate-200 dark:border-slate-800 text-right">{{ t('actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
             <!-- ローディング -->
             <tr v-if="isLoadingStaff">
-              <td colspan="3" class="px-6 py-10 text-center text-slate-500">
+              <td colspan="4" class="px-6 py-10 text-center text-slate-500">
                 <UIcon name="i-lucide-loader-2" class="animate-spin size-6 mx-auto mb-2" />
                 <p>{{ t('set.staff_loading') }}</p>
               </td>
@@ -448,6 +478,26 @@ watch(() => staff.value?.store_id, (newId) => {
                   </span>
                 </div>
               </td>
+              <td class="px-6 py-4" data-testid="staff-mfa">
+                <div class="flex items-center gap-2">
+                  <UBadge
+                    :label="mfaEnabled[member.id] ? t('set.mfa.on') : t('set.mfa.off')"
+                    :color="mfaEnabled[member.id] ? 'success' : 'neutral'"
+                    variant="subtle"
+                  />
+                  <UButton
+                    v-if="mfaEnabled[member.id] && member.id !== staff?.id"
+                    :label="t('set.mfa.reset')"
+                    icon="i-lucide-rotate-ccw"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    class="cursor-pointer"
+                    :loading="isResettingMfa[member.id]"
+                    @click="handleResetMfa(member)"
+                  />
+                </div>
+              </td>
               <td class="px-6 py-4 text-right">
                 <UButton
                   v-if="member.id !== staff?.id"
@@ -463,7 +513,7 @@ watch(() => staff.value?.store_id, (newId) => {
 
             <!-- 空状態 -->
             <tr v-if="!isLoadingStaff && staffList.length === 0">
-              <td colspan="3" class="px-6 py-10 text-center text-slate-500">
+              <td colspan="4" class="px-6 py-10 text-center text-slate-500">
                 {{ t('set.staff_empty') }}
               </td>
             </tr>

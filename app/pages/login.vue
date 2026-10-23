@@ -16,6 +16,7 @@ const isDev = appEnv === 'development'
 const supabase = useSupabaseClient()
 const toast = useToast()
 const { syncUser, isSuperAdmin } = useStaff()
+const { pendingMfaStep } = useMfa()
 const { t } = useI18n()
 
 async function handleLogin() {
@@ -42,9 +43,11 @@ async function handleLogin() {
     toast.add({ title: t('auth.welcome'), description: t('auth.logged_in'), color: 'success' })
 
     // ロールを同期してリダイレクト先を分岐（window.location で完全リロード→競合状態を回避）
+    // パスワードの次は二段階認証（全員必須）。未登録なら登録、登録済みならコードの入力へ
     await syncUser()
+    const mfaStep = await pendingMfaStep()
     setTimeout(() => {
-      window.location.href = isSuperAdmin.value ? '/admin/stores' : '/dashboard'
+      window.location.href = mfaStep ? MFA_PATHS[mfaStep] : (isSuperAdmin.value ? '/admin/stores' : '/dashboard')
     }, 100)
   } catch (error: any) {
     console.error('Login error:', error)
